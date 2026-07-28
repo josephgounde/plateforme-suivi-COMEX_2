@@ -1,0 +1,161 @@
+<div class="dashboard-page">
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <ng-container *ngIf="!chargement">
+
+  <div class="dashboard-shell">
+  <aside class="dashboard-notif">
+    <a routerLink="/dossiers/nouveau" class="btn-primary btn-notif">+ Nouveau dossier</a>
+    <app-notification-panel [dossiers]="tousLesDossiers" />
+  </aside>
+
+  <div class="dashboard-content">
+
+    <div class="content-topbar">
+      <div class="content-header">
+        <h1>{{ libelleSectionActive }}</h1>
+        <p class="content-subtitle" *ngIf="vueActive === 'brouillons' && dossiersAffiches.length > 0">
+          Ces dossiers ne sont pas encore soumis — vous pouvez les modifier.
+        </p>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <div class="filter-pays">
+        <span class="filter-pays-icon">📍</span>
+        <app-dropdown-select class="filter-pays-select" [options]="paysOptions" [(ngModel)]="filtrePays" />
+      </div>
+
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Rechercher par référence ou client…"
+          [(ngModel)]="rechercheSaisie"
+          (keyup.enter)="appliquerRecherche()"
+        />
+        <button type="button" class="search-clear" *ngIf="rechercheSaisie" (click)="effacerRecherche()">✕</button>
+      </div>
+
+      <button type="button" class="btn-filtres" [class.btn-filtres--actif]="afficherFiltresAvances" (click)="afficherFiltresAvances = !afficherFiltresAvances">
+        <span>🎚</span> Filtres
+      </button>
+    </div>
+
+    <div class="chips-row" *ngIf="afficherFiltresAvances">
+      <span class="chips-label">Type</span>
+      <button type="button" class="chip" [class.chip--actif]="filtreType === 'TOUS'" (click)="filtreType = 'TOUS'">
+        Tous
+      </button>
+      <button
+        type="button"
+        class="chip"
+        *ngFor="let type of typesOperation"
+        [class.chip--actif]="filtreType === type"
+        (click)="filtreType = type"
+      >
+        {{ typeLabels[type] }}
+      </button>
+    </div>
+
+    <div class="results-toolbar">
+      <div class="results-info">
+        <span class="results-count">
+          {{ dossiersAffiches.length }} dossier{{ dossiersAffiches.length > 1 ? 's' : '' }}
+        </span>
+        <span class="results-subtitle">Dans {{ libelleSectionActive | lowercase }}</span>
+      </div>
+
+      <div class="toolbar-toggles">
+        <label class="toggle-field">
+          <span>Montant</span>
+          <button type="button" class="toggle-switch" [class.toggle-switch--actif]="afficherMontant" (click)="afficherMontant = !afficherMontant">
+            <span class="toggle-knob"></span>
+          </button>
+        </label>
+      </div>
+
+      <div class="toolbar-actions">
+        <app-dropdown-select class="tri-select" [options]="triOptions" [(ngModel)]="tri" />
+
+        <div class="vue-toggle">
+          <button type="button" class="vue-btn" [class.vue-btn--actif]="!vueGrille" (click)="vueGrille = false" title="Vue liste">☰</button>
+          <button type="button" class="vue-btn" [class.vue-btn--actif]="vueGrille" (click)="vueGrille = true" title="Vue grille">▦</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dossier-scroll">
+
+      <div class="empty-state" *ngIf="dossiersAffiches.length === 0">
+        Aucun dossier {{ recherche || filtreType !== 'TOUS' || filtrePays !== 'TOUS' ? 'ne correspond à ces critères' : ('dans ' + (libelleSectionActive | lowercase)) }}.
+      </div>
+
+      <ul class="dossier-grid" [class.dossier-grid--liste]="!vueGrille" *ngIf="dossiersAffiches.length > 0">
+        <li class="dossier-card" *ngFor="let dossier of dossiersAffichesPage">
+
+          <div class="card-top">
+            <span class="card-ref">{{ dossier.referenceInterne }}</span>
+          </div>
+
+          <h3 class="card-client">{{ dossier.nomClient }}</h3>
+          <p class="card-montant" *ngIf="afficherMontant">{{ dossier.montant | number }} {{ dossier.devise }}</p>
+          <p class="card-motif">{{ dossier.motif }}</p>
+
+          <p class="card-rejet" *ngIf="vueActive === 'rejetes' && dossier.dernierMotifRejet">
+            ⚠ {{ dossier.dernierMotifRejet }}
+          </p>
+
+          <div class="card-footer">
+            <span class="card-badge" [class]="'card-badge--' + (dossier.typeOperation | lowercase)">
+              {{ typeLabels[dossier.typeOperation] }}
+            </span>
+            <span class="card-pays">{{ dossier.paysBeneficiaire }}</span>
+          </div>
+
+          <div class="card-actions">
+            <ng-container *ngIf="vueActive === 'brouillons' || (vueActive === 'rejetes' && dossier.statutElectronique === StatutDossier.BROUILLON)">
+              <a class="btn-edit" [routerLink]="['/dossiers', dossier.dossierId, 'modifier']">Modifier</a>
+              <button
+                type="button"
+                class="btn-soumettre"
+                [disabled]="soumissionEnCours.has(dossier.dossierId)"
+                (click)="soumettre(dossier)"
+              >
+                {{ soumissionEnCours.has(dossier.dossierId) ? 'Soumission…' : 'Soumettre' }}
+              </button>
+              <p class="soumission-erreur" *ngIf="soumissionErreurs.has(dossier.dossierId)">
+                {{ soumissionErreurs.get(dossier.dossierId) }}
+              </p>
+            </ng-container>
+
+            <ng-container *ngIf="vueActive === 'rejetes' && dossier.statutElectronique === StatutDossier.REJETE_DEFINITIF">
+              <span class="statut-badge statut-badge--danger">{{ statutLabels[dossier.statutElectronique] }}</span>
+              <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+            </ng-container>
+
+            <ng-container *ngIf="vueActive === 'en-cours'">
+              <span class="statut-badge">{{ statutLabels[dossier.statutElectronique] }}</span>
+              <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+            </ng-container>
+
+            <ng-container *ngIf="vueActive === 'valides'">
+              <span class="statut-badge statut-badge--ok">{{ statutLabels[dossier.statutElectronique] }}</span>
+              <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+            </ng-container>
+          </div>
+
+        </li>
+      </ul>
+      <app-pager [total]="dossiersAffiches.length" [pageSize]="pageSize" [page]="page" (pageChange)="page = $event"></app-pager>
+
+    </div>
+
+  </div>
+  </div>
+
+  </ng-container>
+
+</div>

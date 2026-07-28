@@ -1,0 +1,190 @@
+.page {
+  padding: 16px;
+  max-width: 880px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.count-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #595959;
+}
+
+// ── Barre de filtres ─────────────────────────────────────────
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-search {
+  flex: 1 1 200px;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fafafa;
+
+  &:focus {
+    outline: none;
+    border-color: var(--pdoe-red);
+    background: #ffffff;
+  }
+}
+
+// app-dropdown-select se stylise lui-même ; seule sa participation à la flex-row reste à fixer ici.
+app-dropdown-select.filter-select {
+  flex: 1 1 160px;
+}
+
+.btn-reset {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #595959;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #e5e5e5;
+  }
+}
+
+.loading,
+.empty-state {
+  padding: 16px;
+  font-size: 13px;
+  color: #999999;
+  background: #fafafa;
+  border-radius: 6px;
+  text-align: center;
+}
+
+// ── Liste ────────────────────────────────────────────────────
+
+.dossier-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossier-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+}
+
+.dossier-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.dossier-ref {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pdoe-red);
+}
+
+.dossier-client {
+  font-size: 13px;
+  color: var(--pdoe-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dossier-compte {
+  font-size: 11px;
+  color: #999999;
+}
+
+.dossier-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.badge-type {
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6a1fa0;
+  background: #f3e5f5;
+  border-radius: 12px;
+}
+
+.dossier-montant {
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+.statut-badge {
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1565c0;
+  background: #e3f2fd;
+  border-radius: 12px;
+}
+
+.btn-detail {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-ink);
+  border-radius: 6px;
+  text-decoration: none;
+
+  &:hover {
+    background: #333333;
+  }
+}
+
+// ── Responsive ───────────────────────────────────────────────
+
+@media (max-width: 600px) {
+  .dossier-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dossier-meta {
+    flex-wrap: wrap;
+  }
+
+  .btn-detail {
+    margin-left: 0;
+    text-align: center;
+  }
+}

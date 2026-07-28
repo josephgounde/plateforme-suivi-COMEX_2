@@ -1,0 +1,18 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "PdoeDb": "Server=YOUR_SQL_INSTANCE;Database=PDOE_DB;Trusted_Connection=True;TrustServerCertificate=true;Encrypt=false;"
+  },
+  "Storage": {
+    "DocumentsRootPath": "C:\\path\\to\\pdoe-backend\\.local-storage\\documents",
+    "ReportingArchiveRootPath": "C:\\path\\to\\pdoe-backend\\.local-storage\\reporting-reglementaire"
+  },
+  "Messagerie": {
+    "BaseUrl": "https://your-mail-service-host/MailService/Afriland/api/v1/SendEmail"
+  }
+}

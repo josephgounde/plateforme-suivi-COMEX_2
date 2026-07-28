@@ -1,0 +1,71 @@
+<div class="otp-page">
+  <div class="otp-card">
+
+    <header class="otp-header">
+      <img class="otp-logo" src="logo-afriland-mark.png" alt="Afriland First Bank" />
+      <h1>Vérification en deux étapes</h1>
+      <p class="otp-subtitle">
+        Un code à 6 chiffres a été envoyé par {{ canalLabel }} à
+        <strong>{{ destinataireMasque }}</strong>.
+      </p>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="soumettre()" class="otp-form" novalidate>
+      <div class="form-field">
+        <label for="code">Code de vérification</label>
+        <input
+          id="code"
+          type="text"
+          inputmode="numeric"
+          maxlength="6"
+          formControlName="code"
+          autocomplete="one-time-code"
+          placeholder="000000"
+        />
+        <span
+          class="field-error"
+          *ngIf="form.get('code')?.invalid && form.get('code')?.touched"
+        >
+          Saisissez le code à 6 chiffres reçu.
+        </span>
+      </div>
+
+      <p class="otp-timer" *ngIf="!expire">Code valable encore {{ tempsFormate }}</p>
+      <p class="otp-timer otp-timer--expire" *ngIf="expire && !sessionExpiree">Code expiré.</p>
+
+      <p class="otp-error" *ngIf="erreur" role="alert">{{ erreur }}</p>
+      <p class="otp-succes" *ngIf="renvoiSucces">✓ {{ renvoiSucces }}</p>
+
+      <p class="otp-dev-hint" *ngIf="modeMock">
+        Mode test — code : {{ codeMock }}
+      </p>
+
+      <button type="submit" class="btn-primary" [disabled]="loading || expire">
+        {{ loading ? 'Vérification…' : 'Vérifier' }}
+      </button>
+    </form>
+
+    <div class="otp-actions">
+      <button
+        type="button"
+        class="btn-link"
+        *ngIf="!sessionExpiree"
+        [disabled]="renvoiEnCours || cooldownRenvoi > 0"
+        (click)="renvoyer()"
+      >
+        {{ cooldownRenvoi > 0
+          ? 'Renvoyer le code (' + cooldownRenvoi + 's)'
+          : (renvoiEnCours ? 'Envoi…' : 'Renvoyer le code') }}
+      </button>
+      <button
+        type="button"
+        [class.btn-link--muted]="!sessionExpiree"
+        class="btn-link"
+        (click)="annuler()"
+      >
+        ← Retour à la connexion
+      </button>
+    </div>
+
+  </div>
+</div>

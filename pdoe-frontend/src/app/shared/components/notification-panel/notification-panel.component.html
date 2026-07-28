@@ -1,0 +1,31 @@
+<div class="notif-panel">
+  <h2 class="notif-panel-titre">
+    Notifications
+    <span class="notif-panel-badge" *ngIf="service.notifications().length > 0">{{ service.notifications().length }}</span>
+  </h2>
+
+  <div class="notif-panel-empty" *ngIf="service.notifications().length === 0">
+    Aucune notification.
+  </div>
+
+  <ul class="notif-panel-list" *ngIf="service.notifications().length > 0">
+    <li class="notif-panel-row" *ngFor="let n of service.notifications()">
+      <span class="notif-panel-icone">📬</span>
+      <span class="notif-panel-texte">
+        {{ service.libelle(n) }}
+        <ng-container *ngIf="dossierDe(n) as d">
+          <br />
+          <strong>{{ d.referenceInterne }}</strong> · {{ d.nomClient }}
+        </ng-container>
+      </span>
+      <a
+        *ngIf="n.dossierId"
+        class="notif-panel-lien"
+        [routerLink]="['/dossiers', n.dossierId]"
+      >
+        Voir →
+      </a>
+      <button type="button" class="notif-panel-fermer" (click)="ignorer(n.notificationId)">✕</button>
+    </li>
+  </ul>
+</div>

@@ -1,0 +1,215 @@
+// Reprend la charte de login.component.scss pour une transition continue.
+
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.otp-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(160deg, var(--pdoe-ink) 0%, #2d0a12 100%);
+  box-sizing: border-box;
+}
+
+.otp-card {
+  width: 100%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 28px 20px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+// ── En-tête ──────────────────────────────────────────────────
+
+.otp-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.otp-logo {
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+}
+
+.otp-header h1 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--pdoe-red);
+  letter-spacing: 0.02em;
+}
+
+.otp-subtitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #595959;
+
+  strong {
+    color: var(--pdoe-ink);
+  }
+}
+
+// ── Formulaire ───────────────────────────────────────────────
+
+.otp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pdoe-ink);
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 20px;
+    text-align: center;
+    letter-spacing: 0.3em;
+    font-weight: 600;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    background: #fafafa;
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+  }
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--pdoe-red);
+}
+
+.otp-timer {
+  margin: 0;
+  font-size: 12px;
+  color: #999999;
+  text-align: center;
+
+  &--expire {
+    color: var(--pdoe-red);
+    font-weight: 600;
+  }
+}
+
+.otp-error {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--pdoe-red);
+  background: #fdecee;
+  border-radius: 6px;
+}
+
+.otp-succes {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #2e7d32;
+  background: #e8f5e9;
+  border-radius: 6px;
+}
+
+.otp-dev-hint {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  text-align: center;
+  color: #8a6d00;
+  background: #fff8e1;
+  border-radius: 6px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ── Actions secondaires ──────────────────────────────────────
+
+.otp-actions {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #ececec;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-link {
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-red);
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    color: #bfbfbf;
+    cursor: not-allowed;
+  }
+
+  &--muted {
+    color: #999999;
+    font-weight: 500;
+
+    &:hover {
+      color: #595959;
+    }
+  }
+}
+
+// ── Paliers responsive ──────────────────────────────────────
+
+@media (min-width: 768px) {
+  .otp-card {
+    max-width: 400px;
+    padding: 36px 32px;
+  }
+}

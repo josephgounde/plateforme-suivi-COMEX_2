@@ -1,0 +1,671 @@
+.dashboard-page {
+  padding: 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+// Coquille partagée entre dashboards : top: 70px = topbar (54px) + padding (16px), à garder identique partout.
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-areas: 'content notif';
+  column-gap: 16px;
+}
+
+// Bornée à la hauteur de .dashboard-content : au-delà, .notif-panel-list défile en interne, pas toute la coquille.
+.dashboard-notif {
+  grid-area: notif;
+  position: sticky;
+  top: 70px;
+  height: calc(100vh - 70px - 16px);
+}
+
+.btn-notif {
+  display: block;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+// Seul .dossier-scroll défile ici ; l'en-tête/filtre/résultats restent fixes.
+// Bordure/coin arrondi vivent sur .shell-content (coquille globale), pas ici.
+.dashboard-content {
+  grid-area: content;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: calc(100vh - 70px - 16px);
+  padding: 0 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.content-topbar,
+.filter-row,
+.chips-row,
+.results-toolbar {
+  flex-shrink: 0;
+}
+
+.dossier-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+
+  // Défilement fonctionnel, barre masquée.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'notif'
+      'content';
+    row-gap: 16px;
+  }
+
+  .dashboard-notif {
+    position: static;
+    right: auto;
+    width: 100%;
+    height: auto;
+    margin-bottom: 16px;
+  }
+
+  .dashboard-content {
+    height: auto;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .dossier-scroll {
+    overflow-y: visible;
+  }
+}
+
+.btn-primary {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: 1px solid var(--pdoe-red);
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(var(--pdoe-red-rgb), 0.25);
+
+  &:hover {
+    background: var(--pdoe-red-hover);
+  }
+}
+
+.loading {
+  color: #595959;
+  font-size: 13px;
+}
+
+// Fond/texte rouge clair partagé par les badges "danger" (count-badge
+// et statut-badge) — même teinte, deux contextes différents.
+%danger-tint {
+  color: var(--pdoe-red);
+  background: #fdecee;
+}
+
+// Base commune des pilules d'action secondaires (Voir / Modifier) —
+// seule la couleur de fond (et son survol) change entre les deux.
+%pill-btn-neutral {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+  border-radius: 999px;
+  text-decoration: none;
+}
+
+%muted-caption {
+  font-size: 11px;
+  color: #999999;
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #595959;
+  background: #f0f0f0;
+  border-radius: 10px;
+
+  &--danger {
+    @extend %danger-tint;
+  }
+}
+
+.btn-detail {
+  @extend %pill-btn-neutral;
+  background: #f0f0f0;
+
+  &:hover {
+    background: #e2e2e2;
+  }
+}
+
+.empty-state {
+  padding: 20px;
+  font-size: 13px;
+  color: #999999;
+  background: #fafafa;
+  border-radius: 18px;
+  text-align: center;
+}
+
+// ── Topbar locale + barre de filtre + chips + barre de résultats ──
+// Structure de la maquette fournie, adaptée à notre charte (rouge PDOE) et nos données.
+
+.content-topbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.content-header {
+  h1 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.content-subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #999999;
+}
+
+// ── Barre de filtre : pays + recherche + Filtres + Rechercher ──
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+// app-dropdown-select fournit déjà sa pilule ; l'ancien halo/ombre de .filter-pays n'a plus lieu d'être.
+.filter-pays {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.filter-pays-icon {
+  font-size: 10px;
+  color: #999999;
+  flex-shrink: 0;
+}
+
+app-dropdown-select.filter-pays-select {
+  min-width: 130px;
+}
+
+.btn-filtres {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+  background: #ffffff;
+  border: 1px solid #e2e2e2;
+  border-radius: 999px;
+  cursor: pointer;
+
+  &:hover {
+    background: #fafafa;
+  }
+
+  &--actif {
+    color: var(--pdoe-ink);
+    background: #e9e9e8;
+    border-color: transparent;
+
+    &:hover {
+      background: #dedede;
+    }
+  }
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 220px;
+  padding: 11px 18px;
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(20, 20, 20, 0.05);
+}
+
+.search-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+  opacity: 0.45;
+}
+
+.search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--pdoe-ink);
+  background: transparent;
+  border: none;
+  outline: none;
+
+  &::placeholder {
+    color: #b3b3b3;
+  }
+}
+
+.search-clear {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  color: #999999;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+
+  &:hover {
+    background: #e2e2e2;
+  }
+}
+
+.chips-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.chips-label {
+  margin-right: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #999999;
+}
+
+.chip {
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+  background: #f0f0f0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+
+  &:hover {
+    background: #e5e5e5;
+  }
+
+  &--actif {
+    color: #ffffff;
+    background: var(--pdoe-gray);
+
+    &:hover {
+      background: #767675;
+    }
+  }
+}
+
+.results-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.results-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.results-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #595959;
+}
+
+.results-subtitle {
+  @extend %muted-caption;
+  text-transform: capitalize;
+}
+
+// ── Bascules d'affichage (montant / description sur les cartes) ──
+.toolbar-toggles {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #595959;
+}
+
+.toggle-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 18px;
+  padding: 0;
+  background: #e2e2e2;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &--actif {
+    background: var(--pdoe-gray);
+  }
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+
+  .toggle-switch--actif & {
+    transform: translateX(14px);
+  }
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+app-dropdown-select.tri-select {
+  min-width: 160px;
+}
+
+.vue-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: #f0f0f0;
+  border-radius: 999px;
+}
+
+.vue-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  color: #999999;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+
+  &--actif {
+    color: #ffffff;
+    background: var(--pdoe-red);
+  }
+}
+
+// ── Grille de cartes ─────────────────────────────────────────
+// Vue "liste" réoriente chaque carte en ligne plutôt que dupliquer un second gabarit.
+
+.dossier-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+// :not(--liste) plutôt que !important : la vue liste reste à 1 colonne même quand la grille passe à 2/3.
+@media (min-width: 700px) {
+  .dossier-grid:not(.dossier-grid--liste) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .dossier-grid:not(.dossier-grid--liste) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.dossier-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(20, 20, 20, 0.05);
+}
+
+.dossier-grid--liste .dossier-card {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 12px 18px;
+
+  .card-top {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .card-client {
+    flex: 1 1 160px;
+  }
+
+  .card-motif {
+    display: none;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .card-actions {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-ref {
+  @extend %danger-tint;
+  display: inline-flex;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.card-client {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-montant {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+.card-motif {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #8a8a8a;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-rejet {
+  @extend %danger-tint;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11px;
+  border-radius: 10px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-badge {
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-radius: 999px;
+
+  &--import { color: #1565c0; background: #e3f2fd; }
+  &--export { color: #2e7d32; background: #e8f5e9; }
+  &--service { color: #7b1fa2; background: #f3e5f5; }
+  &--transfert { color: #ef6c00; background: #fff3e0; }
+}
+
+.card-pays {
+  @extend %muted-caption;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid #f2f2f2;
+}
+
+.soumission-erreur {
+  flex-basis: 100%;
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--pdoe-red);
+}
+
+.btn-edit {
+  @extend %pill-btn-neutral;
+  background: #eeeeed;
+
+  &:hover {
+    background: #e2e2e1;
+  }
+}
+
+.btn-soumettre {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #2e7d32;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #256428;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.statut-badge {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1565c0;
+  background: #e3f2fd;
+  border-radius: 999px;
+
+  &--ok {
+    color: #2e7d32;
+    background: #e8f5e9;
+  }
+
+  &--danger {
+    @extend %danger-tint;
+  }
+}

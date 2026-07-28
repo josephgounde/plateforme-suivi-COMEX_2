@@ -1,0 +1,230 @@
+<div class="dashboard-page">
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="dashboard-shell" *ngIf="!chargement">
+  <aside class="dashboard-notif">
+    <app-notification-panel [dossiers]="dossiers" />
+  </aside>
+
+  <div class="dashboard-content">
+
+  <section class="dossier-section" *ngIf="vueActive === 'file-attente'">
+    <app-repartition-chart titre="Exposition devise" [items]="repartitionDevises" />
+
+    <h2>
+      Dossiers à traiter
+      <span class="count-badge">{{ dossiersFileAttente.length }}</span>
+    </h2>
+
+    <div class="empty-state" *ngIf="dossiersFileAttente.length === 0">
+      Aucun dossier en attente de votre avis.
+    </div>
+
+    <ul class="dossier-list" *ngIf="dossiersFileAttente.length > 0">
+    <li class="dossier-row" *ngFor="let dossier of dossiersFileAttenteAffiches">
+
+      <div class="row-top">
+        <div class="dossier-main">
+          <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+          <span class="dossier-client">{{ dossier.nomClient }}</span>
+        </div>
+        <div class="dossier-meta">
+          <span class="dossier-type">{{ typeLabels[dossier.typeOperation] }}</span>
+          <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+          <span class="dossier-pays">{{ dossier.paysBeneficiaire }}</span>
+          <app-delai-traitement
+            *ngIf="delaiHeures"
+            [dateDebut]="dossier.dateDerniereAction"
+            [delaiHeures]="delaiHeures"
+          />
+        </div>
+        <div class="row-actions">
+          <span class="param-statut" [class.param-statut--ok]="etat(dossier.dossierId).enregistre">
+            {{ etat(dossier.dossierId).enregistre ? '✓ Paramètres renseignés' : '⚡ À saisir' }}
+          </span>
+          <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+        </div>
+      </div>
+
+        <button
+          type="button"
+          class="btn-toggle"
+          [class.btn-toggle--ouvert]="etat(dossier.dossierId).ouvert"
+          (click)="basculerFormulaire(dossier.dossierId)"
+        >
+          {{ etat(dossier.dossierId).ouvert ? 'Fermer' : 'Renseigner →' }}
+        </button>
+
+        <form
+          class="treso-form"
+          *ngIf="etat(dossier.dossierId).ouvert"
+          [formGroup]="formulaire(dossier.dossierId)"
+          (ngSubmit)="enregistrer(dossier.dossierId)"
+        >
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Taux de change</label>
+              <div class="taux-field">
+                <input type="number" step="0.000001" [formControl]="$any(formulaire(dossier.dossierId).get('tauxChange'))" placeholder="Ex : 655.957 (valeur positive)" />
+                <button
+                  type="button"
+                  class="btn-actualiser-taux"
+                  [disabled]="chargementTaux.has(dossier.dossierId)"
+                  (click)="actualiserTaux(dossier.dossierId)"
+                  title="Actualiser la cotation"
+                >
+                  {{ chargementTaux.has(dossier.dossierId) ? '…' : '↻' }}
+                </button>
+              </div>
+              <span class="taux-cote-le" *ngIf="heureCotation(dossier.dossierId)">Coté à {{ heureCotation(dossier.dossierId) }}</span>
+            </div>
+            <div class="form-field">
+              <label>Devise de cotation</label>
+              <app-dropdown-select
+                [options]="deviseOptions"
+                [value]="deviseCotationSelection(dossier.dossierId)"
+                (valueChange)="choisirDeviseCotation(dossier.dossierId, $event)"
+              />
+              <input
+                *ngIf="deviseCotationSelection(dossier.dossierId) === 'AUTRE'"
+                type="text"
+                maxlength="3"
+                class="devise-autre-input"
+                [formControl]="$any(formulaire(dossier.dossierId).get('deviseCotation'))"
+                placeholder="Ex : MAD (code ISO, 3 lettres)"
+              />
+            </div>
+            <div class="form-field">
+              <label>Correspondant désigné</label>
+              <input type="text" [formControl]="$any(formulaire(dossier.dossierId).get('correspondantDesigne'))" placeholder="Ex : BNP Paribas" />
+            </div>
+            <div class="form-field">
+              <label>BIC / SWIFT</label>
+              <input type="text" maxlength="11" [formControl]="$any(formulaire(dossier.dossierId).get('bicCorrespondant'))" placeholder="Ex : BNPAFRPP (8 ou 11 caractères)" />
+            </div>
+            <div class="form-field">
+              <label>Date de débit prévue</label>
+              <input type="date" [formControl]="$any(formulaire(dossier.dossierId).get('dateDebit'))" title="Date de débit prévue" />
+            </div>
+            <div class="form-field">
+              <label>Couverture de change</label>
+              <input type="text" [formControl]="$any(formulaire(dossier.dossierId).get('couverture'))" placeholder="Facultatif — Ex : Forward 3 mois" />
+            </div>
+          </div>
+
+          <label class="disponibilite-check">
+            <input type="checkbox" [formControl]="$any(formulaire(dossier.dossierId).get('disponibiliteFonds'))" />
+            <span>Disponibilité des fonds confirmée</span>
+          </label>
+
+          <p class="form-erreur" *ngIf="etat(dossier.dossierId).erreur">
+            Échec de l'enregistrement — réessayez.
+          </p>
+
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="formulaire(dossier.dossierId).invalid || etat(dossier.dossierId).enregistrement"
+            >
+              {{ etat(dossier.dossierId).enregistrement ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </div>
+        </form>
+
+        <div class="transmission-bloc">
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="!peutValiderEtTransmettre(dossier.dossierId) || transmissionEnCours.has(dossier.dossierId)"
+            (click)="validerEtTransmettre(dossier)"
+          >
+            {{ transmissionEnCours.has(dossier.dossierId) ? 'Transmission…' : 'Valider et transmettre à COMEX (Exécution)' }}
+          </button>
+
+          <p
+            class="transmission-hint"
+            *ngIf="!peutValiderEtTransmettre(dossier.dossierId) && !transmissionEnCours.has(dossier.dossierId)"
+          >
+            Enregistrez d'abord les paramètres de change ci-dessus.
+          </p>
+        </div>
+
+        <div class="rejet-bloc">
+          <button type="button" class="btn-rejeter-toggle" (click)="basculerRejet(dossier.dossierId)">
+            {{ rejetOuvert.has(dossier.dossierId) ? 'Annuler le rejet' : 'Rejeter pour correction' }}
+          </button>
+
+          <div class="rejet-form" *ngIf="rejetOuvert.has(dossier.dossierId)">
+            <label class="rejet-label">
+              Motif du rejet
+              <textarea
+                rows="2"
+                [value]="motifRejet(dossier.dossierId)"
+                (input)="modifierMotifRejet(dossier.dossierId, $any($event.target).value)"
+                placeholder="Ex : correspondant bancaire incorrect"
+              ></textarea>
+            </label>
+            <label class="rejet-label">
+              Renvoyer à
+              <app-dropdown-select
+                [options]="ciblesRejetOptions"
+                [value]="cibleRejet(dossier.dossierId)"
+                (valueChange)="modifierCibleRejet(dossier.dossierId, $event)"
+              />
+            </label>
+            <button
+              type="button"
+              class="btn-rejeter"
+              [disabled]="!peutRejeter(dossier) || rejetEnCours.has(dossier.dossierId)"
+              (click)="rejeter(dossier)"
+            >
+              {{ rejetEnCours.has(dossier.dossierId) ? 'Rejet en cours' : 'Confirmer le rejet' }}
+            </button>
+          </div>
+        </div>
+
+    </li>
+    </ul>
+    <app-pager [total]="dossiersFileAttente.length" [pageSize]="pageSize" [page]="pageFileAttente" (pageChange)="pageFileAttente = $event"></app-pager>
+  </section>
+
+  <!-- Dossiers déjà avisés par la Trésorerie mais transmis plus loin
+       (Exécution, Apurement, Archivage) ou rejetés définitivement —
+       lecture seule. -->
+  <section class="dossier-section" *ngIf="vueActive === 'historique'">
+    <h2>
+      Historique — dossiers déjà transmis
+      <span class="count-badge">{{ dossiersHistorique.length }}</span>
+    </h2>
+
+    <div class="empty-state" *ngIf="dossiersHistorique.length === 0">
+      Aucun dossier dans l'historique.
+    </div>
+
+    <ul class="dossier-list" *ngIf="dossiersHistorique.length > 0">
+      <li class="dossier-row" *ngFor="let dossier of dossiersHistoriqueAffiches">
+        <div class="row-top">
+          <div class="dossier-main">
+            <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+            <span class="dossier-client">{{ dossier.nomClient }}</span>
+          </div>
+          <div class="dossier-meta">
+            <span class="dossier-type">{{ typeLabels[dossier.typeOperation] }}</span>
+            <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+          </div>
+          <div class="row-actions">
+            <span class="statut-badge">{{ statutLabels[dossier.statutElectronique] }}</span>
+            <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+          </div>
+        </div>
+      </li>
+    </ul>
+    <app-pager [total]="dossiersHistorique.length" [pageSize]="pageSize" [page]="pageHistorique" (pageChange)="pageHistorique = $event"></app-pager>
+  </section>
+
+  </div>
+  </div>
+
+</div>

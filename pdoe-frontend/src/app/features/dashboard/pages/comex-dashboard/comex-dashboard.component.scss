@@ -1,0 +1,778 @@
+.dashboard-page {
+  padding: 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.loading {
+  color: #595959;
+  font-size: 13px;
+}
+
+// Défilement fonctionnel, barre masquée — partagé par tout élément
+// scrollable de cette page (notif + modale d'exécution).
+%hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// Base commune des boutons d'action pilule inline (signaler/rejeter) —
+// seules la couleur de fond et son survol changent d'un bouton à l'autre.
+%btn-pill-action {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+// Base commune des boutons "toggle" en pilule creuse (ouvrir le
+// formulaire de signalement / rejet) — seule la couleur change.
+%btn-toggle-pill {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+%dim-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// Fond/texte rouge clair partagé par les pastilles/messages "danger".
+%danger-tint {
+  color: var(--pdoe-red);
+  background: #fdecee;
+}
+
+// Base commune des libellés de motif (signalement/rejet) — seule la
+// couleur de bordure au focus du textarea change d'un bloc à l'autre.
+%correction-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 320px;
+  font-size: 12px;
+  color: var(--pdoe-ink);
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #fafafa;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      background: #ffffff;
+    }
+  }
+}
+
+// Coquille contenu + notifications, partagée entre dashboards : top: 70px =
+// topbar (54px) + padding de page (16px), à garder identique partout.
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-areas: 'content notif';
+  column-gap: 16px;
+}
+
+.dashboard-notif {
+  grid-area: notif;
+  position: sticky;
+  top: 70px;
+  max-height: calc(100vh - 70px - 16px);
+  overflow-y: auto;
+  @extend %hide-scrollbar;
+}
+
+.dashboard-content {
+  grid-area: content;
+  min-width: 0;
+  min-height: calc(100vh - 70px - 16px);
+  border-left: 1px solid #ececec;
+  border-right: 1px solid #ececec;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'notif'
+      'content';
+    row-gap: 16px;
+  }
+
+  .dashboard-notif {
+    position: static;
+    right: auto;
+    width: 100%;
+    height: auto;
+    overflow-y: visible;
+    margin-bottom: 16px;
+  }
+
+  .dashboard-content {
+    min-height: 0;
+    border-left: none;
+    border-right: none;
+    padding: 0;
+  }
+}
+
+// ── Exports réglementaires (DGI / Trésor / BCEAO) ────────────
+
+.section-block {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+}
+
+.reglementaire-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    flex: 1 1 100%;
+    font-size: 15px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.reglementaire-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #595959;
+
+  input[type='date'] {
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--pdoe-ink);
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #fafafa;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+  }
+}
+
+.reglementaire-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.btn-exporter {
+  padding: 8px 18px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #2e7d32;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+
+  &:hover:not(:disabled) { background: #256428; }
+
+  &:disabled {
+    @extend %dim-disabled;
+    box-shadow: none;
+  }
+}
+
+.dossier-section {
+  margin-bottom: 28px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 10px;
+    font-size: 15px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #595959;
+  background: #f0f0f0;
+  border-radius: 10px;
+}
+
+.empty-state {
+  padding: 16px;
+  font-size: 13px;
+  color: #999999;
+  background: #fafafa;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.dossier-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossier-row {
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+
+  &--urgent {
+    border-color: #e65100;
+    background: #fff8f0;
+  }
+}
+
+.dossier-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dossier-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.dossier-ref {
+  @extend %danger-tint;
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.dossier-client {
+  font-size: 13px;
+  color: var(--pdoe-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dossier-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 11px;
+  color: #595959;
+}
+
+.dossier-montant {
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+.statut-badge {
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1565c0;
+  background: #e3f2fd;
+  border-radius: 12px;
+
+  &--urgent {
+    color: #e65100;
+    background: #ffe9d6;
+  }
+}
+
+.btn-detail {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-ink);
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: #333333;
+  }
+}
+
+// ── Alerte anti-fractionnement ───────────────────────────────
+
+.alerte-fractionnement {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #fdecee;
+  border: 1px solid #f0b8c0;
+  border-radius: 6px;
+}
+
+.alerte-texte {
+  flex: 1 1 220px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-red);
+}
+
+// ── Signalement de fractionnement ────────────────────────────
+// Ambre plutôt que rouge (cf. .rejet-bloc) : signaler n'est pas rejeter.
+
+.signalement-bloc {
+  margin-top: 12px;
+}
+
+.btn-signaler-toggle {
+  @extend %btn-toggle-pill;
+  color: #e65100;
+  border: 1px solid #ffcc9c;
+
+  &:hover {
+    background: #fff3e0;
+  }
+}
+
+.signalement-form,
+.rejet-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.signalement-label {
+  @extend %correction-label;
+
+  textarea:focus {
+    border-color: #e65100;
+  }
+}
+
+.btn-signaler {
+  @extend %btn-pill-action;
+  background: #e65100;
+
+  &:hover:not(:disabled) {
+    background: #c94800;
+  }
+
+  &:disabled {
+    @extend %dim-disabled;
+  }
+}
+
+// ── Panneau pièce jointe ─────────────────────────────────────
+
+.btn-toggle-upload {
+  margin-top: 8px;
+  padding: 0;
+  font-size: 12px;
+  color: #595959;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--pdoe-red);
+  }
+}
+
+.upload-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+app-dropdown-select.upload-type-select {
+  flex: 1 1 160px;
+}
+
+.upload-file-input {
+  flex: 1 1 160px;
+  font-size: 12px;
+}
+
+.upload-reference-input {
+  flex: 1 1 160px;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.btn-upload {
+  @extend %btn-pill-action;
+  padding: 6px 14px;
+  background: var(--pdoe-red);
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    @extend %dim-disabled;
+  }
+}
+
+.transmission-bloc {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #ececec;
+}
+
+.confirmation-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--pdoe-ink);
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--pdoe-red);
+  }
+}
+
+.upload-erreur {
+  font-size: 11px;
+  color: var(--pdoe-red);
+  width: 100%;
+}
+
+.upload-succes {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #2e7d32;
+}
+
+// ── Bloc rejet inline ────────────────────────────────────────
+
+.rejet-bloc {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #ececec;
+}
+
+.btn-rejeter-toggle {
+  @extend %btn-toggle-pill;
+  color: var(--pdoe-red);
+  border: 1px solid #f0b8c0;
+
+  &:hover {
+    background: #fdecee;
+  }
+}
+
+.rejet-label {
+  @extend %correction-label;
+
+  textarea:focus {
+    border-color: var(--pdoe-red);
+  }
+
+  app-dropdown-select {
+    width: 100%;
+  }
+}
+
+.btn-rejeter {
+  @extend %btn-pill-action;
+  background: var(--pdoe-red);
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    @extend %dim-disabled;
+  }
+}
+
+// ── Responsive ───────────────────────────────────────────────
+
+@media (max-width: 480px) {
+  .dossier-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dossier-meta {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .btn-detail {
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
+// ── Modale d'exécution (étape 5) ──────────────────────────────
+// Remplace l'ancienne page /execution/:id (cf. en-tête du .ts) ; styles inchangés, juste déplacés ici.
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 100;
+}
+
+.modal-execution {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 32px);
+  max-width: 480px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  z-index: 101;
+  box-sizing: border-box;
+  @extend %hide-scrollbar;
+
+  h3 {
+    margin: 0 0 14px;
+    font-size: 15px;
+    color: #2e7d32;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  color: #595959;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+
+  &:hover {
+    background: #e2e2e2;
+  }
+}
+
+.execution-header {
+  margin: 0 28px 20px 0;
+
+  h2 {
+    margin: 4px 0 2px;
+    font-size: 17px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.execution-hint {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #595959;
+}
+
+.execution-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-divider {
+  margin: 18px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid #ececec;
+  font-size: 11px;
+  color: #999999;
+  text-align: center;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pdoe-ink);
+  }
+
+  input {
+    padding: 9px 11px;
+    font-size: 13px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    background: #fafafa;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+  }
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.execution-error {
+  @extend %danger-tint;
+  margin: 0;
+  padding: 9px 11px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.btn-primary {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    @extend %dim-disabled;
+  }
+}
+
+.execution-summary {
+  margin: 0;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 13px;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  dt {
+    color: #595959;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 500;
+    color: var(--pdoe-ink);
+  }
+
+  &--highlight dd {
+    color: #e65100;
+    font-weight: 700;
+  }
+}
+
+@media (min-width: 480px) {
+  .modal-execution .form-row {
+    flex-direction: row;
+
+    .form-field {
+      flex: 1;
+    }
+  }
+}

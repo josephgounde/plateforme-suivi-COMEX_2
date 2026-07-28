@@ -1,0 +1,73 @@
+<div class="page">
+
+  <header class="page-header">
+    <h1>Paramétrage système</h1>
+  </header>
+
+  <p class="succes" *ngIf="succes">✓ {{ succes }}</p>
+  <p class="erreur" *ngIf="erreur">{{ erreur }}</p>
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="table-wrapper" *ngIf="!chargement">
+    <table>
+      <thead>
+        <tr>
+          <th>Clé</th>
+          <th>Description</th>
+          <th>Valeur</th>
+          <th>Unité</th>
+          <th>Plage</th>
+          <th>Modifiable</th>
+          <th>Mis à jour</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of parametres" [class.row-locked]="!p.modifiableUI">
+          <td class="td-cle">{{ p.cle }}</td>
+          <td class="td-desc">{{ p.description }}</td>
+          <td class="td-val">
+            <span *ngIf="editCle !== p.cle">{{ p.valeur }}</span>
+            <input
+              *ngIf="editCle === p.cle"
+              class="edit-input"
+              [(ngModel)]="editValeur"
+              [attr.min]="p.valeurMin"
+              [attr.max]="p.valeurMax"
+              [placeholder]="(p.valeurMin || p.valeurMax) ? ('Entre ' + (p.valeurMin ?? '—') + ' et ' + (p.valeurMax ?? '—')) : 'Obligatoire'"
+            />
+          </td>
+          <td class="td-unite">{{ p.unite }}</td>
+          <td class="td-plage">
+            <span *ngIf="p.valeurMin || p.valeurMax">{{ p.valeurMin ?? '—' }} → {{ p.valeurMax ?? '—' }}</span>
+            <span *ngIf="!p.valeurMin && !p.valeurMax">—</span>
+          </td>
+          <td>
+            <span class="badge" [class.badge--ok]="p.modifiableUI">
+              {{ p.modifiableUI ? 'Oui' : 'BCEAO' }}
+            </span>
+          </td>
+          <td class="td-date">{{ p.updatedAt | date: 'dd/MM HH:mm' }}</td>
+          <td class="td-actions">
+            <ng-container *ngIf="editCle !== p.cle">
+              <button *ngIf="p.modifiableUI" class="btn-edit" (click)="demarrerEdition(p)">
+                Modifier
+              </button>
+            </ng-container>
+            <ng-container *ngIf="editCle === p.cle">
+              <button class="btn-cancel" (click)="annuler()">Annuler</button>
+              <button
+                class="btn-save"
+                [disabled]="!valide(p) || enregistrement"
+                (click)="enregistrer(p)"
+              >
+                {{ enregistrement ? '…' : 'OK' }}
+              </button>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

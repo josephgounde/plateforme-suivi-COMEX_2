@@ -1,0 +1,114 @@
+.page {
+  min-width: 0;
+  padding: 16px;
+  max-width: 1200px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 53px);
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+  h1 { margin: 0; font-size: 20px; color: var(--pdoe-ink); }
+}
+
+.page-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #999999;
+}
+
+.loading { font-size: 13px; color: #999999; }
+
+.erreur {
+  margin-bottom: 14px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: var(--pdoe-red);
+  background: #fdecee;
+  border-radius: 6px;
+}
+
+.filtres {
+  display: flex;
+  gap: 8px;
+}
+
+.recherche,
+.recherche { width: 180px; }
+app-dropdown-select.filtre-categorie { min-width: 180px; }
+
+@media (max-width: 700px) {
+  .page { height: auto; }
+  .page-header { flex-direction: column; align-items: stretch; }
+  .table-wrapper { flex: none; max-height: none; overflow-x: auto; overflow-y: visible; }
+  th { position: static; }
+}
+
+.table-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead tr { background: #f5f5f5; }
+
+th {
+  padding: 9px 12px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #595959;
+  border-bottom: 1px solid #ececec;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f5f5f5;
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f5f5f5;
+  vertical-align: middle;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #fafafa; }
+.row-echec td { background: #fdecee0d; }
+
+.td-date { white-space: nowrap; color: #595959; }
+.td-action { font-family: monospace; font-size: 11px; color: #595959; white-space: nowrap; }
+.td-description { color: var(--pdoe-ink); }
+.td-utilisateur { font-family: monospace; font-size: 11px; color: #595959; white-space: nowrap; }
+.td-resultat { text-align: center; }
+.td-vide { text-align: center; color: #999999; padding: 24px 12px; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  &--categorie { color: #1a5fb4; background: #e8f0fc; }
+  &--ok { color: #2e7d32; background: #e6f4ea; }
+  &--echec { color: var(--pdoe-red); background: #fdecee; }
+}

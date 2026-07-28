@@ -1,0 +1,3865 @@
+openapi: 3.1.0
+
+info:
+  title: PDOE API — Plateforme de Digitalisation des Opérations avec l'Extérieur
+  version: 5.6.0
+  description: |
+    API REST de la PDOE pour AfrilandFirstBank CI (AFBCI).
+
+    Orchestration du circuit COMEX en 7 étapes séquentielles :
+    Initiation → Validation Gestionnaire → Contrôle COMEX →
+    Avis Trésorerie → Exécution SWIFT → Apurement → Archivage.
+
+    **Rejet pour correction** : `POST /workflow/{dossierId}/rejeter` peut
+    renvoyer le dossier vers n'importe quelle étape déjà franchie (pas
+    seulement l'étape précédente) — `responsableCorrection` désigne cette
+    étape cible (`NiveauValidation`), jamais un login ou un texte libre.
+
+    **Authentification** : bind LDAP (Active Directory AFBCI) suivi d'une
+    vérification en deux étapes (OTP) — un identifiant/mot de passe valides
+    ne délivrent plus directement un JWT, ils déclenchent l'envoi d'un code
+    dont la vérification délivre la session réelle (`POST /auth/login` puis
+    `POST /auth/otp/verifier`). Le mapping login AD → profil PDOE et le
+    statut actif/désactivé d'un compte vivent dans `Utilisateurs`, gérés par
+    l'Admin DSIRI (`Auth` ne fait que vérifier l'identité, jamais le profil).
+
+    **Modules** :
+    - `Auth` : bind LDAP, vérification OTP, session
+    - `Utilisateurs` : annuaire local des profils PDOE (Admin DSIRI)
+    - `Portefeuilles` : affectation automatique Gestionnaire ↔ compte client
+    - `Dossiers` : création, documents, paiements partiels, portefeuille Gestionnaire
+    - `Workflow` : transitions, rejet pour correction, anti-fractionnement, délais
+    - `Execution` : bascule SWIFT, déclaration retour
+    - `Apurement` : checklist, alertes J-14/J-8/J=0
+    - `Reporting` : dashboards, exports réglementaires
+    - `Notifications` : SMS/Email, retry
+    - `NotificationTemplates` : modèles de notification (libellé, message, canal par défaut) par type d'événement
+    - `CBS` : vérification signature ABS2000 (lecture seule)
+    - `Parametrage` : configuration dashboard Admin DSIRI
+    - `WorkflowConfig` : étapes du circuit configurables
+    - `ChecklistConfig` : items de la checklist d'apurement configurables
+    - `JournalAudit` : journal d'audit — authentification, actions admin et circuit des dossiers (Super Admin uniquement)
+  contact:
+    name: DSIRI — AfrilandFirstBank CI
+    email: dsiri@afrilandfirstbank.com
+  license:
+    name: Usage interne AFBCI — Confidentiel
+
+servers:
+  - url: https://pdoe.afbci.internal/api
+    description: Serveur IIS on-premise AFBCI (production)
+  - url: https://pdoe-dev.afbci.internal/api
+    description: Serveur développement
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Auth
+    description: Bind LDAP, vérification OTP, session — PDOE.Gateway
+  - name: Utilisateurs
+    description: Annuaire local des profils PDOE — Admin DSIRI ou Super Admin uniquement
+  - name: Portefeuilles
+    description: Affectation automatique Gestionnaire ↔ compte client — GestionnaireClients, Admin DSIRI ou Super Admin uniquement
+  - name: CBS
+    description: Vérification signature et solde via ABS2000 (lecture seule)
+  - name: Dossiers
+    description: Gestion des dossiers COMEX — PDOE.Dossiers.API
+  - name: Documents
+    description: Gestion des pièces justificatives — PDOE.Dossiers.API
+  - name: Workflow
+    description: Transitions du circuit COMEX — PDOE.Workflow.API
+  - name: Execution
+    description: Bascule et déclaration SWIFT — PDOE.Execution.API
+  - name: Apurement
+    description: Apurement, alertes BCEAO — PDOE.Apurement.API
+  - name: Paiements
+    description: Paiements partiels — PDOE.Dossiers.API
+  - name: Reporting
+    description: Dashboards et exports réglementaires — PDOE.Reporting.API
+  - name: Notifications
+    description: Logs SMS/Email — PDOE.Notifications
+  - name: NotificationTemplates
+    description: Modèles de notification (libellé, message, canal par défaut) par type d'événement — configurables sans déploiement, Admin DSIRI ou Super Admin uniquement
+  - name: Parametrage
+    description: Configuration dashboard Admin DSIRI — ParametrageMetier
+  - name: WorkflowConfig
+    description: Étapes du circuit configurables — ajout/désactivation/réordonnancement sans déploiement, Admin DSIRI ou Super Admin uniquement
+  - name: ChecklistConfig
+    description: Items de la checklist d'apurement configurables — ajout/désactivation/réordonnancement sans déploiement, Admin DSIRI ou Super Admin uniquement
+  - name: JournalAudit
+    description: Journal d'audit des actions admin/sécurité (authentification, utilisateurs, paramétrage, configuration du circuit) — Super Admin uniquement (Admin DSIRI en est délibérément exclu, cf. séparation des tâches)
+
+paths:
+
+  # ============================================================
+  # AUTHENTIFICATION — bind LDAP + vérification en deux étapes
+  # ============================================================
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Vérifier les identifiants (bind LDAP)
+      description: |
+        Ne délivre plus de session directement. Un identifiant/mot de passe
+        valides déclenchent l'envoi d'un code de vérification (OTP) par SMS,
+        e-mail ou les deux — voir `POST /auth/otp/verifier` pour l'étape
+        suivante. Le mapping login AD → profil PDOE est résolu via
+        `Utilisateurs` ; un login sans fiche active y renvoie
+        `NO_PROFILE_MAPPED` ou `ACCOUNT_DISABLED` avant même l'envoi d'un OTP.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Identifiants valides — code de vérification envoyé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallengeResponse'
+        '401':
+          description: Identifiants invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthErrorResponse'
+              example:
+                code: INVALID_CREDENTIALS
+                message: Identifiants invalides.
+        '403':
+          description: Compte verrouillé, expiré, désactivé ou sans profil PDOE mappé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthErrorResponse'
+        '503':
+          description: Service LDAP indisponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthErrorResponse'
+              example:
+                code: LDAP_UNAVAILABLE
+                message: Service d'authentification indisponible.
+
+  /auth/otp/verifier:
+    post:
+      tags: [Auth]
+      summary: Vérifier le code OTP et délivrer la session
+      description: |
+        Aucune session n'existe avant cet appel. Un code valide délivre le
+        JWT réel (`SessionResponse`) ; trois échecs consécutifs invalident
+        définitivement le `otpToken` (`OTP_MAX_TENTATIVES`) — un nouveau
+        `POST /auth/login` est alors nécessaire, `POST /auth/otp/renvoyer`
+        ne peut pas ranimer un jeton déjà invalidé.
+      operationId: verifierOtp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifierOtpRequest'
+      responses:
+        '200':
+          description: Code vérifié — session délivrée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          description: Code incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthErrorResponse'
+              example:
+                code: OTP_INVALID
+                message: Code incorrect.
+        '410':
+          description: Code ou jeton OTP expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthErrorResponse'
+              example:
+                code: OTP_EXPIRED
+                message: Code expiré.
+        '429':
+          description: Trop de tentatives échouées — jeton OTP invalidé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthErrorResponse'
+              example:
+                code: OTP_MAX_TENTATIVES
+                message: Trop de tentatives échouées.
+
+  /auth/otp/renvoyer:
+    post:
+      tags: [Auth]
+      summary: Renvoyer un nouveau code sur le otpToken en cours
+      description: |
+        Réinitialise l'horloge d'expiration et le compteur de tentatives du
+        même `otpToken` — ne redémarre pas toute la vérification. Échoue en
+        `OTP_EXPIRED` si le jeton a déjà été invalidé (expiration naturelle
+        ou `OTP_MAX_TENTATIVES` sur `/auth/otp/verifier`), auquel cas
+        l'utilisateur doit reprendre depuis `POST /auth/login`.
+      operationId: renvoyerOtp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenvoyerOtpRequest'
+      responses:
+        '200':
+          description: Nouveau code envoyé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OtpChallengeResponse'
+        '410':
+          description: Jeton OTP déjà invalidé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Révoquer la session courante
+      description: |
+        Appelé en best-effort par le frontend (la session locale est purgée
+        immédiatement côté client, indépendamment du résultat de cet appel).
+      operationId: logout
+      responses:
+        '200':
+          description: Session révoquée
+
+  # ============================================================
+  # CBS — Vérification signature ABS2000
+  # ============================================================
+
+  /clients/{numCompte}/verifier-signature:
+    get:
+      tags: [CBS]
+      summary: Vérifier la signature client dans ABS2000
+      description: |
+        Déclenché automatiquement sur l'événement `onBlur` du champ `numCompte`
+        dans le formulaire Angular — avant toute création de dossier en base.
+        
+        Le comportement dépend du mode configuré dans `ParametrageMetier`
+        (clé `MODE_VERIFICATION_SIGNATURE`) :
+        
+        - **AUTOMATIQUE** : retourne uniquement `signatureExistante: bool`
+        - **VISUEL** : retourne `signatureExistante` + `imageSignature` (base64)
+        - **LES_DEUX** : retourne les deux
+        
+        Si le compte est introuvable → 404.
+        Si la signature est absente → 422.
+        Délai cible de réponse : < 2 secondes.
+      operationId: verifierSignatureClient
+      parameters:
+        - name: numCompte
+          in: path
+          required: true
+          schema:
+            type: string
+            maxLength: 20
+          example: "CI00123456789"
+        - name: mode
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ModeVerificationSignature'
+          description: Mode de vérification (remplace ParametrageMetier si fourni)
+      responses:
+        '200':
+          description: Compte trouvé et signature valide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignatureVerificationResult'
+        '404':
+          description: Numéro de compte introuvable dans ABS2000
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: COMPTE_INTROUVABLE
+                message: "Numéro de compte introuvable dans ABS2000"
+        '422':
+          description: Compte trouvé mais signature absente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: SIGNATURE_INVALIDE
+                message: "Signature client absente dans ABS2000"
+
+  /clients/{numCompte}/valider-signature-visuelle:
+    post:
+      tags: [CBS]
+      summary: Enregistrer la validation visuelle de la signature par l'agent
+      description: |
+        Appelé après que l'agent d'accueil a coché la case de conformité
+        visuelle (modes VISUEL et LES_DEUX). Enregistre les initiales de
+        l'agent comme preuve d'audit humaine.
+      operationId: validerSignatureVisuelle
+      parameters:
+        - name: numCompte
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationVisuelleRequest'
+      responses:
+        '200':
+          description: Validation visuelle enregistrée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signatureValidee:
+                    type: boolean
+                    example: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /clients/{numCompte}/solde:
+    get:
+      tags: [CBS]
+      summary: Vérifier le solde du compte client dans ABS2000
+      description: Utilisé à l'étape 2 (validation gestionnaire). Lecture seule ABS2000.
+      operationId: getSoldeClient
+      parameters:
+        - name: numCompte
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Solde récupéré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SoldeClientResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /taux-change:
+    get:
+      tags: [CBS]
+      summary: Obtenir la cotation marché d'une devise
+      description: |
+        Utilisé à l'étape 4 (Trésorerie) pour pré-remplir tauxChange/
+        deviseCotation. Lecture seule — un vrai fournisseur de cours
+        (Reuters/CBS/etc.) remplacera cette source le jour venu, sans
+        rien changer côté appelant.
+      operationId: obtenirTauxChange
+      parameters:
+        - name: devise
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 3
+        - name: versDevise
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 3
+          description: XOF si omis.
+      responses:
+        '200':
+          description: Cotation obtenue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TauxChangeResult'
+
+  # ============================================================
+  # DOSSIERS
+  # ============================================================
+
+  /dossiers:
+    get:
+      tags: [Dossiers]
+      summary: Lister les dossiers COMEX
+      description: |
+        Liste filtrée selon le profil de l'agent connecté.
+        - Agent d'accueil : ses propres dossiers
+        - Gestionnaire : dossiers en attente à son niveau
+        - Agent COMEX : dossiers en contrôle/exécution/apurement
+        - Direction / Admin : tous les dossiers
+      operationId: listDossiers
+      parameters:
+        - name: statut
+          in: query
+          schema:
+            $ref: '#/components/schemas/StatutDossier'
+        - name: typeOperation
+          in: query
+          schema:
+            $ref: '#/components/schemas/TypeOperation'
+        - name: numCompte
+          in: query
+          schema:
+            type: string
+        - name: dateDebutCreation
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateFinCreation
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+      responses:
+        '200':
+          description: Liste des dossiers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierListResponse'
+
+    post:
+      tags: [Dossiers]
+      summary: Créer un nouveau dossier COMEX
+      description: |
+        Crée le dossier en base **uniquement après** validation positive
+        de la signature ABS2000. Le dossier est initialisé en statut BROUILLON.
+        
+        La signature doit avoir été validée préalablement via
+        `GET /clients/{numCompte}/verifier-signature`.
+      operationId: createDossier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDossierRequest'
+      responses:
+        '201':
+          description: Dossier créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          description: Signature non validée — création impossible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dossiers/{dossierId}:
+    get:
+      tags: [Dossiers]
+      summary: Récupérer un dossier complet
+      operationId: getDossier
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Dossier complet avec historique workflow
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Dossiers]
+      summary: Mettre à jour un dossier (correction après rejet)
+      operationId: updateDossier
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDossierRequest'
+      responses:
+        '200':
+          description: Dossier mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/fiche:
+    get:
+      tags: [Dossiers]
+      summary: Générer la fiche de synthèse d'un dossier (.pdf)
+      description: |
+        Export opérationnel interne (tous profils) — synthèse d'une page
+        d'un dossier (référence, client, montant, statut, dates clés),
+        destinée à être jointe au dossier physique papier.
+      operationId: genererFicheDossier
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: PDF généré
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /dossiers/{dossierId}/soumettre:
+    post:
+      tags: [Dossiers]
+      summary: Soumettre le dossier (BROUILLON → INITIE)
+      description: |
+        Déclenche la transition vers le statut INITIE et notifie uniquement
+        le Gestionnaire assigné à ce dossier (`Dossiers.GestionnaireAssigneLogin`
+        — jamais l'ensemble des Gestionnaires).
+      operationId: soumettreDossier
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Dossier soumis — statut INITIE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+        '422':
+          description: Conditions de soumission non remplies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dossiers/{dossierId}/tresorerie:
+    patch:
+      tags: [Dossiers]
+      summary: Renseigner les paramètres Trésorerie (étape 4)
+      operationId: updateTresorerie
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TresorerieUpdateRequest'
+      responses:
+        '200':
+          description: Paramètres Trésorerie enregistrés
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+
+  /dossiers/{dossierId}/gestionnaire:
+    patch:
+      tags: [Dossiers]
+      summary: Réattribuer le dossier à un autre Gestionnaire (Admin DSIRI ou Super Admin uniquement)
+      description: |
+        N'a de sens que tant que le dossier n'a pas dépassé l'étape
+        Gestionnaire (index ≤ 1 dans le circuit) — vérifié côté serveur,
+        pas seulement masqué côté UI. Réinitialise `dateConfirmationClient` :
+        le nouveau Gestionnaire doit refaire intégralement le contrôle et
+        les opérations de son étape.
+      operationId: reassignerGestionnaire
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReassignerGestionnaireRequest'
+      responses:
+        '200':
+          description: Dossier réattribué
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+        '400':
+          description: gestionnaireLogin manquant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: GESTIONNAIRE_LOGIN_MANQUANT
+                message: gestionnaireLogin requis.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Dossier déjà au-delà de l'étape Gestionnaire — réattribution impossible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: ETAPE_GESTIONNAIRE_DEPASSEE
+                message: Ce dossier a déjà dépassé l'étape Gestionnaire — réattribution impossible.
+
+  # ============================================================
+  # DOCUMENTS
+  # ============================================================
+
+  /dossiers/{dossierId}/documents:
+    get:
+      tags: [Documents]
+      summary: Lister les documents d'un dossier
+      operationId: listDocuments
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+        - name: typeDocument
+          in: query
+          schema:
+            $ref: '#/components/schemas/TypeDocument'
+      responses:
+        '200':
+          description: Liste des documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentResponse'
+
+    post:
+      tags: [Documents]
+      summary: Téléverser un document
+      description: |
+        Calcule le hash SHA-256 côté serveur.
+        Stocke le fichier dans le répertoire IIS sécurisé.
+        Enregistre les métadonnées en base (hash, chemin, type).
+      operationId: uploadDocument
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadDocumentRequest'
+      responses:
+        '200':
+          description: Document enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+        '413':
+          description: Fichier trop volumineux
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dossiers/{dossierId}/documents/{documentId}:
+    patch:
+      tags: [Documents]
+      summary: Valider ou invalider un document
+      operationId: updateDocumentStatut
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                estValide:
+                  type: boolean
+      responses:
+        '200':
+          description: Statut document mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentResponse'
+
+  /dossiers/{dossierId}/notifier-client:
+    post:
+      tags: [Dossiers]
+      summary: Notifier directement le client (SMS/Email)
+      description: |
+        Envoi direct au client (Dossiers.EmailClient/TelephoneClient selon
+        le canal), distinct du journal de notifications internes AFB
+        (GET /notifications) — le client n'en est jamais destinataire.
+        Utilisé par le Gestionnaire lorsqu'un dossier est mis en attente
+        de correction. Simulation stateless, sans persistance d'historique.
+      operationId: notifierClient
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotifierClientRequest'
+      responses:
+        '200':
+          description: Notification envoyée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotifierClientResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ============================================================
+  # WORKFLOW
+  # ============================================================
+
+  /workflow/{dossierId}/valider:
+    post:
+      tags: [Workflow]
+      summary: Valider le dossier à l'étape courante
+      description: |
+        Enregistre une étape VALIDATION dans EtapesWorkflow (INSERT ONLY)
+        et fait avancer le dossier vers l'étape suivante. Déclenche la
+        notification du prochain acteur.
+      operationId: validerEtape
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValiderEtapeRequest'
+      responses:
+        '200':
+          description: Étape validée — nouveau statut
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTransitionResponse'
+        '422':
+          description: Conditions de validation non remplies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workflow/{dossierId}/rejeter:
+    post:
+      tags: [Workflow]
+      summary: Rejeter le dossier à l'étape courante
+      description: |
+        `motifRejet` et `responsableCorrection` sont obligatoires.
+        Enregistre une étape REJET dans EtapesWorkflow. Notifie le
+        responsable de correction désigné.
+      operationId: rejeterEtape
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejeterEtapeRequest'
+      responses:
+        '200':
+          description: Rejet enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTransitionResponse'
+        '400':
+          description: motifRejet ou responsableCorrection manquant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workflow/{dossierId}/archiver:
+    post:
+      tags: [Workflow]
+      summary: Archiver un dossier apuré (Agent COMEX / Admin DSIRI)
+      description: |
+        Étape 7 (Archivage) — cf. PDOE_DAT §3.1. Transition `EN_ARCHIVAGE`
+        → `ARCHIVE`, refusée hors de ce statut. La vérification
+        d'intégrité SHA-256 des documents et la finalisation du reporting
+        BCEAO (CRPI FINEX, cf. §7.2/§7.3) restent à brancher côté
+        implémentation — cet endpoint ne fait aujourd'hui que la
+        transition d'état.
+      operationId: archiver
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Dossier archivé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTransitionResponse'
+        '422':
+          description: Dossier pas en statut EN_ARCHIVAGE — archivage impossible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workflow/{dossierId}/lever-alerte:
+    post:
+      tags: [Workflow]
+      summary: Lever l'alerte anti-fractionnement (Direction/Admin DSIRI/Super Admin uniquement)
+      description: |
+        Réservé à Direction, Admin DSIRI et Super Admin — l'Agent COMEX qui a
+        signalé le fractionnement (`POST /workflow/{dossierId}/signaler-fractionnement`)
+        ne peut pas lever sa propre alerte, seule la hiérarchie en décide.
+        Renvoie le dossier vers `EN_ATTENTE_EXECUTION` : le circuit reprend là
+        où le signalement l'avait interrompu.
+      operationId: leverAlerte
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Alerte levée — dossier débloqué
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTransitionResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workflow/{dossierId}/rejeter-definitif:
+    post:
+      tags: [Workflow]
+      summary: Clôturer définitivement un dossier (Direction/Admin DSIRI/Super Admin uniquement)
+      description: |
+        Utilisé en cas de fraude confirmée ou d'abandon explicite.
+        Statut final REJETE_DEFINITIF — irréversible.
+
+        Interdit une fois le dossier déjà exécuté (`EXECUTE` ou tout statut
+        en aval — apurement, alertes de délai, archivage) : l'opération est
+        déjà partie, il n'y a plus rien à annuler. Voir le champ `statuts
+        déjà exécutés` de la logique métier pour la liste exacte.
+      operationId: rejeterDefinitif
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motif]
+              properties:
+                motif:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '200':
+          description: Dossier clôturé définitivement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTransitionResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Dossier déjà exécuté — rejet définitif impossible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workflow/{dossierId}/signaler-fractionnement:
+    post:
+      tags: [Workflow]
+      summary: Signaler un fractionnement suspecté (Agent COMEX)
+      description: |
+        Le fractionnement n'est détectable que sur la plateforme d'exécution
+        externe (ABS2000/SWIFT), jamais dans la PDOE elle-même : l'Agent COMEX
+        y bascule via `POST /execution/{dossierId}/basculer`, le constate
+        là-bas, puis revient dans la PDOE cocher ce signalement plutôt que de
+        déclarer l'exécution (`POST /execution/{dossierId}/declarer`).
+        Statut → `ANTI_FRACTIONNEMENT_DETECTE`. Notifie Direction, Admin
+        DSIRI et Super Admin — seuls habilités ensuite à `lever-alerte` ou
+        `rejeter-definitif`.
+
+        Autorisé uniquement tant que le dossier est en fenêtre d'exécution
+        (`EN_ATTENTE_EXECUTION` ou `EN_EXECUTION_SWIFT`) — une fois `EXECUTE`,
+        il n'y a plus rien à signaler.
+      operationId: signalerFractionnement
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motif]
+              properties:
+                motif:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '200':
+          description: Signalement enregistré — statut ANTI_FRACTIONNEMENT_DETECTE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowTransitionResponse'
+        '400':
+          description: motif manquant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Dossier hors fenêtre d'exécution (pas encore basculé, ou déjà exécuté)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workflow/{dossierId}/controle-reglementaire:
+    post:
+      tags: [Workflow]
+      summary: Déclencher le contrôle réglementaire BCEAO/FINEX (étape 3)
+      operationId: controleReglementaire
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Résultat contrôle réglementaire
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ControleReglementaireResult'
+
+  /workflow/{dossierId}/controle-lcbft:
+    post:
+      tags: [Workflow]
+      summary: Déclencher le contrôle LCB-FT (étape 3)
+      operationId: controleLCBFT
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agentLogin:
+                  type: string
+      responses:
+        '200':
+          description: Résultat contrôle LCB-FT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lcbftConforme:
+                    type: boolean
+                  observations:
+                    type: string
+                    nullable: true
+
+  /workflow/{dossierId}/historique:
+    get:
+      tags: [Workflow]
+      summary: Récupérer l'historique complet des transitions d'un dossier
+      operationId: getHistoriqueWorkflow
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Historique complet (table EtapesWorkflow — INSERT ONLY)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EtapeWorkflowResponse'
+
+  /workflow/{dossierId}/historique/export:
+    get:
+      tags: [Workflow]
+      summary: Exporter l'historique complet d'un dossier (.pdf)
+      description: |
+        Export opérationnel interne (Agent COMEX, Audit) — mêmes données
+        que `GET /workflow/{dossierId}/historique`, mises en forme en PDF :
+        toutes les étapes du workflow avec dates, agents et motifs.
+      operationId: exporterHistoriqueWorkflow
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: PDF généré
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  # ============================================================
+  # EXECUTION SWIFT
+  # ============================================================
+
+  /execution/{dossierId}/basculer:
+    post:
+      tags: [Execution]
+      summary: Enregistrer la bascule vers ABS2000/SWIFT (étape 5)
+      description: |
+        Met le dossier en statut EN_EXECUTION_SWIFT.
+        L'agent traite ensuite dans ABS2000/SWIFT (hors PDOE).
+        Il revient ensuite déclarer l'exécution via POST /execution/{id}/declarer.
+        
+        **V1 : bascule manuelle. V2 : intégration API directe.**
+      operationId: basculerSWIFT
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Bascule enregistrée — statut EN_EXECUTION_SWIFT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+
+  /execution/{dossierId}/declarer:
+    post:
+      tags: [Execution]
+      summary: Déclarer l'exécution SWIFT dans la PDOE
+      description: |
+        Enregistre la référence ABS, la référence SWIFT, la date et le montant exécuté.
+        Déclenche automatiquement le calcul de la date d'échéance d'apurement
+        et la planification des alertes J-14, J-8, J=0.
+        
+        `dateEcheance = dateExecution + délai lu dans ParametrageMetier`
+        (DELAI_APUREMENT_IMPORT_J ou DELAI_APUREMENT_SERVICE_J).
+      operationId: declarerExecution
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeclarerExecutionRequest'
+      responses:
+        '200':
+          description: Exécution enregistrée — délai apurement calculé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionDeclarationResponse'
+        '422':
+          description: Données incohérentes (montant, date)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /execution/{dossierId}:
+    get:
+      tags: [Execution]
+      summary: Récupérer la fiche d'exécution d'un dossier
+      operationId: getExecution
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Fiche d'exécution complète
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionDetailResponse'
+
+  # ============================================================
+  # APUREMENT
+  # ============================================================
+
+  /apurement/{dossierId}/checklist:
+    post:
+      tags: [Apurement]
+      summary: Valider la checklist d'apurement
+      operationId: validerChecklist
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChecklistRequest'
+      responses:
+        '200':
+          description: Checklist validée — statut APURE si solde = 0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+
+  /apurement/{dossierId}/declarer-depassement:
+    post:
+      tags: [Apurement]
+      summary: Déclarer un dépassement BCEAO (J=0)
+      description: |
+        Enregistre la déclaration obligatoire à la BCEAO.
+        Met le dossier en statut DEPASSE_BCEAO.
+        Génère l'export CRPI FINEX.
+      operationId: declarerDepassement
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepassementRequest'
+      responses:
+        '200':
+          description: Dépassement enregistré — déclaration BCEAO générée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierResponse'
+
+  /apurement/{dossierId}/alertes:
+    get:
+      tags: [Apurement]
+      summary: Lister les alertes d'apurement d'un dossier
+      operationId: getAlertes
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Liste des alertes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlerteApurementResponse'
+
+  # ============================================================
+  # PAIEMENTS PARTIELS
+  # ============================================================
+
+  /dossiers/{dossierId}/paiements-partiels:
+    get:
+      tags: [Paiements]
+      summary: Lister les paiements partiels d'un dossier
+      operationId: listPaiements
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      responses:
+        '200':
+          description: Liste des paiements avec solde restant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaiementListResponse'
+
+    post:
+      tags: [Paiements]
+      summary: Enregistrer un paiement partiel
+      description: |
+        Contrôle anti-double-paiement : SUM(montants) ≤ Dossier.montant.
+        Référence paiement unique par dossier (contrainte UNIQUE en base).
+        Recalcule et met à jour Dossiers.SoldeRestantApurement.
+      operationId: createPaiement
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaiementRequest'
+      responses:
+        '201':
+          description: Paiement enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaiementResponse'
+        '422':
+          description: Dépassement montant ou référence dupliquée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                doublePaiement:
+                  value:
+                    code: DOUBLE_PAIEMENT_DETECTE
+                    message: "Le montant dépasse le solde restant à apurer"
+                referenceDupliquee:
+                  value:
+                    code: REFERENCE_PAIEMENT_DUPLIQUEE
+                    message: "Cette référence de paiement existe déjà pour ce dossier"
+
+  # ============================================================
+  # REPORTING
+  # ============================================================
+
+  /reporting/dashboard:
+    get:
+      tags: [Reporting]
+      summary: Tableau de bord consolidé
+      description: |
+        Données agrégées pour le dashboard Direction et Admin DSIRI.
+        Basé sur la vue VW_DossiersCours.
+      operationId: getDashboard
+      parameters:
+        - name: periode
+          in: query
+          schema:
+            type: string
+            enum: [SEMAINE, MOIS, TRIMESTRE, ANNEE]
+            default: MOIS
+      responses:
+        '200':
+          description: Données dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+
+  /reporting/dossiers-en-retard:
+    get:
+      tags: [Reporting]
+      summary: Dossiers dépassant les délais configurés
+      description: Identifie les goulots d'étranglement par étape.
+      operationId: getDossiersEnRetard
+      responses:
+        '200':
+          description: Liste des dossiers en retard avec heures de blocage
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DossierRetardResponse'
+
+  /reporting/dossiers-en-retard/export:
+    get:
+      tags: [Reporting]
+      summary: Exporter la liste des dossiers en retard (.xlsx)
+      description: |
+        Export opérationnel interne (Direction, Admin DSIRI) — mêmes
+        données que `GET /reporting/dossiers-en-retard`, sérialisées en
+        classeur Excel plutôt qu'en JSON. Colonnes : référence, client,
+        étape bloquée, délai dépassé, dernier agent responsable.
+      operationId: exporterDossiersEnRetard
+      responses:
+        '200':
+          description: Classeur Excel généré
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /reporting/activite-mensuelle/export:
+    get:
+      tags: [Reporting]
+      summary: Exporter le rapport d'activité mensuel (.xlsx)
+      description: |
+        Export opérationnel interne (Direction). Contenu : volume de
+        dossiers par type d'opération, délai moyen (en heures) entre deux
+        étapes du workflow, taux de rejet parmi les décisions de
+        validation/rejet enregistrées sur la période.
+      operationId: exporterRapportActiviteMensuel
+      parameters:
+        - name: mois
+          in: query
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}$
+          description: Mois au format AAAA-MM — mois courant si omis
+          example: "2026-07"
+      responses:
+        '200':
+          description: Classeur Excel généré
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /reporting/export-crpi-dgi:
+    post:
+      tags: [Reporting]
+      summary: Générer le CRPI Direction Générale des Impôts (transferts émis/reçus)
+      description: |
+        Rempli le classeur officiel DGI (Direction des Enquêtes et Vérifications
+        Fiscales) à partir des gabarits fournis — feuilles "Transferts émis" et
+        "Transferts reçus". La feuille "Comptes commerciaux" du gabarit reste à
+        compléter manuellement : PDOE ne tient pas de registre des comptes
+        clients (NCC, adresse), seulement des dossiers COMEX.
+      operationId: exportCrpiDgi
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportReglementaireRequest'
+      responses:
+        '200':
+          description: Classeur CRPI DGI généré
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /reporting/export-crpi-tresor:
+    post:
+      tags: [Reporting]
+      summary: Générer le CRPI Direction du Trésor (paiements émis/reçus, UEMOA et hors UEMOA)
+      operationId: exportCrpiTresor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportReglementaireRequest'
+      responses:
+        '200':
+          description: Classeur CRPI Trésor généré
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /reporting/export-situation-bceao:
+    post:
+      tags: [Reporting]
+      summary: Générer la Situation Statistique BCEAO (transferts/virements émis/reçus, hors UEMOA)
+      operationId: exportSituationBceao
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportReglementaireRequest'
+      responses:
+        '200':
+          description: Classeur Situation Statistique BCEAO généré
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /reporting/exports:
+    get:
+      tags: [Reporting]
+      summary: Journal des exports générés (réglementaires et opérationnels)
+      description: |
+        Historique de tous les exports produits via Reporting, quelle que
+        soit leur catégorie — basé sur ExportsReglementaires (nom historique
+        de la table, conservé). Ne renvoie jamais CheminFichier (chemin
+        disque serveur) : utiliser GET /reporting/exports/{id}/download
+        pour récupérer le contenu.
+      operationId: listExportsReglementaires
+      parameters:
+        - name: categorie
+          in: query
+          schema:
+            $ref: '#/components/schemas/CategorieExport'
+        - name: typeExport
+          in: query
+          schema:
+            $ref: '#/components/schemas/TypeExport'
+        - name: dateDebut
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Ne retourne que les exports dont la période couvre au moins ce jour.
+        - name: dateFin
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Page d'exports
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportReglementaireListResponse'
+
+  /reporting/exports/{exportReglementaireId}/download:
+    get:
+      tags: [Reporting]
+      summary: Re-télécharger un export déjà généré
+      description: |
+        Relit le fichier archivé sur le disque du serveur (Storage:ReportingArchiveRootPath)
+        et vérifie son intégrité (SHA-256) avant de le renvoyer.
+      operationId: telechargerExportReglementaire
+      parameters:
+        - name: exportReglementaireId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Classeur Excel archivé
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Export introuvable, ou fichier archivé absent du disque
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # NOTIFICATIONS
+  # ============================================================
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Lister les notifications (Admin DSIRI)
+      operationId: listNotifications
+      parameters:
+        - name: statut
+          in: query
+          schema:
+            $ref: '#/components/schemas/StatutNotification'
+        - name: dossierId
+          in: query
+          schema:
+            type: integer
+        - name: canal
+          in: query
+          schema:
+            $ref: '#/components/schemas/CanalNotification'
+      responses:
+        '200':
+          description: Liste des notifications avec statut de délivrance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationResponse'
+
+  # ============================================================
+  # NOTIFICATIONTEMPLATES — modèles de notification (Admin DSIRI)
+  # ============================================================
+  #
+  # Un modèle par typeEvenement (ex: DOSSIER_SOUMIS, DOSSIER_REJETE).
+  # libelle alimente la cloche/le panneau de notifications des dashboards ;
+  # message est le corps SMS/Email envoyé via la Gateway Notifications
+  # (cf. Notifications.Corps). Pas de création/suppression : l'ensemble
+  # des typeEvenement possibles est fixé par le code applicatif (chaque
+  # événement métier qui notifie), seul leur contenu est configurable.
+
+  /notification-templates:
+    get:
+      tags: [NotificationTemplates]
+      summary: Lister tous les modèles de notification (Admin DSIRI)
+      operationId: listNotificationTemplates
+      responses:
+        '200':
+          description: Liste complète des modèles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationTemplate'
+
+  /notification-templates/{typeEvenement}:
+    patch:
+      tags: [NotificationTemplates]
+      summary: Modifier un modèle de notification (Admin DSIRI ou Super Admin uniquement)
+      operationId: modifierNotificationTemplate
+      parameters:
+        - name: typeEvenement
+          in: path
+          required: true
+          schema:
+            type: string
+          example: DOSSIER_SOUMIS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationTemplateUpdateRequest'
+      responses:
+        '200':
+          description: Modèle mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationTemplate'
+        '404':
+          description: Modèle introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: MODELE_NOTIFICATION_INTROUVABLE
+                message: Modèle de notification introuvable.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================================
+  # PARAMETRAGE
+  # ============================================================
+
+  /parametrage:
+    get:
+      tags: [Parametrage]
+      summary: Lister tous les paramètres (Admin DSIRI)
+      operationId: listParametrage
+      responses:
+        '200':
+          description: Liste complète des paramètres
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ParametreMetierResponse'
+
+  /parametrage/{cle}:
+    get:
+      tags: [Parametrage]
+      summary: Récupérer un paramètre par clé
+      operationId: getParametre
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+          example: MODE_VERIFICATION_SIGNATURE
+      responses:
+        '200':
+          description: Paramètre trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParametreMetierResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Parametrage]
+      summary: Modifier la valeur d'un paramètre (Admin DSIRI ou Super Admin uniquement)
+      description: |
+        Seuls les paramètres avec `modifiableUI = true` peuvent être modifiés.
+        La modification est tracée (UpdatedAt, UpdatedBy).
+        Le cache IMemoryCache est invalidé immédiatement.
+      operationId: updateParametre
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateParametreRequest'
+      responses:
+        '200':
+          description: Paramètre mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParametreMetierResponse'
+        '403':
+          description: Paramètre non modifiable via dashboard (modifiableUI = false)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Valeur hors plage (valeurMin/valeurMax)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================
+  # WORKFLOW-CONFIG — étapes du circuit configurables (Admin DSIRI)
+  # ============================================================
+  #
+  # Les 7 étapes historiques (NiveauValidation) restent des identités
+  # stables — Code ne change jamais pour elles. Pas de suppression
+  # physique : une étape se désactive (actif = false), jamais ne se
+  # supprime, pour les mêmes raisons que /utilisateurs (l'historique
+  # EtapesWorkflow doit rester résoluble).
+
+  /workflow-config/etapes:
+    get:
+      tags: [WorkflowConfig]
+      summary: Lister toutes les étapes configurées, actives et inactives (Admin DSIRI)
+      description: |
+        Triée par ordre croissant. Utilisée par l'écran d'administration
+        du circuit ET par tout client ayant besoin de résoudre un code
+        vers son libellé/typeEtape à l'exécution (cf. NiveauValidation,
+        devenu chaîne libre plutôt qu'enum fermée).
+      operationId: listEtapesWorkflowConfig
+      responses:
+        '200':
+          description: Liste complète, triée par ordre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EtapeWorkflowConfig'
+
+    post:
+      tags: [WorkflowConfig]
+      summary: Créer une étape personnalisée (Admin DSIRI)
+      operationId: creerEtapeWorkflowConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EtapeWorkflowConfigCreateRequest'
+      responses:
+        '201':
+          description: Étape créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtapeWorkflowConfig'
+        '409':
+          description: Code déjà utilisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: ETAPE_CODE_DEJA_UTILISE
+                message: Ce code d'étape est déjà utilisé.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workflow-config/etapes/reordonner:
+    patch:
+      tags: [WorkflowConfig]
+      summary: Réordonnancer l'ensemble des étapes en une seule opération atomique (Admin DSIRI)
+      description: |
+        Remplace le champ ordre de TOUTES les étapes d'un coup, pour
+        éviter les collisions transitoires qu'un réordonnancement
+        étape-par-étape provoquerait sur la contrainte UNIQUE(Ordre).
+        Ce réordonnancement pilote le routage RÉEL des dossiers : les
+        prochaines validations suivent le nouvel ordre.
+      operationId: reordonnerEtapesWorkflowConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReordonnerEtapesRequest'
+      responses:
+        '200':
+          description: Nouvel ordre appliqué
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EtapeWorkflowConfig'
+        '422':
+          description: La liste ne correspond pas exactement aux codes existants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /workflow-config/etapes/{code}:
+    patch:
+      tags: [WorkflowConfig]
+      summary: Modifier le libellé, la description ou l'état actif d'une étape (Admin DSIRI)
+      operationId: modifierEtapeWorkflowConfig
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EtapeWorkflowConfigUpdateRequest'
+      responses:
+        '200':
+          description: Étape mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtapeWorkflowConfig'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Désactivation refusée — étape d'entrée du circuit (ETAPE_1_INITIATION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: ETAPE_DESACTIVATION_REFUSEE
+                message: Impossible de désactiver l'étape d'initiation — point d'entrée obligatoire du circuit.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================================
+  # CHECKLISTCONFIG — items de la checklist d'apurement (Admin DSIRI)
+  # ============================================================
+  #
+  # Items proposés par défaut sur l'écran Apurement (SEQ-04, bloc
+  # "Checklist d'apurement") — configurables sans déploiement, même
+  # principe que WorkflowConfig ci-dessus. Pas de suppression physique :
+  # un item se désactive (actif = false), jamais ne se supprime.
+
+  /checklist-config/items:
+    get:
+      tags: [ChecklistConfig]
+      summary: Lister tous les items configurés, actifs et inactifs (Admin DSIRI)
+      operationId: listChecklistItemsConfig
+      responses:
+        '200':
+          description: Liste complète, triée par ordre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChecklistItemConfig'
+
+    post:
+      tags: [ChecklistConfig]
+      summary: Créer un item de checklist (Admin DSIRI)
+      operationId: creerChecklistItemConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChecklistItemConfigCreateRequest'
+      responses:
+        '201':
+          description: Item créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChecklistItemConfig'
+        '400':
+          description: libelle manquant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: CHECKLIST_ITEM_LIBELLE_MANQUANT
+                message: libelle est requis.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # /reordonner AVANT le regex générique /{checklistItemId} — même règle
+  # que /workflow-config/etapes/reordonner ci-dessus.
+  /checklist-config/items/reordonner:
+    patch:
+      tags: [ChecklistConfig]
+      summary: Réordonnancer l'ensemble des items en une seule opération atomique (Admin DSIRI)
+      operationId: reordonnerChecklistItemsConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReordonnerChecklistItemsRequest'
+      responses:
+        '200':
+          description: Nouvel ordre appliqué
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChecklistItemConfig'
+        '422':
+          description: La liste ne correspond pas exactement aux items existants
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: CHECKLIST_ORDRE_INVALIDE
+                message: La liste fournie ne correspond pas exactement aux items existants.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /checklist-config/items/{checklistItemId}:
+    patch:
+      tags: [ChecklistConfig]
+      summary: Modifier le libellé ou l'état actif d'un item (Admin DSIRI)
+      operationId: modifierChecklistItemConfig
+      parameters:
+        - name: checklistItemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChecklistItemConfigUpdateRequest'
+      responses:
+        '200':
+          description: Item mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChecklistItemConfig'
+        '404':
+          description: Item introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: CHECKLIST_ITEM_INTROUVABLE
+                message: Item de checklist introuvable.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================================
+  # JOURNAL D'AUDIT (Super Admin uniquement — Admin DSIRI exclu, séparation des tâches)
+  # ============================================================
+  #
+  # Trace tout : authentification, actions admin (utilisateurs, paramétrage,
+  # configuration du circuit) et chaque transition de dossier (soumission,
+  # validation, rejet, exécution, apurement...). Vue globale cross-dossiers ;
+  # GET /workflow/{dossierId}/historique reste l'historique détaillé d'un
+  # dossier donné.
+
+  /journal-audit:
+    get:
+      tags: [JournalAudit]
+      summary: Lister le journal d'audit (Super Admin uniquement)
+      operationId: listJournalAudit
+      responses:
+        '200':
+          description: Journal d'audit, trié du plus récent au plus ancien
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JournalAuditEntry'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ============================================================
+  # UTILISATEURS — annuaire local (Admin DSIRI ou Super Admin uniquement)
+  # ============================================================
+  #
+  # LDAP/AD ne vérifie que l'existence du compte, jamais son profil PDOE
+  # ni son statut d'activation applicatif — ceux-ci vivent exclusivement
+  # dans Utilisateurs, gérés ici par l'Admin DSIRI. Pas de suppression :
+  # un compte se désactive (estActif = false), jamais ne se supprime —
+  # l'historique des dossiers qu'il a traités (AgentLogin dans
+  # EtapesWorkflow) doit rester résoluble.
+
+  /utilisateurs:
+    get:
+      tags: [Utilisateurs]
+      summary: Lister tous les comptes de l'annuaire (Admin DSIRI)
+      operationId: listUtilisateurs
+      responses:
+        '200':
+          description: Liste complète des comptes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UtilisateurResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Utilisateurs]
+      summary: Créer un compte (Admin DSIRI)
+      operationId: creerUtilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerUtilisateurRequest'
+      responses:
+        '201':
+          description: Compte créé — actif par défaut
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisateurResponse'
+        '400':
+          description: Champ requis manquant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: CHAMPS_UTILISATEUR_MANQUANTS
+                message: Tous les champs sont requis.
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: loginAD déjà utilisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: LOGIN_AD_DEJA_UTILISE
+                message: Ce login AD est déjà utilisé.
+
+  /utilisateurs/{utilisateurId}:
+    patch:
+      tags: [Utilisateurs]
+      summary: Modifier un compte — profil, identité ou statut actif (Admin DSIRI)
+      description: |
+        Un Admin DSIRI ne peut ni se désactiver lui-même, ni retirer son
+        propre profil ADMIN_DSIRI (409) — sans ce garde-fou, une session
+        encore active pourrait se retrouver sans aucun Admin capable de
+        revenir en arrière.
+      operationId: modifierUtilisateur
+      parameters:
+        - name: utilisateurId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierUtilisateurRequest'
+      responses:
+        '200':
+          description: Compte mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UtilisateurResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Compte introuvable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: UTILISATEUR_INTROUVABLE
+                message: Utilisateur introuvable.
+        '409':
+          description: Tentative de retirer ses propres droits d'administration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: AUTO_RETRAIT_DROITS_ADMIN_INTERDIT
+                message: Impossible de retirer vos propres droits d'administration.
+
+  # ============================================================
+  # PORTEFEUILLES — affectation automatique Gestionnaire ↔ compte
+  # ============================================================
+  #
+  # Table GestionnaireClients : détermine le Gestionnaire assigné par
+  # défaut à un dossier lors de sa création (résolu par NumCompte),
+  # avant toute réattribution manuelle éventuelle (voir DossierResponse.
+  # gestionnaireAssigne et PATCH /dossiers/{dossierId}/gestionnaire, qui
+  # prime sur ce portefeuille automatique tant qu'il est renseigné).
+
+  /gestionnaire-clients:
+    get:
+      tags: [Portefeuilles]
+      summary: Lister les affectations de portefeuille (Admin DSIRI)
+      operationId: listGestionnaireClients
+      parameters:
+        - name: gestionnaireLogin
+          in: query
+          schema:
+            type: string
+          description: Filtre sur le Gestionnaire titulaire du portefeuille
+      responses:
+        '200':
+          description: Liste des affectations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GestionnaireClientResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Portefeuilles]
+      summary: Affecter un compte client à un Gestionnaire (Admin DSIRI)
+      operationId: creerGestionnaireClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerGestionnaireClientRequest'
+      responses:
+        '201':
+          description: Affectation créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GestionnaireClientResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Ce compte est déjà affecté à ce Gestionnaire
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: PORTEFEUILLE_DEJA_AFFECTE
+                message: Ce compte est déjà affecté à ce Gestionnaire.
+
+  /gestionnaire-clients/{gestionnaireClientId}:
+    delete:
+      tags: [Portefeuilles]
+      summary: Retirer une affectation de portefeuille (Admin DSIRI)
+      operationId: supprimerGestionnaireClient
+      parameters:
+        - name: gestionnaireClientId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Affectation supprimée
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ============================================================
+# COMPONENTS
+# ============================================================
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT généré par PDOE.Gateway une fois le bind LDAP/AD AFBCI ET la
+        vérification OTP réussis (voir tag Auth) — jamais délivré sur le
+        seul bind LDAP.
+
+  parameters:
+    DossierIdParam:
+      name: dossierId
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Identifiant unique du dossier (INT IDENTITY)
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Profil insuffisant pour cette action
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+
+    # ── Enums ──────────────────────────────────────────────
+    TypeOperation:
+      type: string
+      enum: [IMPORT_BIENS, IMPORT_SERVICES, EXPORT_BIENS, EXPORT_SERVICES, TRANSFERT_CAPITAUX]
+
+    TypeCompte:
+      type: string
+      enum: [COURANT, EPARGNE, DEVISE]
+      description: Type de compte débité à l'initiation du dossier.
+
+    CategorieExport:
+      type: string
+      enum: [REGLEMENTAIRE, OPERATIONNEL]
+
+    TypeExport:
+      type: string
+      enum: [CRPI_DGI, CRPI_TRESOR, SITUATION_BCEAO, DOSSIERS_EN_RETARD, ACTIVITE_MENSUELLE]
+
+    QualiteResidence:
+      type: string
+      enum: [RESIDENT, NON_RESIDENT]
+      description: |
+        Qualité de la résidence du client au sens de la réglementation
+        des changes BCEAO — RESIDENT (personne physique/morale résidente
+        de l'UEMOA) ou NON_RESIDENT.
+
+    StatutDossier:
+      type: string
+      enum:
+        - BROUILLON
+        - INITIE
+        - EN_VALIDATION_GESTIONNAIRE
+        - ANTI_FRACTIONNEMENT_DETECTE
+        - CONFIRME_GESTIONNAIRE
+        - EN_CONTROLE_COMEX
+        - VALIDE_COMEX
+        - EN_AVIS_TRESORERIE
+        - AVIS_TRESORERIE_DONNE
+        - EN_ATTENTE_EXECUTION
+        - EN_EXECUTION_SWIFT
+        - EXECUTE
+        - EN_APUREMENT
+        - APUREMENT_PARTIEL
+        - ALERTE_J14
+        - ALERTE_J8
+        - DEPASSE_BCEAO
+        - APURE
+        - EN_ARCHIVAGE
+        - ARCHIVE
+        - REJETE_DEFINITIF
+
+    NiveauValidation:
+      type: string
+      description: |
+        Code d'étape du circuit — dynamique depuis l'introduction de la
+        modularité workflow (WorkflowEtapes). Les 7 codes historiques
+        (ETAPE_1_INITIATION .. ETAPE_7_ARCHIVAGE) restent valides tant
+        qu'ils ne sont pas retirés par l'Admin DSIRI ; un code
+        personnalisé retourné par GET /workflow-config/etapes est
+        également une valeur légale. Les clients ne doivent PAS coder en
+        dur la liste des valeurs possibles — utiliser
+        GET /workflow-config/etapes comme source de vérité à l'exécution.
+      example: ETAPE_3_COMEX
+
+    ActionWorkflow:
+      type: string
+      enum:
+        - SOUMISSION
+        - VALIDATION
+        - REJET
+        - CORRECTION
+        - BASCULE_SWIFT
+        - DECLARATION_EXECUTION
+        - RECEPTION_JUSTIFICATIF
+        - SIGNALEMENT_FRACTIONNEMENT
+        - LEVEE_ALERTE
+        - REJET_DEFINITIF
+        - ESCALADE
+        - ARCHIVAGE
+
+    TypeDocument:
+      type: string
+      enum:
+        - PIECE_IDENTITE
+        - FACTURE_PROFORMA
+        - CONTRAT
+        - FDI
+        - AUTORISATION_CHANGE
+        - BAE
+        - D3
+        - FACTURE_SOLDEE
+        - JUSTIFICATIF_APUREMENT
+        - ORDRE_TRANSFERT
+        - FORMULAIRE_CHANGE
+        - ATTESTATION_CHANGE
+        - ATTESTATION_BNC
+        - FACTURE_DEFINITIVE
+        - AUTRE
+
+    TypeAlerte:
+      type: string
+      enum:
+        - RELANCE_J14
+        - MISE_EN_DEMEURE_J8
+        - DEPASSEMENT_J0
+        - ESCALADE_DELAI
+        - FRACTIONNEMENT
+
+    CanalNotification:
+      type: string
+      enum: [SMS, EMAIL, SMS_ET_EMAIL]
+
+    StatutNotification:
+      type: string
+      enum: [EN_ATTENTE, ENVOYE, ECHEC, ECHEC_DEFINITIF]
+
+    CategorieAudit:
+      type: string
+      enum: [AUTHENTIFICATION, UTILISATEUR, PARAMETRAGE, WORKFLOW, REPORTING]
+
+    ModeVerificationSignature:
+      type: string
+      enum: [AUTOMATIQUE, VISUEL, LES_DEUX]
+      description: |
+        Mode de vérification signature ABS2000 :
+        - AUTOMATIQUE : contrôle binaire (signature présente ou absente)
+        - VISUEL : image affichée — agent compare et coche case + initiales
+        - LES_DEUX : automatique ET visuelle obligatoires
+
+    ProfilUtilisateur:
+      type: string
+      enum:
+        - AGENT_ACCUEIL
+        - GESTIONNAIRE
+        - AGENT_COMEX
+        - TRESORERIE
+        - DIRECTION
+        - ADMIN_DSIRI
+        - SUPER_ADMIN
+
+    # ── Auth ────────────────────────────────────────────────
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+          description: Identifiant AD (LoginAD)
+          example: gestionnaire.diallo
+        password:
+          type: string
+          format: password
+
+    OtpChallengeResponse:
+      type: object
+      properties:
+        otpToken:
+          type: string
+          description: Jeton opaque identifiant cette vérification OTP — à renvoyer tel quel à /auth/otp/verifier et /auth/otp/renvoyer
+        canal:
+          $ref: '#/components/schemas/CanalNotification'
+        destinataireMasque:
+          type: string
+          description: Destination du code, partiellement masquée
+          example: g***********@afbci.ci
+        expiresInSeconds:
+          type: integer
+          example: 300
+
+    VerifierOtpRequest:
+      type: object
+      required: [otpToken, code]
+      properties:
+        otpToken:
+          type: string
+        code:
+          type: string
+          pattern: ^\d{6}$
+          example: "123456"
+
+    RenvoyerOtpRequest:
+      type: object
+      required: [otpToken]
+      properties:
+        otpToken:
+          type: string
+
+    SessionResponse:
+      type: object
+      properties:
+        login:
+          type: string
+        nomComplet:
+          type: string
+        email:
+          type: string
+        profil:
+          $ref: '#/components/schemas/ProfilUtilisateur'
+        token:
+          type: string
+          description: JWT — à transmettre en Authorization Bearer sur tous les appels suivants
+        expiresAt:
+          type: string
+          format: date-time
+
+    AuthErrorResponse:
+      type: object
+      required: [code, message]
+      description: |
+        Format d'erreur dédié aux endpoints Auth — distinct de ErrorResponse
+        (erreurs métier Dossiers/Workflow/...) puisqu'aucun des deux jeux de
+        codes ne peut survenir sur les endpoints de l'autre.
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_CREDENTIALS
+            - ACCOUNT_LOCKED
+            - PASSWORD_EXPIRED
+            - ACCOUNT_DISABLED
+            - NO_PROFILE_MAPPED
+            - LDAP_UNAVAILABLE
+            - OTP_INVALID
+            - OTP_EXPIRED
+            - OTP_MAX_TENTATIVES
+        message:
+          type: string
+
+    # ── Requêtes ────────────────────────────────────────────
+    CreateDossierRequest:
+      type: object
+      required:
+        - numCompte
+        - nomClient
+        - typeOperation
+        - montant
+        - devise
+        - paysBeneficiaire
+        - motif
+        - matriculeClient
+        - nomBeneficiaire
+        - natureTransaction
+        - typeCompteDebite
+        - signatureValideeABS
+        - dateValidationSignature
+        - modeVerificationApplique
+      properties:
+        numCompte:
+          type: string
+          maxLength: 20
+        nomClient:
+          type: string
+          maxLength: 150
+        typeOperation:
+          $ref: '#/components/schemas/TypeOperation'
+        montant:
+          type: number
+          format: decimal
+          minimum: 0.0001
+        devise:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: XOF
+        paysBeneficiaire:
+          type: string
+          maxLength: 100
+        motif:
+          type: string
+          maxLength: 500
+        matriculeClient:
+          type: string
+          maxLength: 50
+        nomBeneficiaire:
+          type: string
+          maxLength: 150
+        natureTransaction:
+          type: string
+          maxLength: 200
+        referenceDomiciliation:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Référence de domiciliation réglementaire — distincte de referenceInterne (n° interne PDOE) et de referenceSWIFT (attribuée à l'exécution). Renseignée quand connue à l'Initiation.
+        codeStatistiqueOperateur:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: Code statistique / n° d'identification de l'opérateur économique (client), exigé par la checklist de domiciliation BCEAO.
+        nifClient:
+          type: string
+          maxLength: 50
+          nullable: true
+          description: NIF/NCC du client — distinct de matriculeClient (identifiant interne AFB).
+        adressePostaleClient:
+          type: string
+          maxLength: 250
+          nullable: true
+        adresseGeographiqueClient:
+          type: string
+          maxLength: 250
+          nullable: true
+        telephoneClient:
+          type: string
+          maxLength: 30
+          nullable: true
+        codeBanque:
+          type: string
+          maxLength: 10
+          nullable: true
+          description: Code banque (Afriland First Bank CI).
+        qualiteResidence:
+          allOf:
+            - $ref: '#/components/schemas/QualiteResidence'
+          nullable: true
+        dateOuvertureCompte:
+          type: string
+          format: date
+          nullable: true
+        anneeExerciceCompte:
+          type: integer
+          nullable: true
+        typeCompteDebite:
+          $ref: '#/components/schemas/TypeCompte'
+        codeSwiftIndicatif:
+          type: string
+          maxLength: 11
+          nullable: true
+          description: Saisi à titre préliminaire par l'Agent d'accueil, distinct de bicCorrespondant (confirmé par la Trésorerie à l'étape 4).
+        banqueCorrespondanteIndicative:
+          type: string
+          maxLength: 200
+          nullable: true
+        signatureValideeABS:
+          type: boolean
+        dateValidationSignature:
+          type: string
+          format: date-time
+        modeVerificationApplique:
+          $ref: '#/components/schemas/ModeVerificationSignature'
+        signatureVerifieeVisuellement:
+          type: boolean
+          default: false
+        initialesAgent:
+          type: string
+          maxLength: 10
+          nullable: true
+          description: Obligatoire si modeVerificationApplique = VISUEL ou LES_DEUX
+
+    UpdateDossierRequest:
+      type: object
+      description: Mise à jour partielle — seuls les champs présents sont modifiés.
+      properties:
+        typeOperation:
+          allOf:
+            - $ref: '#/components/schemas/TypeOperation'
+          nullable: true
+        montant:
+          type: number
+          format: decimal
+          nullable: true
+        devise:
+          type: string
+          nullable: true
+        paysBeneficiaire:
+          type: string
+          nullable: true
+        motif:
+          type: string
+          nullable: true
+        matriculeClient:
+          type: string
+          nullable: true
+        nomBeneficiaire:
+          type: string
+          nullable: true
+        natureTransaction:
+          type: string
+          nullable: true
+        referenceDomiciliation:
+          type: string
+          nullable: true
+        codeStatistiqueOperateur:
+          type: string
+          nullable: true
+        nifClient:
+          type: string
+          nullable: true
+        adressePostaleClient:
+          type: string
+          nullable: true
+        adresseGeographiqueClient:
+          type: string
+          nullable: true
+        telephoneClient:
+          type: string
+          nullable: true
+        codeBanque:
+          type: string
+          nullable: true
+        qualiteResidence:
+          allOf:
+            - $ref: '#/components/schemas/QualiteResidence'
+          nullable: true
+        dateOuvertureCompte:
+          type: string
+          format: date
+          nullable: true
+        anneeExerciceCompte:
+          type: integer
+          nullable: true
+        typeCompteDebite:
+          allOf:
+            - $ref: '#/components/schemas/TypeCompte'
+          nullable: true
+        codeSwiftIndicatif:
+          type: string
+          nullable: true
+        banqueCorrespondanteIndicative:
+          type: string
+          nullable: true
+        dateConfirmationClient:
+          type: string
+          format: date-time
+          nullable: true
+        soldeCompteVerifie:
+          type: boolean
+          nullable: true
+
+    NotifierClientRequest:
+      type: object
+      required: [canal, message]
+      properties:
+        canal:
+          $ref: '#/components/schemas/CanalNotification'
+        message:
+          type: string
+
+    NotifierClientResponse:
+      type: object
+      properties:
+        succes:
+          type: boolean
+        destinataire:
+          type: string
+
+    ReassignerGestionnaireRequest:
+      type: object
+      required: [gestionnaireLogin]
+      properties:
+        gestionnaireLogin:
+          type: string
+          description: LoginAD du nouveau Gestionnaire assigné (doit correspondre à un compte actif de profil GESTIONNAIRE dans Utilisateurs)
+
+    TresorerieUpdateRequest:
+      type: object
+      properties:
+        tauxChange:
+          type: number
+          format: decimal
+          nullable: true
+        deviseCotation:
+          type: string
+          maxLength: 3
+          nullable: true
+        correspondantDesigne:
+          type: string
+          maxLength: 200
+          nullable: true
+        bicCorrespondant:
+          type: string
+          maxLength: 11
+          nullable: true
+        dateDebit:
+          type: string
+          format: date
+          nullable: true
+        couverture:
+          type: string
+          maxLength: 200
+          nullable: true
+        disponibiliteFonds:
+          type: boolean
+          nullable: true
+
+    ValiderEtapeRequest:
+      type: object
+      required: [niveauValidation]
+      properties:
+        niveauValidation:
+          $ref: '#/components/schemas/NiveauValidation'
+        dateConfirmationClient:
+          type: string
+          format: date-time
+          nullable: true
+          description: Obligatoire à l'étape 2
+        soldeCompteVerifie:
+          type: boolean
+          description: Obligatoire à l'étape 2
+        conformiteBCEAO:
+          type: boolean
+          description: Obligatoire à l'étape 3
+        lcbftConforme:
+          type: boolean
+          description: Obligatoire à l'étape 3
+
+    RejeterEtapeRequest:
+      type: object
+      required: [niveauValidation, motifRejet, responsableCorrection]
+      properties:
+        niveauValidation:
+          $ref: '#/components/schemas/NiveauValidation'
+        motifRejet:
+          type: string
+          maxLength: 1000
+        responsableCorrection:
+          type: string
+          description: |
+            Code de l'étape (WorkflowEtapes.Code — historique ou
+            personnalisée) vers laquelle renvoyer le dossier pour
+            correction — doit être une étape ACTIVE déjà franchie (index ≤
+            étape courante dans l'ordre configuré), jamais en avance.
+            String plutôt que NiveauValidation : une étape personnalisée
+            ajoutée par l'Admin DSIRI n'appartient pas aux 7 valeurs
+            historiques. Le dossier repasse dans la file d'attente de
+            cette étape ; seul le titulaire du portefeuille (Gestionnaire)
+            ou le profil de cette étape est notifié.
+
+    DeclarerExecutionRequest:
+      type: object
+      required: [referenceABS, referenceSWIFT, dateExecution, montantExecute]
+      properties:
+        referenceABS:
+          type: string
+          maxLength: 50
+        referenceSWIFT:
+          type: string
+          maxLength: 50
+        numeroAC:
+          type: string
+          maxLength: 30
+          description: "N° d'Attestation/Autorisation de Change — facultatif, saisi par l'Agent COMEX à la déclaration d'exécution."
+        codeTRF:
+          type: string
+          maxLength: 30
+          description: "Code TRF (formulaire de change) — facultatif, saisi par l'Agent COMEX à la déclaration d'exécution."
+        dateExecution:
+          type: string
+          format: date-time
+        montantExecute:
+          type: number
+          format: decimal
+          minimum: 0.0001
+
+    ChecklistRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [libelle, valide]
+            properties:
+              libelle:
+                type: string
+              valide:
+                type: boolean
+        tousValides:
+          type: boolean
+
+    DepassementRequest:
+      type: object
+      required: [dateDeclaration, montantNonApure]
+      properties:
+        dateDeclaration:
+          type: string
+          format: date-time
+        montantNonApure:
+          type: number
+          format: decimal
+
+    CreatePaiementRequest:
+      type: object
+      required: [montantPaiement, devise, datePaiement, referencePaiement]
+      properties:
+        montantPaiement:
+          type: number
+          format: decimal
+          minimum: 0.0001
+        devise:
+          type: string
+          maxLength: 3
+        datePaiement:
+          type: string
+          format: date
+        referencePaiement:
+          type: string
+          maxLength: 100
+
+    UploadDocumentRequest:
+      type: object
+      required: [fichier, typeDocument]
+      properties:
+        fichier:
+          type: string
+          format: binary
+        typeDocument:
+          $ref: '#/components/schemas/TypeDocument'
+        referenceDocument:
+          type: string
+          maxLength: 100
+          nullable: true
+          description: "N° de référence du document lui-même (ex : n° de facture, n° d'AC, n° de formulaire de change) — distinct du nom système du fichier uploadé. Pertinent surtout pour FACTURE_PROFORMA/FACTURE_DEFINITIVE/AUTORISATION_CHANGE/FORMULAIRE_CHANGE."
+        estObligatoire:
+          type: boolean
+          default: false
+        paiementId:
+          type: integer
+          nullable: true
+
+    ValidationVisuelleRequest:
+      type: object
+      required: [initialesAgent]
+      properties:
+        initialesAgent:
+          type: string
+          minLength: 1
+          maxLength: 10
+          description: Initiales de l'agent ayant effectué la vérification visuelle
+
+    # ── Réponses ────────────────────────────────────────────
+    DossierResponse:
+      type: object
+      properties:
+        dossierId:
+          type: integer
+        referenceInterne:
+          type: string
+          description: N° interne attribué à la création — distinct de referenceSWIFT, la vraie référence COMEX du processus physique, attribuée à la déclaration d'exécution.
+          example: PDOE-202506-0042
+        numCompte:
+          type: string
+        nomClient:
+          type: string
+        typeOperation:
+          $ref: '#/components/schemas/TypeOperation'
+        montant:
+          type: number
+        devise:
+          type: string
+        paysBeneficiaire:
+          type: string
+        motif:
+          type: string
+        matriculeClient:
+          type: string
+        nomBeneficiaire:
+          type: string
+        natureTransaction:
+          type: string
+        referenceDomiciliation:
+          type: string
+          nullable: true
+        codeStatistiqueOperateur:
+          type: string
+          nullable: true
+        nifClient:
+          type: string
+          nullable: true
+        adressePostaleClient:
+          type: string
+          nullable: true
+        adresseGeographiqueClient:
+          type: string
+          nullable: true
+        codeBanque:
+          type: string
+          nullable: true
+          description: Code banque (Afriland First Bank CI).
+        qualiteResidence:
+          allOf:
+            - $ref: '#/components/schemas/QualiteResidence'
+          nullable: true
+        dateOuvertureCompte:
+          type: string
+          format: date
+          nullable: true
+        anneeExerciceCompte:
+          type: integer
+          nullable: true
+        typeCompteDebite:
+          $ref: '#/components/schemas/TypeCompte'
+        codeSwiftIndicatif:
+          type: string
+          nullable: true
+        banqueCorrespondanteIndicative:
+          type: string
+          nullable: true
+        statutElectronique:
+          $ref: '#/components/schemas/StatutDossier'
+        etapeGenerique:
+          allOf:
+            - $ref: '#/components/schemas/EtapeGeneriqueInfo'
+          nullable: true
+        gestionnaireAssigne:
+          type: string
+          description: |
+            LoginAD du Gestionnaire responsable de ce dossier — hérité du
+            portefeuille client à la création, réattribuable par l'Admin
+            DSIRI tant que le dossier n'a pas dépassé l'étape Gestionnaire
+            (voir PATCH /dossiers/{dossierId}/gestionnaire).
+        modeVerificationApplique:
+          $ref: '#/components/schemas/ModeVerificationSignature'
+        signatureVerifieeVisuellement:
+          type: boolean
+        initialesAgent:
+          type: string
+          nullable: true
+
+        # Validation gestionnaire (étape 2)
+        dateConfirmationClient:
+          type: string
+          format: date-time
+          nullable: true
+        soldeCompteVerifie:
+          type: boolean
+
+        # Coordonnées client — pour notifier-client (SMS/Email), pas
+        # renseignées à la création (v1 : pas encore de lookup CBS pour
+        # ces champs) — nullable tant qu'aucune source ne les alimente.
+        emailClient:
+          type: string
+          nullable: true
+        telephoneClient:
+          type: string
+          nullable: true
+
+        # Paramètres Trésorerie (étape 4)
+        tauxChange:
+          type: number
+          nullable: true
+        deviseCotation:
+          type: string
+          nullable: true
+        correspondantDesigne:
+          type: string
+          nullable: true
+        bicCorrespondant:
+          type: string
+          nullable: true
+        dateDebit:
+          type: string
+          format: date
+          nullable: true
+        couverture:
+          type: string
+          nullable: true
+        disponibiliteFonds:
+          type: boolean
+
+        # Exécution SWIFT (étape 5)
+        referenceABS:
+          type: string
+          nullable: true
+        referenceSWIFT:
+          type: string
+          nullable: true
+        numeroAC:
+          type: string
+          nullable: true
+        codeTRF:
+          type: string
+          nullable: true
+        dateExecution:
+          type: string
+          format: date-time
+          nullable: true
+        montantExecute:
+          type: number
+          nullable: true
+
+        # Apurement (étape 6)
+        dateEcheanceApurement:
+          type: string
+          format: date
+          nullable: true
+        soldeRestantApurement:
+          type: number
+          nullable: true
+        apurementComplet:
+          type: boolean
+
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+
+        dateDerniereAction:
+          type: string
+          format: date-time
+          description: |
+            Date de la dernière transition workflow enregistrée pour ce
+            dossier (EtapesWorkflow.DateAction le plus récent — cf.
+            VW_DossiersCours.DateDerniereAction). Point de départ du
+            calcul de délai de traitement de l'étape courante (cf.
+            ParametrageMetier.DELAI_*_HEURES) ; retombe sur updatedAt
+            tant qu'aucune transition n'a encore eu lieu (BROUILLON).
+
+    DossierDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/DossierResponse'
+        - type: object
+          properties:
+            documents:
+              type: array
+              items:
+                $ref: '#/components/schemas/DocumentResponse'
+            etapesWorkflow:
+              type: array
+              items:
+                $ref: '#/components/schemas/EtapeWorkflowResponse'
+            paiementsPartiels:
+              type: array
+              items:
+                $ref: '#/components/schemas/PaiementResponse'
+            alertes:
+              type: array
+              items:
+                $ref: '#/components/schemas/AlerteApurementResponse'
+
+    DossierListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DossierResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    EtapeWorkflowResponse:
+      type: object
+      properties:
+        etapeId:
+          type: integer
+        niveauValidation:
+          $ref: '#/components/schemas/NiveauValidation'
+        statutAvant:
+          $ref: '#/components/schemas/StatutDossier'
+        statutApres:
+          $ref: '#/components/schemas/StatutDossier'
+        action:
+          $ref: '#/components/schemas/ActionWorkflow'
+        motifRejet:
+          type: string
+          nullable: true
+        responsableCorrection:
+          type: string
+          nullable: true
+        agentLogin:
+          type: string
+        dateAction:
+          type: string
+          format: date-time
+
+    WorkflowTransitionResponse:
+      type: object
+      properties:
+        dossierId:
+          type: integer
+        referenceInterne:
+          type: string
+        statutAvant:
+          $ref: '#/components/schemas/StatutDossier'
+        statutApres:
+          $ref: '#/components/schemas/StatutDossier'
+        action:
+          $ref: '#/components/schemas/ActionWorkflow'
+        dateAction:
+          type: string
+          format: date-time
+
+    DocumentResponse:
+      type: object
+      properties:
+        documentId:
+          type: integer
+        typeDocument:
+          $ref: '#/components/schemas/TypeDocument'
+        referenceDocument:
+          type: string
+          nullable: true
+        nomFichier:
+          type: string
+        hashSHA256:
+          type: string
+          minLength: 64
+          maxLength: 64
+        tailleFichier:
+          type: integer
+          format: int64
+        estObligatoire:
+          type: boolean
+        estValide:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+
+    PaiementResponse:
+      type: object
+      properties:
+        paiementId:
+          type: integer
+        montantPaiement:
+          type: number
+        devise:
+          type: string
+        datePaiement:
+          type: string
+          format: date
+        referencePaiement:
+          type: string
+        soldeRestant:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+
+    PaiementListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaiementResponse'
+        montantInitial:
+          type: number
+        totalPaye:
+          type: number
+        soldeRestant:
+          type: number
+        nbPaiements:
+          type: integer
+
+    AlerteApurementResponse:
+      type: object
+      properties:
+        alerteId:
+          type: integer
+        typeAlerte:
+          $ref: '#/components/schemas/TypeAlerte'
+        jRestants:
+          type: integer
+        dateAlerte:
+          type: string
+          format: date-time
+        envoye:
+          type: boolean
+        dateEnvoi:
+          type: string
+          format: date-time
+          nullable: true
+
+    NotificationResponse:
+      type: object
+      properties:
+        notificationId:
+          type: integer
+        dossierId:
+          type: integer
+          nullable: true
+        typeEvenement:
+          type: string
+        canal:
+          $ref: '#/components/schemas/CanalNotification'
+        destinataire:
+          type: string
+        statut:
+          $ref: '#/components/schemas/StatutNotification'
+        codeErreur:
+          type: string
+          nullable: true
+        nbTentatives:
+          type: integer
+        dateEnvoi:
+          type: string
+          format: date-time
+          nullable: true
+
+    NotificationTemplate:
+      type: object
+      properties:
+        typeEvenement:
+          type: string
+          example: DOSSIER_SOUMIS
+        libelle:
+          type: string
+          example: Nouveau dossier reçu
+          description: Alimente la cloche/le panneau de notifications des dashboards.
+        message:
+          type: string
+          description: Corps SMS/Email envoyé via la Gateway Notifications.
+        canalDefaut:
+          $ref: '#/components/schemas/CanalNotification'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+
+    NotificationTemplateUpdateRequest:
+      type: object
+      description: Toutes les propriétés sont optionnelles — seuls les champs fournis sont modifiés.
+      properties:
+        libelle:
+          type: string
+          maxLength: 150
+        message:
+          type: string
+          maxLength: 1000
+        canalDefaut:
+          allOf:
+            - $ref: '#/components/schemas/CanalNotification'
+          nullable: true
+
+    JournalAuditEntry:
+      type: object
+      properties:
+        journalAuditId:
+          type: integer
+        categorie:
+          $ref: '#/components/schemas/CategorieAudit'
+        typeAction:
+          type: string
+        description:
+          type: string
+        entiteType:
+          type: string
+          nullable: true
+        entiteId:
+          type: string
+          nullable: true
+        succes:
+          type: boolean
+        dateAction:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+
+    ParametreMetierResponse:
+      type: object
+      properties:
+        parametreId:
+          type: integer
+        cle:
+          type: string
+        valeur:
+          type: string
+        unite:
+          type: string
+        description:
+          type: string
+        modifiableUI:
+          type: boolean
+        valeurMin:
+          type: string
+          nullable: true
+        valeurMax:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+
+    UpdateParametreRequest:
+      type: object
+      required: [valeur]
+      properties:
+        valeur:
+          type: string
+          description: Nouvelle valeur — validée entre valeurMin et valeurMax
+
+    # ── Workflow-config — étapes du circuit configurables ────
+    TypeEtapeWorkflow:
+      type: string
+      enum: [GESTIONNAIRE, COMEX, TRESORERIE, EXECUTION, APUREMENT, GENERIQUE]
+      description: |
+        Détermine l'écran cible : les 5 premières valeurs routent vers
+        leur tableau de bord spécialisé existant ; GENERIQUE route vers
+        l'écran de secours générique (sousEtat EN_ATTENTE/VALIDE/REJETE),
+        utilisé par toute étape ajoutée sans dashboard dédié.
+
+    SousEtat:
+      type: string
+      enum: [EN_ATTENTE, VALIDE, REJETE]
+      description: Sous-état d'un dossier positionné sur une étape GENERIQUE — remplace StatutDossier pour ces étapes-là uniquement.
+
+    EtapeGeneriqueInfo:
+      type: object
+      description: Renseigné uniquement quand le dossier est positionné sur une étape GENERIQUE — sinon absent/null.
+      properties:
+        etapeCode:
+          type: string
+        sousEtat:
+          $ref: '#/components/schemas/SousEtat'
+
+    EtapeWorkflowConfig:
+      type: object
+      properties:
+        etapeConfigId:
+          type: integer
+        code:
+          type: string
+          example: ETAPE_3_COMEX
+        libelle:
+          type: string
+          example: Contrôle COMEX
+        ordre:
+          type: integer
+          minimum: 1
+        actif:
+          type: boolean
+        typeEtape:
+          $ref: '#/components/schemas/TypeEtapeWorkflow'
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+
+    EtapeWorkflowConfigCreateRequest:
+      type: object
+      required: [code, libelle, ordre]
+      description: |
+        typeEtape est optionnel et vaut GENERIQUE par défaut — créer une
+        étape avec un typeEtape spécialisé (ex COMEX) sans qu'un
+        dashboard existant ne soit prévu pour la router n'a de sens que
+        pour les 7 étapes historiques (déjà en base via le seed) ; toute
+        étape ajoutée après coup par un Admin doit rester GENERIQUE.
+      properties:
+        code:
+          type: string
+          maxLength: 30
+          pattern: '^[A-Z0-9_]+$'
+          example: ETAPE_8_CONFORMITE
+        libelle:
+          type: string
+          maxLength: 100
+        ordre:
+          type: integer
+          minimum: 1
+          description: |
+            Position d'insertion — les étapes existantes à cette
+            position et au-delà sont décalées de +1.
+        typeEtape:
+          allOf:
+            - $ref: '#/components/schemas/TypeEtapeWorkflow'
+          nullable: true
+        description:
+          type: string
+          maxLength: 500
+
+    EtapeWorkflowConfigUpdateRequest:
+      type: object
+      description: |
+        Toutes les propriétés sont optionnelles — seuls les champs
+        fournis sont modifiés. ordre n'est PAS modifiable ici (voir
+        PATCH /workflow-config/etapes/reordonner).
+      properties:
+        libelle:
+          type: string
+          maxLength: 100
+        actif:
+          type: boolean
+          nullable: true
+          description: |
+            Désactiver une étape (actif=false) n'affecte que les
+            NOUVELLES entrées dans le circuit ; un dossier déjà
+            positionné sur cette étape au moment de la désactivation
+            continue son traitement normalement jusqu'à sa sortie.
+        description:
+          type: string
+          maxLength: 500
+
+    ReordonnerEtapesRequest:
+      type: object
+      required: [ordre]
+      properties:
+        ordre:
+          type: array
+          description: |
+            Liste COMPLÈTE des codes d'étape (actives et inactives),
+            dans le nouvel ordre souhaité — la position dans le tableau
+            (1-based) devient la nouvelle valeur ordre. Doit contenir
+            exactement les mêmes codes que GET /workflow-config/etapes,
+            sans doublon ni omission (422 sinon).
+          items:
+            type: string
+          example: [ETAPE_1_INITIATION, ETAPE_2_GESTIONNAIRE, ETAPE_4_TRESORERIE, ETAPE_3_COMEX, ETAPE_5_EXECUTION, ETAPE_6_APUREMENT, ETAPE_7_ARCHIVAGE]
+
+    # ── ChecklistConfig — items de la checklist d'apurement ──
+    ReordonnerChecklistItemsRequest:
+      type: object
+      required: [ordre]
+      properties:
+        ordre:
+          type: array
+          description: |
+            Liste COMPLÈTE des checklistItemId, dans le nouvel ordre
+            souhaité — doit contenir exactement les mêmes ids que
+            GET /checklist-config/items, sans doublon ni omission
+            (422 sinon).
+          items:
+            type: integer
+          example: [3, 1, 2]
+
+    ChecklistItemConfig:
+      type: object
+      properties:
+        checklistItemId:
+          type: integer
+        libelle:
+          type: string
+          example: Justificatif douanier (D3/BAE) reçu et vérifié
+        ordre:
+          type: integer
+          minimum: 1
+        actif:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+
+    ChecklistItemConfigCreateRequest:
+      type: object
+      required: [libelle]
+      properties:
+        libelle:
+          type: string
+          maxLength: 300
+
+    ChecklistItemConfigUpdateRequest:
+      type: object
+      description: |
+        Toutes les propriétés sont optionnelles — seuls les champs
+        fournis sont modifiés. ordre n'est PAS modifiable ici (voir
+        PATCH /checklist-config/items/reordonner).
+      properties:
+        libelle:
+          type: string
+          maxLength: 300
+        actif:
+          type: boolean
+          nullable: true
+
+    UtilisateurResponse:
+      type: object
+      properties:
+        utilisateurId:
+          type: integer
+        loginAD:
+          type: string
+        nom:
+          type: string
+        prenom:
+          type: string
+        email:
+          type: string
+        profil:
+          $ref: '#/components/schemas/ProfilUtilisateur'
+        estActif:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: string
+
+    CreerUtilisateurRequest:
+      type: object
+      required: [loginAD, nom, prenom, email, profil]
+      properties:
+        loginAD:
+          type: string
+          example: gestionnaire.yao
+        nom:
+          type: string
+        prenom:
+          type: string
+        email:
+          type: string
+        profil:
+          $ref: '#/components/schemas/ProfilUtilisateur'
+
+    ModifierUtilisateurRequest:
+      type: object
+      description: Toutes les propriétés sont optionnelles — seuls les champs fournis sont modifiés.
+      properties:
+        nom:
+          type: string
+        prenom:
+          type: string
+        email:
+          type: string
+        profil:
+          $ref: '#/components/schemas/ProfilUtilisateur'
+        estActif:
+          type: boolean
+
+    GestionnaireClientResponse:
+      type: object
+      properties:
+        gestionnaireClientId:
+          type: integer
+        gestionnaireLogin:
+          type: string
+        numCompte:
+          type: string
+        dateAffectation:
+          type: string
+          format: date-time
+
+    CreerGestionnaireClientRequest:
+      type: object
+      required: [gestionnaireLogin, numCompte]
+      properties:
+        gestionnaireLogin:
+          type: string
+          description: LoginAD d'un compte actif de profil GESTIONNAIRE dans Utilisateurs
+        numCompte:
+          type: string
+          maxLength: 20
+
+    SignatureVerificationResult:
+      type: object
+      properties:
+        trouve:
+          type: boolean
+        signatureExistante:
+          type: boolean
+        nomClient:
+          type: string
+        typeCompte:
+          type: string
+          nullable: true
+        dateSignature:
+          type: string
+          format: date
+          nullable: true
+        imageSignature:
+          type: string
+          format: byte
+          nullable: true
+          description: Base64 de l'image de signature — présent uniquement en mode VISUEL ou LES_DEUX
+        modeVerification:
+          $ref: '#/components/schemas/ModeVerificationSignature'
+        # Informations client complémentaires — retournées par ABS2000 au
+        # même moment que la vérification de signature (cf. section
+        # "Compte client" de CreateDossierRequest), pour pré-remplir le
+        # formulaire au lieu d'une ressaisie manuelle. codeBanque est
+        # délibérément absent : c'est le code propre à Afriland First
+        # Bank CI, pas une donnée client retournée par ABS2000.
+        nifClient:
+          type: string
+          nullable: true
+          description: NCC (numéro de compte contribuable) du client.
+        adressePostaleClient:
+          type: string
+          nullable: true
+        adresseGeographiqueClient:
+          type: string
+          nullable: true
+        telephoneClient:
+          type: string
+          nullable: true
+        qualiteResidence:
+          allOf:
+            - $ref: '#/components/schemas/QualiteResidence'
+          nullable: true
+        dateOuvertureCompte:
+          type: string
+          format: date
+          nullable: true
+        anneeExerciceCompte:
+          type: integer
+          nullable: true
+
+    SoldeClientResult:
+      type: object
+      properties:
+        numCompte:
+          type: string
+        soldeDisponible:
+          type: number
+        devise:
+          type: string
+        suffisant:
+          type: boolean
+        dateConsultation:
+          type: string
+          format: date-time
+
+    TauxChangeResult:
+      type: object
+      properties:
+        devise:
+          type: string
+        taux:
+          type: number
+        deviseCotation:
+          type: string
+        dateCotation:
+          type: string
+          format: date-time
+
+    ExecutionDeclarationResponse:
+      type: object
+      properties:
+        dossierId:
+          type: integer
+        referenceInterne:
+          type: string
+        statutElectronique:
+          $ref: '#/components/schemas/StatutDossier'
+        referenceABS:
+          type: string
+        referenceSWIFT:
+          type: string
+        numeroAC:
+          type: string
+          nullable: true
+        codeTRF:
+          type: string
+          nullable: true
+        dateExecution:
+          type: string
+          format: date-time
+        dateEcheanceApurement:
+          type: string
+          format: date
+        alertesJ14:
+          type: string
+          format: date
+        alertesJ8:
+          type: string
+          format: date
+
+    ExecutionDetailResponse:
+      type: object
+      properties:
+        dossierId:
+          type: integer
+        referenceInterne:
+          type: string
+        montant:
+          type: number
+        devise:
+          type: string
+        tauxChange:
+          type: number
+          nullable: true
+        correspondantDesigne:
+          type: string
+          nullable: true
+        bicCorrespondant:
+          type: string
+          nullable: true
+        dateDebit:
+          type: string
+          format: date
+          nullable: true
+        referenceABS:
+          type: string
+          nullable: true
+        referenceSWIFT:
+          type: string
+          nullable: true
+        numeroAC:
+          type: string
+          nullable: true
+        codeTRF:
+          type: string
+          nullable: true
+        dateExecution:
+          type: string
+          format: date-time
+          nullable: true
+        statutElectronique:
+          $ref: '#/components/schemas/StatutDossier'
+
+    ControleReglementaireResult:
+      type: object
+      properties:
+        conforme:
+          type: boolean
+        plafondRespecte:
+          type: boolean
+        codeRetour:
+          type: string
+          nullable: true
+        observations:
+          type: string
+          nullable: true
+
+    DashboardResponse:
+      type: object
+      properties:
+        totalDossiers:
+          type: integer
+        parStatut:
+          type: object
+          additionalProperties:
+            type: integer
+        dossiersEnRetard:
+          type: integer
+        dossiersApurementProche:
+          type: integer
+        tauxApurement:
+          type: number
+          format: double
+        alertesNonTraitees:
+          type: integer
+
+    DossierRetardResponse:
+      type: object
+      properties:
+        dossierId:
+          type: integer
+        referenceInterne:
+          type: string
+        nomClient:
+          type: string
+        statutElectronique:
+          $ref: '#/components/schemas/StatutDossier'
+        derniereEtape:
+          $ref: '#/components/schemas/NiveauValidation'
+        dernierAgent:
+          type: string
+        heuresDepuisDerniereAction:
+          type: integer
+        seuilDepasse:
+          type: integer
+          description: Seuil d'alerte atteint (50, 90 ou 100)
+        etapesTraverseesCodes:
+          type: array
+          description: |
+            Codes d'étape (NiveauValidation) réellement présents dans
+            l'historique de ce dossier — permet à un client d'afficher
+            fidèlement les étapes sautées (désactivées au moment du
+            passage du dossier) sans requête supplémentaire par ligne.
+          items:
+            type: string
+
+    ExportReglementaireRequest:
+      type: object
+      required: [dateDebut, dateFin]
+      properties:
+        dateDebut:
+          type: string
+          format: date
+        dateFin:
+          type: string
+          format: date
+
+    ExportReglementaireResponse:
+      type: object
+      properties:
+        exportReglementaireId:
+          type: integer
+        categorie:
+          $ref: '#/components/schemas/CategorieExport'
+        typeExport:
+          $ref: '#/components/schemas/TypeExport'
+        dateDebut:
+          type: string
+          format: date
+        dateFin:
+          type: string
+          format: date
+        nomFichier:
+          type: string
+        hashSHA256:
+          type: string
+        tailleFichier:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+
+    ExportReglementaireListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportReglementaireResponse'
+        total:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Code erreur métier
+          example: SIGNATURE_INVALIDE
+          enum:
+            - COMPTE_INTROUVABLE
+            - SIGNATURE_INVALIDE
+            - DOUBLE_PAIEMENT_DETECTE
+            - REFERENCE_PAIEMENT_DUPLIQUEE
+            - MOTIF_REJET_MANQUANT
+            - RESPONSABLE_CORRECTION_MANQUANT
+            - DATE_CONFIRMATION_CLIENT_MANQUANTE
+            - SOLDE_INSUFFISANT
+            - FRACTIONNEMENT_DETECTE
+            - PARAMETRAGE_NON_MODIFIABLE
+            - VALEUR_HORS_PLAGE
+            - PROFIL_INSUFFISANT
+            - DOSSIER_INTROUVABLE
+            - STATUT_INVALIDE_POUR_ACTION
+            - INITIALES_AGENT_MANQUANTES
+            - ETAPE_GESTIONNAIRE_DEPASSEE
+            - GESTIONNAIRE_LOGIN_MANQUANT
+            - LOGIN_AD_DEJA_UTILISE
+            - CHAMPS_UTILISATEUR_MANQUANTS
+            - UTILISATEUR_INTROUVABLE
+            - AUTO_RETRAIT_DROITS_ADMIN_INTERDIT
+            - PORTEFEUILLE_DEJA_AFFECTE
+            - ETAPE_CODE_DEJA_UTILISE
+            - ETAPE_CONFIG_INTROUVABLE
+            - ETAPE_DESACTIVATION_REFUSEE
+            - ETAPE_ORDRE_INVALIDE
+            - MODELE_NOTIFICATION_INTROUVABLE
+            - CHECKLIST_ITEM_LIBELLE_MANQUANT
+            - CHECKLIST_ITEM_INTROUVABLE
+            - CHECKLIST_ORDRE_INVALIDE
+            - PARAMETRE_INTROUVABLE
+            - FDI_MANQUANTE
+            - EXPORT_INTROUVABLE
+        message:
+          type: string
+          description: Message lisible par l'humain
+        details:
+          type: object
+          nullable: true
+          description: Informations supplémentaires (champs invalides, etc.)

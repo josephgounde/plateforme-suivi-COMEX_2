@@ -1,0 +1,19 @@
+{
+  "runtime": "Net100",
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "",
+      "url": "OpenApi/PDOE_openapi.yaml"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "generateDtoTypes": true,
+      "generateClientClasses": false,
+      "generateClientInterfaces": false,
+      "jsonLibrary": "SystemTextJson",
+      "namespace": "PDOE.Api.Contracts",
+      "output": "Generated/PdoeContracts.cs"
+    }
+  }
+}

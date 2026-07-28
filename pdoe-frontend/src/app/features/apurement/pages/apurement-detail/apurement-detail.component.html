@@ -1,0 +1,210 @@
+<div class="page" *ngIf="!chargement && dossier">
+
+  <a routerLink="/dashboard" class="back-link">← Retour</a>
+
+  <header class="apurement-header">
+    <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+    <h1>{{ dossier.nomClient }}</h1>
+  </header>
+
+  <!-- ═══ Échéance et solde ═══ -->
+  <section class="apurement-block apurement-summary" [class.apurement-summary--depasse]="estEnDepassement">
+    <div class="summary-item">
+      <span class="summary-label">Montant initial</span>
+      <span class="summary-value">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Solde restant</span>
+      <span class="summary-value">{{ soldeRestant | number }} {{ dossier.devise }}</span>
+    </div>
+    <div class="summary-item" *ngIf="dossier.dateEcheanceApurement">
+      <span class="summary-label">Échéance</span>
+      <span class="summary-value">{{ dossier.dateEcheanceApurement | date: 'dd/MM/yyyy' }}</span>
+    </div>
+  </section>
+
+  <div class="depassement-banniere" *ngIf="estEnDepassement">
+    <p>Ce dossier a dépassé son échéance réglementaire avec un solde restant non apuré.</p>
+    <button
+      type="button"
+      class="btn-danger"
+      [disabled]="depassementEnCours"
+      (click)="declarerDepassement()"
+    >
+      {{ depassementEnCours ? 'Déclaration…' : 'Déclarer le dépassement (J=0)' }}
+    </button>
+    <p class="erreur-msg" *ngIf="depassementErreur">Échec de la déclaration — réessayez.</p>
+  </div>
+
+  <!-- ═══ Paiements partiels ═══ -->
+  <section class="apurement-block">
+    <div class="block-header">
+      <h2>Paiements partiels</h2>
+      <button
+        type="button"
+        class="btn-add"
+        *ngIf="!afficherFormulairePaiement"
+        (click)="afficherFormulairePaiement = true"
+      >
+        + Ajouter
+      </button>
+    </div>
+
+    <div class="empty-state" *ngIf="paiements.length === 0 && !afficherFormulairePaiement">
+      Aucun paiement enregistré.
+    </div>
+
+    <ul class="paiement-list" *ngIf="paiements.length > 0">
+      <li class="paiement-row" *ngFor="let p of paiements">
+        <span>{{ p.datePaiement | date: 'dd/MM/yyyy' }}</span>
+        <span class="paiement-montant">{{ p.montantPaiement | number }} {{ p.devise }}</span>
+        <span class="paiement-ref">{{ p.referencePaiement }}</span>
+      </li>
+    </ul>
+
+    <form
+      class="paiement-form"
+      *ngIf="afficherFormulairePaiement"
+      [formGroup]="formulairePaiement"
+      (ngSubmit)="ajouterPaiement()"
+    >
+      <div class="form-row">
+        <div class="form-field">
+          <label for="montantPaiement">Montant</label>
+          <input id="montantPaiement" type="number" formControlName="montantPaiement" min="0.01" step="0.01" placeholder="Ex : 2500000 (minimum 0.01)" />
+        </div>
+        <div class="form-field">
+          <label for="devisePaiement">Devise</label>
+          <input id="devisePaiement" type="text" formControlName="devise" maxlength="3" placeholder="Ex : XOF (code ISO, 3 lettres)" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="datePaiement">Date</label>
+          <input id="datePaiement" type="date" formControlName="datePaiement" title="Date du paiement" />
+        </div>
+        <div class="form-field">
+          <label for="referencePaiement">Référence</label>
+          <input id="referencePaiement" type="text" formControlName="referencePaiement" placeholder="Ex : VIR-2026-04581" />
+        </div>
+      </div>
+
+      <p class="erreur-msg" *ngIf="paiementErreur">Échec de l'enregistrement — réessayez.</p>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="afficherFormulairePaiement = false">
+          Annuler
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="formulairePaiement.invalid || paiementEnCours">
+          {{ paiementEnCours ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ═══ Documents ═══ -->
+  <section class="apurement-block">
+    <h2>Documents</h2>
+
+    <div class="empty-state" *ngIf="dossier.documents.length === 0">
+      Aucun document joint.
+    </div>
+
+    <ul class="document-list" *ngIf="dossier.documents.length > 0">
+      <li class="document-row" *ngFor="let d of dossier.documents">
+        <span class="document-nom">{{ d.nomFichier }}</span>
+        <span class="document-type">{{ typeDocumentLabels[d.typeDocument] }}</span>
+      </li>
+    </ul>
+
+    <button
+      type="button"
+      class="btn-toggle-upload"
+      (click)="afficherFormulaireDocument = !afficherFormulaireDocument"
+    >
+      {{ afficherFormulaireDocument ? '▾' : '▸' }} Joindre un justificatif
+    </button>
+
+    <div class="upload-panel" *ngIf="afficherFormulaireDocument">
+      <app-dropdown-select
+        class="upload-type-select"
+        [options]="typeDocumentOptions"
+        [(ngModel)]="documentType"
+        [ngModelOptions]="{ standalone: true }"
+      />
+
+      <input
+        type="text"
+        class="upload-reference-input"
+        [placeholder]="referenceDocumentPlaceholderActuel"
+        [(ngModel)]="referenceDocumentSaisie"
+        [ngModelOptions]="{ standalone: true }"
+      />
+
+      <input type="file" class="upload-file-input" (change)="selectionnerDocument($event)" />
+
+      <button
+        type="button"
+        class="btn-upload"
+        [disabled]="!documentSelectionne || documentEnCours"
+        (click)="envoyerDocument()"
+      >
+        {{ documentEnCours ? 'Envoi…' : 'Envoyer' }}
+      </button>
+
+      <span class="upload-erreur" *ngIf="documentErreur">Échec de l'envoi — réessayez.</span>
+    </div>
+  </section>
+
+  <!-- ═══ Checklist ═══ -->
+  <section class="apurement-block">
+    <h2>
+      Checklist d'apurement
+      <button type="button" class="btn-exporter" (click)="exporterChecklist()">
+        Exporter (.pdf)
+      </button>
+    </h2>
+
+    <ul class="checklist-list">
+      <li class="checklist-item" *ngFor="let item of checklist">
+        <label>
+          <input type="checkbox" [(ngModel)]="item.valide" [ngModelOptions]="{ standalone: true }" />
+          <span>{{ item.libelle }}</span>
+        </label>
+      </li>
+    </ul>
+
+    <p class="erreur-msg" *ngIf="checklistErreur">Échec de l'enregistrement — réessayez.</p>
+
+    <button
+      type="button"
+      class="btn-primary"
+      [disabled]="checklistEnCours"
+      (click)="soumettreChecklist()"
+    >
+      {{ checklistEnCours ? 'Enregistrement…' : pretPourCloture ? 'Valider et clôturer' : 'Enregistrer la progression' }}
+    </button>
+  </section>
+
+  <!-- ═══ Alertes ═══ -->
+  <section class="apurement-block" *ngIf="alertes.length > 0">
+    <h2>Alertes</h2>
+    <ul class="alerte-list">
+      <li class="alerte-row" *ngFor="let a of alertes">
+        <span class="alerte-type">
+          <span *ngIf="a.typeAlerte === TypeAlerte.RELANCE_J14">Relance J-14</span>
+          <span *ngIf="a.typeAlerte === TypeAlerte.MISE_EN_DEMEURE_J8">Mise en demeure J-8</span>
+          <span *ngIf="a.typeAlerte === TypeAlerte.DEPASSEMENT_J0">Dépassement J=0</span>
+        </span>
+        <span class="alerte-statut" [class.alerte-statut--ok]="a.envoye">
+          {{ a.envoye ? 'Envoyée' : 'En attente' }}
+        </span>
+      </li>
+    </ul>
+  </section>
+
+</div>
+
+<p class="loading" *ngIf="chargement">Chargement…</p>
+<p class="erreur-page" *ngIf="erreur">Dossier introuvable.</p>

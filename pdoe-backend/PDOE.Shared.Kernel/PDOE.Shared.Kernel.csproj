@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSwag.MSBuild" Version="14.7.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="PdfSharpCore" Version="1.3.67" />
+  </ItemGroup>
+
+  <!--
+    Logo officiel embarqué dans l'assembly (et non lu depuis un chemin
+    disque) : PDOE.Shared.Kernel.Pdf.PdoeDocumentPdf, la lettre à en-tête
+    partagée des exports PDF, doit rester utilisable telle quelle sur tout
+    poste/serveur sans dépendre d'un chemin absolu vers pdoe-frontend.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\logo-afriland-first-bank.png" />
+  </ItemGroup>
+
+  <!--
+    Régénère Generated/PdoeContracts.cs à partir de OpenApi/PDOE_openapi.yaml
+    à chaque build — le yaml (versionné aussi côté frontend) reste la seule
+    source de vérité du contrat, ce fichier généré ne doit jamais être édité
+    à la main. NSwagExe_Net100 (pas _Net80) : seul le SDK .NET 10 est
+    installé sur ce poste ; le binaire NSwag lui-même n'a pas besoin de
+    correspondre au TargetFramework net8.0 du projet, seul le fichier
+    nswag.json (runtime: Net100) doit rester cohérent avec ce choix.
+
+    Vit dans Shared.Kernel (et non PDOE.Api) car chaque module (Dossiers.API,
+    Workflow.API, ...) doit pouvoir référencer les DTOs générés sans dépendre
+    du host — l'hôte dépend des modules, jamais l'inverse.
+  -->
+  <Target Name="NSwagGenerateContracts" BeforeTargets="BeforeBuild">
+    <Exec Command="$(NSwagExe_Net100) run nswag.json /variables:Configuration=$(Configuration)" />
+  </Target>
+
+</Project>

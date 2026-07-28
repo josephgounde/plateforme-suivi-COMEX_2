@@ -1,0 +1,212 @@
+<div class="dashboard-page">
+
+    <header class="dashboard-header">
+      <h1>{{ vue === 'apercu' ? 'Vue d\'ensemble' : 'Tous les dossiers' }}</h1>
+    </header>
+
+    <p class="loading" *ngIf="chargement">Chargement…</p>
+
+    <ng-container *ngIf="!chargement && dashboard">
+
+      <app-metriques-bandeau *ngIf="vue === 'apercu'" [items]="metriquesApercu" />
+
+      <section class="section-block reglementaire-block" *ngIf="vue === 'apercu'">
+        <h2>Exports réglementaires</h2>
+
+        <div class="reglementaire-controls">
+          <label class="date-field">
+            Du
+            <input
+              type="date"
+              [value]="reglementaireDateDebut"
+              (change)="modifierReglementaireDateDebut($any($event.target).value)"
+            />
+          </label>
+          <label class="date-field">
+            Au
+            <input
+              type="date"
+              [value]="reglementaireDateFin"
+              (change)="modifierReglementaireDateFin($any($event.target).value)"
+            />
+          </label>
+        </div>
+
+        <div class="reglementaire-buttons">
+          <button
+            type="button"
+            class="btn-exporter"
+            [disabled]="exportCrpiDgiEnCours"
+            (click)="exporterCrpiDgi()"
+          >
+            {{ exportCrpiDgiEnCours ? 'Export…' : 'CRPI DGI (.xlsx)' }}
+          </button>
+          <button
+            type="button"
+            class="btn-exporter"
+            [disabled]="exportCrpiTresorEnCours"
+            (click)="exporterCrpiTresor()"
+          >
+            {{ exportCrpiTresorEnCours ? 'Export…' : 'CRPI Trésor (.xlsx)' }}
+          </button>
+          <button
+            type="button"
+            class="btn-exporter"
+            [disabled]="exportSituationBceaoEnCours"
+            (click)="exporterSituationBceao()"
+          >
+            {{ exportSituationBceaoEnCours ? 'Export…' : 'Situation BCEAO (.xlsx)' }}
+          </button>
+        </div>
+      </section>
+
+      <div class="charts-grid" *ngIf="vue === 'apercu'">
+        <app-gauge-chart titre="Taux d'apurement" [valeur]="tauxApurementPourcent" couleur="#2e7d32" />
+        <app-bar-chart titre="Dossiers par gestionnaire" [items]="dossiersParGestionnaire" />
+      </div>
+
+      <app-repartition-chart
+        *ngIf="vue === 'apercu'"
+        titre="Répartition dans le circuit"
+        [items]="repartitionCircuit"
+      />
+
+      <section class="section-block" *ngIf="vue === 'apercu' && dossiersEnRetard.length > 0">
+        <h2>
+          Goulots d'étranglement
+          <span class="count-badge">{{ dossiersEnRetard.length }}</span>
+          <button
+            type="button"
+            class="btn-exporter"
+            [disabled]="exportEnCours"
+            (click)="exporterDossiersEnRetard()"
+          >
+            {{ exportEnCours ? 'Export…' : 'Exporter (.xlsx)' }}
+          </button>
+        </h2>
+        <ul class="retard-list">
+          <li class="retard-row" *ngFor="let retard of dossiersEnRetard">
+            <div class="retard-main">
+              <span class="dossier-ref">{{ retard.referenceInterne }}</span>
+              <span class="retard-client">{{ retard.nomClient }}</span>
+              <span class="retard-meta">
+                {{ retard.dernierAgent }} · {{ retard.heuresDepuisDerniereAction }}h d'inactivité
+              </span>
+            </div>
+            <a class="btn-detail" [routerLink]="['/dossiers', retard.dossierId]">Voir →</a>
+          </li>
+        </ul>
+      </section>
+
+      <ng-container *ngIf="vue === 'dossiers'">
+        <div class="empty-state" *ngIf="tousLesDossiers.length === 0">Aucun dossier.</div>
+
+        <div class="table-wrapper" *ngIf="tousLesDossiers.length > 0">
+          <table class="dossier-table">
+            <colgroup>
+              <col style="width: 10%" />
+              <col style="width: 19%" />
+              <col style="width: 8%" />
+              <col style="width: 11%" />
+              <col style="width: 12%" />
+              <col style="width: 15%" />
+              <col style="width: 11%" />
+              <col style="width: 14%" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Référence</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th>Gestionnaire</th>
+                <th>Mis à jour</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of tousLesDossiersAffiches">
+                <td class="td-ref">{{ d.referenceInterne }}</td>
+                <td>
+                  <span class="td-client">{{ d.nomClient }}</span>
+                  <br />
+                  <span class="td-compte">{{ d.numCompte }}</span>
+                </td>
+                <td><span class="badge badge--type">{{ typeLabels[d.typeOperation] }}</span></td>
+                <td class="td-montant">{{ d.montant | number }} {{ d.devise }}</td>
+                <td>
+                  <span [class]="'badge ' + statutClass(d.statutElectronique)">
+                    {{ statutLabels[d.statutElectronique] }}
+                  </span>
+                </td>
+                <td class="td-gestionnaire">
+                  <app-dropdown-select
+                    *ngIf="peutReattribuer(d); else gestionnaireFige"
+                    class="select-gestionnaire"
+                    [options]="gestionnaireOptions"
+                    [value]="d.gestionnaireAssigne ?? ''"
+                    [disabled]="etatReattribution(d.dossierId).enCours"
+                    (valueChange)="reattribuer(d, $event)"
+                  />
+                  <ng-template #gestionnaireFige>
+                    <span class="gestionnaire-fige" title="Étape Gestionnaire déjà dépassée — réattribution impossible">
+                      {{ d.gestionnaireAssigne }}
+                    </span>
+                  </ng-template>
+                  <span class="reattribution-erreur" *ngIf="etatReattribution(d.dossierId).erreur">
+                    {{ etatReattribution(d.dossierId).erreur }}
+                  </span>
+                </td>
+                <td class="td-date">{{ d.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td class="td-actions">
+                  <div class="actions-row">
+                    <button
+                      type="button"
+                      class="btn-lever-alerte"
+                      *ngIf="d.statutElectronique === StatutDossier.ANTI_FRACTIONNEMENT_DETECTE"
+                      [disabled]="leverAlerteEnCours.has(d.dossierId)"
+                      (click)="leverAlerte(d)"
+                    >
+                      {{ leverAlerteEnCours.has(d.dossierId) ? '…' : "Lever l'alerte" }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-rejeter-def-toggle"
+                      *ngIf="peutRejeterDefinitivement(d)"
+                      (click)="basculerRejetDefinitif(d.dossierId)"
+                    >
+                      {{ rejetDefOuvert.has(d.dossierId) ? 'Annuler' : 'Rejet définitif' }}
+                    </button>
+
+                    <a class="btn-detail" [routerLink]="['/dossiers', d.dossierId]">Voir →</a>
+                  </div>
+
+                  <div class="rejet-def-form" *ngIf="rejetDefOuvert.has(d.dossierId)">
+                    <textarea
+                      rows="2"
+                      [value]="motifRejetDefinitif(d.dossierId)"
+                      (input)="modifierMotifRejetDefinitif(d.dossierId, $any($event.target).value)"
+                      placeholder="Motif — Ex : fraude confirmée, abandon client"
+                    ></textarea>
+                    <button
+                      type="button"
+                      class="btn-rejeter-def"
+                      [disabled]="!motifRejetDefinitif(d.dossierId).trim() || rejetDefEnCours.has(d.dossierId)"
+                      (click)="rejeterDefinitivement(d)"
+                    >
+                      {{ rejetDefEnCours.has(d.dossierId) ? 'Clôture…' : 'Confirmer la clôture' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <app-pager [total]="tousLesDossiers.length" [pageSize]="pageSize" [page]="pageTousDossiers" (pageChange)="pageTousDossiers = $event"></app-pager>
+        </div>
+      </ng-container>
+
+    </ng-container>
+
+</div>

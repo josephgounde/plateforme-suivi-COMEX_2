@@ -1,0 +1,22 @@
+.section-block {
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+
+  h2 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.gauge-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  ::ng-deep .apexcharts-canvas {
+    margin: 0 auto;
+  }
+}

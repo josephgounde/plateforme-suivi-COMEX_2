@@ -1,0 +1,580 @@
+// Coquille applicative : sidebar fixed, topbar sticky. Hauteur topbar (~54px) reprise ailleurs (calc(100vh - 53px)) — n'y touche pas isolément.
+
+:host {
+  display: block;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+// ── Barre latérale ───────────────────────────────────────────
+
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  width: 232px;
+  height: 100vh;
+  padding: 6px 12px 16px;
+  box-sizing: border-box;
+  background: var(--pdoe-ink);
+  overflow-y: auto;
+
+  // Défilement fonctionnel, barre masquée — cohérent avec le reste
+  // de la coquille (cf. .shell-content, .topbar-bell-panel).
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 22px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+// PNG sans alpha (fond blanc figé) : la plaque reprend le même fond pour un raccord invisible sur la sidebar sombre.
+// Hauteur 40px calée pour que la largeur résultante du logo tienne dans les 208px utiles de la sidebar sans déborder.
+.sidebar-logo-plate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+
+  img {
+    display: block;
+    height: 35px;
+    width: auto;
+  }
+}
+
+// Repère de contexte sous la marque : taille/contraste relevés (l'original 8.5px/0.28 était quasi invisible), largeur bornée à celle du logo.
+.sidebar-tagline {
+  position: relative;
+  max-width: 100%;
+  padding-top: 10px;
+  margin-top: 2px;
+  font-size: 8.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.38);
+  white-space: normal;
+
+  // Petit trait plutôt qu'un fond/encadré : sépare du logo sans ajouter de bloc, cohérent avec la sidebar (pas de carte).
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 22px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+// Avatar + nom seuls : commun aux deux branches de navigation (dashboardNav.items() ou navParRoute), un seul style pour tous les profils.
+.sidebar-identite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+  margin: 4px 0 14px;
+}
+
+.sidebar-identite-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border-radius: 50%;
+}
+
+.sidebar-identite-nom {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// Utilisée à la fois comme <a> (navParRoute) et <button> (onglets
+// DashboardNav) — reset minimal pour que les deux rendent identiques.
+.sidebar-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.12s ease, color 0.12s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+  }
+
+  // L'item actif "s'ouvre" vers le contenu : width doit croître explicitement (une marge négative seule n'étire pas un flex item à width:100%).
+  // Encoches concaves (::before/::after) donnent l'impression que la pastille se prolonge hors de la carte jusqu'au contenu.
+  &--actif {
+    color: var(--pdoe-ink);
+    font-weight: 700;
+    background: #f5f6f8;
+    width: calc(100% + 12px);
+    margin-right: -12px;
+    padding-right: 26px;
+    border-radius: 8px 0 0 8px;
+
+    &:hover {
+      background: #f5f6f8;
+    }
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      width: 14px;
+      height: 14px;
+    }
+
+    &::before {
+      top: -14px;
+      background: radial-gradient(circle at 0 0, transparent 14px, #f5f6f8 14.5px);
+    }
+
+    &::after {
+      bottom: -14px;
+      background: radial-gradient(circle at 0 100%, transparent 14px, #f5f6f8 14.5px);
+    }
+
+    .nav-count {
+      color: var(--pdoe-ink);
+      background: rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.nav-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-count {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+}
+
+// Toujours en bas (margin-top: auto, .app-sidebar en flex column) ; commun aux deux branches de navigation, placé en dehors plutôt que dupliqué.
+.sidebar-footer {
+  margin: auto 0 0;
+  padding: 12px 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.sidebar-footer-espace {
+  margin: 0 0 4px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.sidebar-footer-copyright {
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+// ── Zone principale ──────────────────────────────────────────
+
+.app-main {
+  margin-left: 232px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--pdoe-ink);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+
+  // Comble le coin que le border-radius de .shell-content découpe juste en dessous (24px, même rayon) : sans ça ce triangle resterait vide.
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -24px;
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 100% 100%, transparent 24px, var(--pdoe-ink) 24.5px);
+    pointer-events: none;
+  }
+}
+
+.topbar-burger {
+  display: none;
+}
+
+.topbar-spacer {
+  flex: 1 1 auto;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+// ── Cloche de notifications ──────────────────────────────────
+
+.topbar-bell-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.topbar-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  color: #ffffff;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover,
+  &--actif {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.topbar-bell-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: 2px solid #ffffff;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.topbar-bell-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+}
+
+.topbar-bell-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 200;
+  width: min(320px, calc(100vw - 24px));
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+
+  // Défilement fonctionnel, barre masquée.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.topbar-bell-titre {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pdoe-ink);
+}
+
+.topbar-bell-empty {
+  padding: 16px 0;
+  font-size: 12px;
+  color: #999999;
+  text-align: center;
+}
+
+.topbar-bell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.topbar-bell-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.topbar-bell-icone {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.topbar-bell-texte {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--pdoe-ink);
+}
+
+.topbar-bell-lien {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pdoe-red);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.topbar-bell-fermer {
+  flex-shrink: 0;
+  padding: 0 4px;
+  font-size: 12px;
+  color: #999999;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--pdoe-ink);
+  }
+}
+
+// ── Identité utilisateur ─────────────────────────────────────
+// Nom retiré (déjà dans la carte profil sidebar) ; seul le badge de profil reste pour le contexte en mobile.
+.topbar-profil {
+  flex-shrink: 0;
+  padding: 4px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.topbar-divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.topbar-logout {
+  flex-shrink: 0;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+}
+
+// Hauteur figée (pas min-height) : comme la sidebar, la vue porte son propre défilement plutôt que de pousser la page entière.
+// Coin arrondi posé ici (pas dans chaque page routée) pour rester visible sur tous les profils.
+.shell-content {
+  flex: 1 1 auto;
+  height: calc(100vh - 54px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  border-radius: 24px 0 0 0;
+  background: #f5f6f8;
+
+  // Barre masquée : la vue a déjà son coin arrondi et sa bordure de coquille, une barre visible casserait l'habillage.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// ── Responsive ───────────────────────────────────────────────
+// < 700px : la sidebar passe en tiroir, ouvert via le burger de la topbar (même seuil que l'ancien AdminSidebarComponent).
+
+@media (max-width: 700px) {
+  .app-sidebar {
+    left: -232px;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
+    transition: left 0.2s ease;
+
+    &--ouverte {
+      left: 0;
+    }
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .app-main {
+    margin-left: 0;
+  }
+
+  .topbar-burger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    font-size: 16px;
+    color: #ffffff;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar-profil {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-topbar {
+    padding: 8px 14px;
+  }
+
+  .topbar-divider {
+    display: none;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+  }
+}

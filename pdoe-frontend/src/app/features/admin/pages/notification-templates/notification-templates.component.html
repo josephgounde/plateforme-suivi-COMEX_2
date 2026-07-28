@@ -1,0 +1,72 @@
+<div class="page">
+
+  <header class="page-header">
+    <div>
+      <h1>Modèles de notification</h1>
+      <p class="page-sub">Libellé et message envoyés pour chaque type d'événement.</p>
+    </div>
+  </header>
+
+  <p class="succes" *ngIf="succes">✓ {{ succes }}</p>
+  <p class="erreur" *ngIf="erreur">{{ erreur }}</p>
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="liste" *ngIf="!chargement">
+    <div class="carte" *ngFor="let t of templates">
+
+      <ng-container *ngIf="editType !== t.typeEvenement">
+        <div class="carte-header">
+          <span class="td-type">{{ t.typeEvenement }}</span>
+          <span class="badge badge--canal">{{ t.canalDefaut }}</span>
+          <button class="btn-edit" (click)="demarrerEdition(t)">Modifier</button>
+        </div>
+        <p class="carte-libelle">{{ t.libelle }}</p>
+        <p class="carte-message">{{ t.message }}</p>
+        <p class="carte-meta">Mis à jour {{ t.updatedAt | date: 'dd/MM/yyyy HH:mm' }} par {{ t.updatedBy }}</p>
+      </ng-container>
+
+      <form class="carte-edit" *ngIf="editType === t.typeEvenement" (ngSubmit)="enregistrer(t)">
+        <div class="carte-header">
+          <span class="td-type">{{ t.typeEvenement }}</span>
+        </div>
+
+        <div class="form-field">
+          <label [for]="'libelle-' + t.typeEvenement">Libellé (cloche/panneau)</label>
+          <input
+            [id]="'libelle-' + t.typeEvenement"
+            [(ngModel)]="editLibelle"
+            name="editLibelle"
+            placeholder="Ex : Nouveau dossier reçu"
+          />
+        </div>
+
+        <div class="form-field">
+          <label [for]="'message-' + t.typeEvenement">Message (SMS/Email)</label>
+          <textarea
+            [id]="'message-' + t.typeEvenement"
+            [(ngModel)]="editMessage"
+            name="editMessage"
+            rows="3"
+            placeholder="Ex : Un nouveau dossier COMEX vous a été transmis..."
+          ></textarea>
+        </div>
+
+        <div class="form-field form-field--canal">
+          <label [for]="'canal-' + t.typeEvenement">Canal par défaut</label>
+          <app-dropdown-select [id]="'canal-' + t.typeEvenement" [options]="canalOptions" [(ngModel)]="editCanal" name="editCanal" />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="annuler()">Annuler</button>
+          <button type="submit" class="btn-save" [disabled]="!valide() || enregistrement">
+            {{ enregistrement ? '…' : 'Enregistrer' }}
+          </button>
+        </div>
+      </form>
+
+    </div>
+
+    <p class="td-vide" *ngIf="templates.length === 0">Aucun modèle de notification.</p>
+  </div>
+
+</div>

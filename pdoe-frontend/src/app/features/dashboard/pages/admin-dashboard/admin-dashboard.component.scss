@@ -1,0 +1,428 @@
+.dashboard-page {
+  min-width: 0;
+  padding: 16px;
+  max-width: 1280px;
+  box-sizing: border-box;
+
+  // Hauteur bornée pour que .table-wrapper défile en interne avec un thead
+  // sticky (sans ça, le sticky n'a rien à quoi s'accrocher).
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 53px);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+
+  h1 { margin: 0; font-size: 20px; color: var(--pdoe-ink); }
+}
+
+.loading { font-size: 13px; color: #999999; }
+
+// ── Graphiques (jauge + barres) ──────────────────────────────
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 800px) {
+  .charts-grid { grid-template-columns: 1fr; }
+}
+
+// ── Section tableau ───────────────────────────────────────────
+
+.empty-state {
+  padding: 14px;
+  font-size: 12px;
+  color: #999999;
+  background: #fafafa;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.table-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  // Défilement fonctionnel, barre masquée — cf. le même traitement
+  // sur DirectionDashboardComponent.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// table-layout: fixed + colgroup (cf. HTML) : colonnes à largeur fixe, contenu long passe à la ligne plutôt que d'élargir le tableau (même traitement que DirectionDashboardComponent).
+.dossier-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  thead tr { background: #f5f5f5; }
+
+  th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #595959;
+    border-bottom: 1px solid #ececec;
+    overflow-wrap: break-word;
+
+    // Ancré à top: 0 de .table-wrapper (la zone qui défile) ; fond porté par le <th> lui-même, sinon le contenu défilé transparaît.
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #f5f5f5;
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f5f5f5;
+    vertical-align: middle;
+    overflow-wrap: break-word;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+}
+
+.td-ref  { font-weight: 700; color: var(--pdoe-red); font-size: 11px; }
+.td-client { font-weight: 500; color: var(--pdoe-ink); display: block; }
+.td-compte { font-size: 11px; color: #999999; }
+.td-montant { font-weight: 600; white-space: nowrap; color: var(--pdoe-ink); }
+.td-date { font-size: 11px; color: #999999; }
+
+.td-gestionnaire {
+  overflow-wrap: break-word;
+}
+
+app-dropdown-select.select-gestionnaire {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.gestionnaire-fige {
+  font-size: 11px;
+  color: #999999;
+}
+
+.reattribution-erreur {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--pdoe-red);
+  white-space: normal;
+  max-width: 160px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+
+  &--default { color: #1565c0; background: #e3f2fd; }
+  &--success  { color: #2e7d32; background: #e8f5e9; }
+  &--warning  { color: #e65100; background: #fff3e0; }
+  &--danger   { color: var(--pdoe-red); background: #fdecee; }
+  &--type     { color: #6a1fa0; background: #f3e5f5; }
+}
+
+.btn-detail {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-ink);
+  border-radius: 6px;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover { background: #333333; }
+}
+
+// ── Goulots d'étranglement ───────────────────────────────────
+
+.section-block {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    font-size: 14px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #595959;
+  background: #f0f0f0;
+  border-radius: 10px;
+}
+
+.btn-exporter {
+  margin-left: auto;
+  padding: 8px 18px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #2e7d32;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+
+  &:hover:not(:disabled) { background: #256428; }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+// ── Exports réglementaires (DGI / Trésor / BCEAO) ────────────
+
+.reglementaire-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+
+  h2 { margin: 0; flex: 1 1 100%; }
+}
+
+.reglementaire-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #595959;
+
+  input[type='date'] {
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--pdoe-ink);
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #fafafa;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+  }
+}
+
+.reglementaire-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+
+  .btn-exporter { margin-left: 0; }
+}
+
+.retard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.retard-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-left: 4px solid #e65100;
+  background: #fff8f0;
+}
+
+.retard-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.dossier-ref {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--pdoe-red);
+  background: #fdecee;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.retard-client {
+  font-size: 13px;
+  color: var(--pdoe-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.retard-meta { font-size: 11px; color: #999999; }
+
+// ── Actions transversales : lever alerte / rejet définitif ──────
+
+.td-actions { min-width: 0; }
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.btn-lever-alerte,
+.btn-rejeter-def-toggle {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-lever-alerte {
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+
+  &:hover:not(:disabled) { background: var(--pdoe-red-hover); }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-rejeter-def-toggle {
+  color: var(--pdoe-red);
+  background: transparent;
+  border: 1px solid #f0b8c0;
+
+  &:hover { background: #fdecee; }
+}
+
+.rejet-def-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+  max-width: 260px;
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 11px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #fafafa;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+  }
+}
+
+.btn-rejeter-def {
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: var(--pdoe-red-hover); }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ── Responsive ───────────────────────────────────────────────
+
+@media (max-width: 700px) {
+  // Sous 700px, la barre latérale passe en tiroir (cf. AppShellComponent) : on repasse en défilement normal de la page.
+  .dashboard-page {
+    height: auto;
+  }
+
+  .table-wrapper {
+    flex: none;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .dossier-table th {
+    position: static;
+  }
+}

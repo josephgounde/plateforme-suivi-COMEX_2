@@ -1,0 +1,284 @@
+<div class="page" *ngIf="!chargement && dossier">
+
+  <a routerLink="/dashboard" class="back-link">← Retour</a>
+
+  <header class="detail-header">
+    <div>
+      <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+      <h1>{{ dossier.nomClient }}</h1>
+      <p class="dossier-compte">{{ dossier.numCompte }}</p>
+    </div>
+    <div class="detail-header-actions">
+      <span class="statut-badge">{{ statutLabels[dossier.statutElectronique] }}</span>
+      <button
+        type="button"
+        class="btn-exporter"
+        [disabled]="exportFicheEnCours"
+        (click)="exporterFiche()"
+      >
+        {{ exportFicheEnCours ? 'Export…' : 'Fiche dossier (.pdf)' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="detail-block">
+    <h2>Position dans le circuit</h2>
+    <app-workflow-stepper
+      [statut]="dossier.statutElectronique"
+      [compact]="false"
+      [etapesTraversees]="etapesTraverseesCodes"
+    />
+  </section>
+
+  <section class="detail-block detail-block--action" *ngIf="peutConfirmerCommande">
+    <h2>Confirmation de commande</h2>
+
+    <label class="confirmation-checkbox">
+      <input
+        type="checkbox"
+        [checked]="etatConfirmation.confirme"
+        (change)="basculerConfirmation()"
+      />
+      <span>Ordre confirmé avec le client</span>
+    </label>
+
+    <ng-container *ngIf="etatConfirmation.confirme">
+      <input
+        type="date"
+        class="confirmation-date"
+        [value]="etatConfirmation.date"
+        (change)="modifierDateConfirmation($any($event.target).value)"
+        title="Date de confirmation de la commande"
+      />
+
+      <button
+        type="button"
+        class="btn-save"
+        [disabled]="!etatConfirmation.date || etatConfirmation.enregistrement"
+        (click)="enregistrerConfirmation()"
+      >
+        {{ etatConfirmation.enregistrement ? 'Enregistrement…' : 'Enregistrer' }}
+      </button>
+
+      <span class="confirmation-erreur" *ngIf="etatConfirmation.erreur">
+        Échec de l'enregistrement — réessayez.
+      </span>
+    </ng-container>
+
+    <div class="transmission-bloc" *ngIf="dossier.dateConfirmationClient">
+      <button
+        type="button"
+        class="btn-save"
+        [disabled]="!peutValiderEtTransmettre() || transmissionEnCours"
+        (click)="validerEtTransmettre()"
+      >
+        {{ transmissionEnCours ? 'Transmission…' : 'Valider et transmettre à COMEX' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="detail-block detail-block--action" *ngIf="peutArchiver">
+    <h2>Archivage</h2>
+    <p>Dossier apuré, en attente d'archivage.</p>
+    <button
+      type="button"
+      class="btn-save"
+      [disabled]="archivageEnCours"
+      (click)="archiverDossier()"
+    >
+      {{ archivageEnCours ? 'Archivage…' : 'Archiver' }}
+    </button>
+  </section>
+
+  <section class="detail-block">
+    <h2>Informations générales</h2>
+    <dl class="info-grid">
+      <div class="info-row">
+        <dt>Matricule client</dt>
+        <dd>{{ dossier.matriculeClient }}</dd>
+      </div>
+      <div class="info-row">
+        <dt>Bénéficiaire</dt>
+        <dd>{{ dossier.nomBeneficiaire }}</dd>
+      </div>
+      <div class="info-row">
+        <dt>Type d'opération</dt>
+        <dd>{{ typeLabels[dossier.typeOperation] }}</dd>
+      </div>
+      <div class="info-row">
+        <dt>Nature de la transaction</dt>
+        <dd>{{ dossier.natureTransaction }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.referenceDomiciliation">
+        <dt>Référence de domiciliation</dt>
+        <dd>{{ dossier.referenceDomiciliation }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.codeStatistiqueOperateur">
+        <dt>Code statistique opérateur</dt>
+        <dd>{{ dossier.codeStatistiqueOperateur }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.nifClient">
+        <dt>NIF / NCC client</dt>
+        <dd>{{ dossier.nifClient }}</dd>
+      </div>
+      <div class="info-row">
+        <dt>Montant</dt>
+        <dd>{{ dossier.montant | number }} {{ dossier.devise }}</dd>
+      </div>
+      <div class="info-row">
+        <dt>Pays du bénéficiaire</dt>
+        <dd>{{ dossier.paysBeneficiaire }}</dd>
+      </div>
+      <div class="info-row">
+        <dt>Type de compte débité</dt>
+        <dd>{{ typeCompteLabels[dossier.typeCompteDebite] }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.codeSwiftIndicatif || dossier.banqueCorrespondanteIndicative">
+        <dt>Coordonnées bancaires indicatives</dt>
+        <dd>{{ dossier.banqueCorrespondanteIndicative }} <span *ngIf="dossier.codeSwiftIndicatif">({{ dossier.codeSwiftIndicatif }})</span></dd>
+      </div>
+      <div class="info-row">
+        <dt>Motif</dt>
+        <dd>{{ dossier.motif }}</dd>
+      </div>
+      <div class="info-row">
+        <dt>Vérification signature</dt>
+        <dd>
+          {{ modeVerificationLabels[dossier.modeVerificationApplique] }}
+          <span *ngIf="dossier.initialesAgent"> — confirmée par {{ dossier.initialesAgent }}</span>
+        </dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.dateConfirmationClient">
+        <dt>Ordre confirmé le</dt>
+        <dd>{{ dossier.dateConfirmationClient | date: 'dd/MM/yyyy' }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.tauxChange">
+        <dt>Taux de change</dt>
+        <dd>{{ dossier.tauxChange }} ({{ dossier.deviseCotation }})</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.correspondantDesigne">
+        <dt>Correspondant</dt>
+        <dd>{{ dossier.correspondantDesigne }} ({{ dossier.bicCorrespondant }})</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.referenceSWIFT">
+        <dt>Référence SWIFT</dt>
+        <dd>{{ dossier.referenceSWIFT }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.numeroAC">
+        <dt>N° Attestation/Autorisation de Change</dt>
+        <dd>{{ dossier.numeroAC }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.codeTRF">
+        <dt>Code TRF</dt>
+        <dd>{{ dossier.codeTRF }}</dd>
+      </div>
+      <div class="info-row" *ngIf="echeancePaiementExport">
+        <dt>Échéance paiement (export)</dt>
+        <dd>{{ echeancePaiementExport | date: 'dd/MM/yyyy' }}</dd>
+      </div>
+      <div class="info-row" *ngIf="dossier.dateEcheanceApurement">
+        <dt>{{ echeancePaiementExport ? 'Échéance rapatriement' : 'Échéance apurement' }}</dt>
+        <dd>{{ dossier.dateEcheanceApurement | date: 'dd/MM/yyyy' }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="detail-block" *ngIf="regleApurement as regle">
+    <h2>Règle d'apurement applicable</h2>
+    <p class="regle-delai">{{ regle.delaiLibelle }}</p>
+    <p class="regle-reference">{{ regle.referenceReglementaire }}</p>
+  </section>
+
+  <section class="detail-block">
+    <h2>
+      Documents
+      <span class="count-badge">{{ dossier.documents.length }}</span>
+    </h2>
+    <div class="empty-state" *ngIf="dossier.documents.length === 0">
+      Aucun document joint.
+    </div>
+    <ul class="document-list" *ngIf="dossier.documents.length > 0">
+      <li class="document-row" *ngFor="let doc of dossier.documents">
+        <div class="document-main">
+          <span class="document-nom">{{ doc.nomFichier }}</span>
+          <span class="document-type">{{ typeDocumentLabels[doc.typeDocument] }}</span>
+          <span class="document-reference" *ngIf="doc.referenceDocument">Réf. {{ doc.referenceDocument }}</span>
+        </div>
+        <div class="document-meta">
+          <span>{{ formaterTaille(doc.tailleFichier) }}</span>
+          <span
+            class="document-validite"
+            [class.document-validite--ok]="doc.estValide"
+          >
+            {{ doc.estValide ? 'Validé' : 'En attente' }}
+          </span>
+          <button type="button" class="btn-apercu" (click)="ouvrirApercu(doc)" title="Aperçu" aria-label="Aperçu du document">
+            👁
+          </button>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="detail-block" *ngIf="dossier.paiementsPartiels.length > 0">
+    <h2>
+      Paiements partiels
+      <span class="count-badge">{{ dossier.paiementsPartiels.length }}</span>
+    </h2>
+    <ul class="paiement-list">
+      <li class="paiement-row" *ngFor="let p of dossier.paiementsPartiels">
+        <span>{{ p.datePaiement | date: 'dd/MM/yyyy' }}</span>
+        <span>{{ p.montantPaiement | number }} {{ p.devise }}</span>
+        <span class="paiement-ref">{{ p.referencePaiement }}</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="detail-block" *ngIf="dossier.alertes.length > 0">
+    <h2>Alertes</h2>
+    <ul class="alerte-list">
+      <li class="alerte-row" *ngFor="let a of dossier.alertes">
+        <span class="alerte-type">{{ a.typeAlerte }}</span>
+        <span>{{ a.jRestants }} jour(s) restant(s)</span>
+        <span class="alerte-statut" [class.alerte-statut--ok]="a.envoye">
+          {{ a.envoye ? 'Envoyée' : 'En attente' }}
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="detail-block">
+    <h2>
+      Historique du circuit
+      <button
+        type="button"
+        class="btn-exporter"
+        [disabled]="exportHistoriqueEnCours"
+        (click)="exporterHistorique()"
+      >
+        {{ exportHistoriqueEnCours ? 'Export…' : 'Exporter (.pdf)' }}
+      </button>
+    </h2>
+    <ul class="historique-list">
+      <li class="historique-row" *ngFor="let etape of dossier.etapesWorkflow">
+        <div class="historique-action">{{ etape.action }}</div>
+        <div class="historique-meta">
+          <span>{{ etape.agentLogin }}</span>
+          <span>{{ etape.dateAction | date: 'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <div class="historique-motif" *ngIf="etape.motifRejet">{{ etape.motifRejet }}</div>
+      </li>
+    </ul>
+  </section>
+
+
+  <app-document-preview-modal
+    *ngIf="documentEnApercu"
+    [document]="documentEnApercu"
+    (fermer)="fermerApercu()"
+  />
+
+</div>
+
+<p class="loading" *ngIf="chargement">Chargement…</p>
+<p class="erreur-page" *ngIf="erreur">Dossier introuvable.</p>

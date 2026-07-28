@@ -1,0 +1,384 @@
+.dashboard-page {
+  padding: 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+// Coquille contenu + notifications, partagée entre dashboards : top: 70px =
+// topbar (54px) + padding de page (16px), à garder identique partout.
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-areas: 'content notif';
+  column-gap: 16px;
+}
+
+.dashboard-notif {
+  grid-area: notif;
+  position: sticky;
+  top: 70px;
+  max-height: calc(100vh - 70px - 16px);
+  overflow-y: auto;
+
+  // Défilement fonctionnel, barre masquée.
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.dashboard-content {
+  grid-area: content;
+  min-width: 0;
+  min-height: calc(100vh - 70px - 16px);
+  border-left: 1px solid #ececec;
+  border-right: 1px solid #ececec;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 700px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'notif'
+      'content';
+    row-gap: 16px;
+  }
+
+  .dashboard-notif {
+    position: static;
+    right: auto;
+    width: 100%;
+    height: auto;
+    overflow-y: visible;
+    margin-bottom: 16px;
+  }
+
+  .dashboard-content {
+    min-height: 0;
+    border-left: none;
+    border-right: none;
+    padding: 0;
+  }
+}
+
+// ── Section principale ──────────────────────────────────────────
+
+.dossier-section {
+  margin-bottom: 28px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 15px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #595959;
+  background: #f0f0f0;
+  border-radius: 10px;
+}
+
+.loading,
+.empty-state {
+  padding: 16px;
+  font-size: 13px;
+  color: #999999;
+  background: #fafafa;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.dossier-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dossier-row {
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+}
+
+.dossier-top {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.dossier-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.dossier-ref {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--pdoe-red);
+  background: #fdecee;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.dossier-client {
+  font-size: 13px;
+  color: var(--pdoe-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dossier-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 11px;
+  color: #595959;
+}
+
+.dossier-montant {
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+// Empilé sous 600px (pas assez de place pour type/montant/délai côte à côte), en ligne au-delà.
+@media (min-width: 600px) {
+  .dossier-meta {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+.btn-detail {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-ink);
+  border-radius: 6px;
+  text-decoration: none;
+
+  &:hover {
+    background: #333333;
+  }
+}
+
+// ── Bloc rejet inline ────────────────────────────────────────
+
+.rejet-bloc {
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px dashed #ececec;
+}
+
+.btn-rejeter-toggle {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-red);
+  background: transparent;
+  border: 1px solid #f0b8c0;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background: #fdecee;
+  }
+}
+
+.rejet-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.rejet-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  font-size: 12px;
+  color: var(--pdoe-ink);
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #fafafa;
+    resize: vertical;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+  }
+
+  app-dropdown-select {
+    width: 100%;
+  }
+}
+
+.rejet-cible {
+  margin: 0;
+  font-size: 11px;
+  color: #595959;
+}
+
+// ── Bloc notification client (SMS/Email) ─────────────────────
+// Indépendant du rejet ci-dessus ; teinte bleue pour le distinguer visuellement.
+
+.notif-client-bloc {
+  padding-top: 10px;
+  margin-top: 10px;
+  border-top: 1px dashed #ececec;
+}
+
+.btn-notif-client-toggle {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1565c0;
+  background: transparent;
+  border: 1px solid #bbdefb;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover {
+    background: #e3f2fd;
+  }
+}
+
+.notif-client-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-notif-client {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #1565c0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #0d47a1;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.notif-client-succes {
+  font-size: 11px;
+  color: #2e7d32;
+}
+
+.notif-client-erreur {
+  font-size: 11px;
+  color: var(--pdoe-red);
+}
+
+.btn-rejeter {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ── Section historique (lecture seule) ───────────────────────
+
+.statut-badge {
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1565c0;
+  background: #e3f2fd;
+  border-radius: 12px;
+}
+
+// ── Responsive ───────────────────────────────────────────────
+
+@media (max-width: 480px) {
+  .dossier-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  // flex-basis: auto : une fois .dossier-top en colonne, la base 160px s'appliquerait à la hauteur et créait ~160px de vide.
+  .dossier-main {
+    flex-basis: auto;
+  }
+
+  .dossier-meta {
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 10px;
+  }
+
+  .btn-detail {
+    align-self: stretch;
+    text-align: center;
+  }
+}

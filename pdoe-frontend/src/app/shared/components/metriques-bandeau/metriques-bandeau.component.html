@@ -1,0 +1,6 @@
+<div class="metriques-bandeau" *ngIf="items.length > 0">
+  <div class="metrique-item" *ngFor="let item of items">
+    <span class="metrique-lbl">{{ item.libelle }}</span>
+    <span class="metrique-val" [class]="item.accent ? 'metrique-val--' + item.accent : ''">{{ item.valeur }}</span>
+  </div>
+</div>

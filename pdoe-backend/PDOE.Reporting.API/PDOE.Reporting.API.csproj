@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PDOE.Shared.Kernel\PDOE.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\PDOE.Infrastructure\PDOE.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!--
+    Gabarits officiels DGI / Trésor / BCEAO embarqués dans l'assembly —
+    ExporterCrpiDgi/Tresor/SituationBceao ouvrent ces classeurs tels quels
+    et ne font que remplir les lignes de données, pour garantir une
+    fidélité exacte au format attendu par chaque autorité (aucune
+    reconstruction de la mise en page à la main). Sources : dossier
+    "reporting reglementaire templates" à la racine du repo, nettoyées de
+    toute donnée réelle avant embarquement (cf. ModuleMarker.cs).
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="ReglementaireTemplates\crpi-dgi.xlsx" />
+    <EmbeddedResource Include="ReglementaireTemplates\crpi-tresor.xlsx" />
+    <EmbeddedResource Include="ReglementaireTemplates\situation-bceao.xlsx" />
+  </ItemGroup>
+
+</Project>

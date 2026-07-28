@@ -1,0 +1,153 @@
+<div class="dashboard-page">
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="dashboard-shell" *ngIf="!chargement">
+  <aside class="dashboard-notif">
+    <app-notification-panel [dossiers]="dossiers" />
+  </aside>
+
+  <div class="dashboard-content">
+
+  <section class="dossier-section" *ngIf="vueActive === 'file-attente'">
+    <h2>
+      Dossiers à valider
+      <span class="count-badge">{{ dossiersFileAttente.length }}</span>
+    </h2>
+
+    <div class="empty-state" *ngIf="dossiersFileAttente.length === 0">
+      Aucun dossier en attente de validation.
+    </div>
+
+    <ul class="dossier-list" *ngIf="dossiersFileAttente.length > 0">
+    <li class="dossier-row" *ngFor="let dossier of dossiersFileAttenteAffiches">
+
+      <div class="dossier-top">
+        <div class="dossier-main">
+          <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+          <span class="dossier-client">{{ dossier.nomClient }}</span>
+        </div>
+        <div class="dossier-meta">
+          <span class="dossier-type">{{ typeLabels[dossier.typeOperation] }}</span>
+          <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+          <app-delai-traitement
+            *ngIf="delaiHeures"
+            [dateDebut]="dossier.dateDerniereAction"
+            [delaiHeures]="delaiHeures"
+          />
+        </div>
+        <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">
+          Examiner →
+        </a>
+      </div>
+
+        <div class="rejet-bloc">
+          <button type="button" class="btn-rejeter-toggle" (click)="basculerRejet(dossier.dossierId)">
+            {{ rejetOuvert.has(dossier.dossierId) ? 'Annuler' : 'En attente pour correction' }}
+          </button>
+
+          <div class="rejet-form" *ngIf="rejetOuvert.has(dossier.dossierId)">
+            <label class="rejet-label">
+              Motif de la correction
+              <textarea
+                rows="2"
+                [value]="motifRejet(dossier.dossierId)"
+                (input)="modifierMotifRejet(dossier.dossierId, $any($event.target).value)"
+                placeholder="Ex : montant incohérent avec la facture jointe"
+              ></textarea>
+            </label>
+            <p class="rejet-cible">Sera renvoyé à : Agent d'accueil</p>
+            <button
+              type="button"
+              class="btn-rejeter"
+              [disabled]="!peutRejeter(dossier) || rejetEnCours.has(dossier.dossierId)"
+              (click)="rejeter(dossier)"
+            >
+              {{ rejetEnCours.has(dossier.dossierId) ? 'Envoi…' : 'Confirmer la mise en attente' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="notif-client-bloc">
+          <button type="button" class="btn-notif-client-toggle" (click)="basculerNotifClient(dossier.dossierId)">
+            {{ etatNotifClient(dossier.dossierId).ouvert ? 'Annuler' : 'Notifier le client' }}
+          </button>
+
+          <div class="notif-client-form" *ngIf="etatNotifClient(dossier.dossierId).ouvert">
+            <label class="rejet-label">
+              Canal
+              <app-dropdown-select
+                [options]="canalOptions"
+                [value]="etatNotifClient(dossier.dossierId).canal"
+                (valueChange)="modifierCanalNotifClient(dossier.dossierId, $event)"
+              />
+            </label>
+            <label class="rejet-label">
+              Message au client
+              <textarea
+                rows="2"
+                [value]="etatNotifClient(dossier.dossierId).message"
+                (input)="modifierMessageNotifClient(dossier.dossierId, $any($event.target).value)"
+                placeholder="Ex : merci de nous transmettre la facture corrigée pour régulariser votre dossier"
+              ></textarea>
+            </label>
+            <button
+              type="button"
+              class="btn-notif-client"
+              [disabled]="!peutNotifierClient(dossier.dossierId) || etatNotifClient(dossier.dossierId).enCours"
+              (click)="notifierClient(dossier)"
+            >
+              {{ etatNotifClient(dossier.dossierId).enCours ? 'Envoi…' : 'Envoyer' }}
+            </button>
+
+            <span class="notif-client-succes" *ngIf="etatNotifClient(dossier.dossierId).succes as destinataire">
+              ✓ Notification envoyée à {{ destinataire }}
+            </span>
+            <span class="notif-client-erreur" *ngIf="etatNotifClient(dossier.dossierId).erreur">
+              Échec de l'envoi — réessayez.
+            </span>
+          </div>
+        </div>
+
+    </li>
+    </ul>
+    <app-pager [total]="dossiersFileAttente.length" [pageSize]="pageSize" [page]="pageFileAttente" (pageChange)="pageFileAttente = $event"></app-pager>
+  </section>
+
+  <!-- Dossiers déjà reçus/examinés par ce Gestionnaire mais transmis
+       plus loin dans le circuit (ou rejetés définitivement) — lecture
+       seule, aucune action de validation possible sur cette section. -->
+  <section class="dossier-section" *ngIf="vueActive === 'historique'">
+    <h2>
+      Historique — dossiers déjà transmis
+      <span class="count-badge">{{ dossiersHistorique.length }}</span>
+    </h2>
+
+    <div class="empty-state" *ngIf="dossiersHistorique.length === 0">
+      Aucun dossier dans l'historique.
+    </div>
+
+    <ul class="dossier-list" *ngIf="dossiersHistorique.length > 0">
+      <li class="dossier-row" *ngFor="let dossier of dossiersHistoriqueAffiches">
+        <div class="dossier-top">
+          <div class="dossier-main">
+            <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+            <span class="dossier-client">{{ dossier.nomClient }}</span>
+          </div>
+          <div class="dossier-meta">
+            <span class="statut-badge">{{ statutLabels[dossier.statutElectronique] }}</span>
+            <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+          </div>
+          <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">
+            Voir →
+          </a>
+        </div>
+      </li>
+    </ul>
+    <app-pager [total]="dossiersHistorique.length" [pageSize]="pageSize" [page]="pageHistorique" (pageChange)="pageHistorique = $event"></app-pager>
+  </section>
+
+  </div>
+  </div>
+
+</div>

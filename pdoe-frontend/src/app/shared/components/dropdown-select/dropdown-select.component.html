@@ -1,0 +1,39 @@
+<div class="dropdown-select">
+  <button
+    type="button"
+    class="dropdown-trigger"
+    [attr.id]="id || null"
+    (click)="basculer()"
+    [class.dropdown-trigger--ouvert]="ouvert"
+    [disabled]="disabled"
+  >
+    <span>{{ libelleActuel }}</span>
+    <span class="dropdown-chevron">▾</span>
+  </button>
+
+  <div class="dropdown-menu" *ngIf="ouvert">
+    <input
+      *ngIf="filtrable"
+      #filtreInputRef
+      type="text"
+      class="dropdown-filtre"
+      [(ngModel)]="filtreTexte"
+      placeholder="Rechercher…"
+      autocomplete="off"
+    />
+
+    <ul class="dropdown-liste">
+      <li *ngFor="let option of optionsFiltrees">
+        <button
+          type="button"
+          class="dropdown-option"
+          [class.dropdown-option--actif]="option.value === value"
+          (click)="choisir(option)"
+        >
+          {{ option.label }}
+        </button>
+      </li>
+      <li *ngIf="filtrable && optionsFiltrees.length === 0" class="dropdown-vide">Aucun résultat</li>
+    </ul>
+  </div>
+</div>

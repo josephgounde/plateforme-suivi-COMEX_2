@@ -1,0 +1,55 @@
+<div class="page">
+
+  <header class="page-header">
+    <h1>Tous les dossiers</h1>
+    <span class="count-badge" *ngIf="!chargement">
+      {{ dossiersFiltres.length }} / {{ tousLesDossiers.length }}
+    </span>
+  </header>
+
+  <div class="filter-bar" *ngIf="!chargement">
+    <input
+      type="text"
+      class="filter-search"
+      placeholder="Référence, client, n° compte…"
+      [(ngModel)]="recherche"
+    />
+
+    <app-dropdown-select class="filter-select" [options]="statutOptions" [(ngModel)]="filtreStatut" />
+
+    <app-dropdown-select class="filter-select" [options]="typeOptions" [(ngModel)]="filtreType" />
+
+    <button
+      type="button"
+      class="btn-reset"
+      *ngIf="recherche || filtreStatut || filtreType"
+      (click)="reinitialiserFiltres()"
+    >
+      Réinitialiser
+    </button>
+  </div>
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="empty-state" *ngIf="!chargement && dossiersFiltres.length === 0">
+    Aucun dossier ne correspond à ces critères.
+  </div>
+
+  <ul class="dossier-list" *ngIf="!chargement && dossiersFiltres.length > 0">
+    <li class="dossier-row" *ngFor="let dossier of dossiersFiltresPage">
+      <div class="dossier-main">
+        <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+        <span class="dossier-client">{{ dossier.nomClient }}</span>
+        <span class="dossier-compte">{{ dossier.numCompte }}</span>
+      </div>
+      <div class="dossier-meta">
+        <span class="badge-type">{{ typeLabels[dossier.typeOperation] }}</span>
+        <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+        <span class="statut-badge">{{ statutLabels[dossier.statutElectronique] }}</span>
+      </div>
+      <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+    </li>
+  </ul>
+  <app-pager [total]="dossiersFiltres.length" [pageSize]="pageSize" [page]="page" (pageChange)="page = $event"></app-pager>
+
+</div>

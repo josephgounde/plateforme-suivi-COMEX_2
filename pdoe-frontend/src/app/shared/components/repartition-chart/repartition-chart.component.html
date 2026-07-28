@@ -1,0 +1,20 @@
+<section class="section-block repartition-block" *ngIf="items.length > 0">
+  <h2>{{ titre }}</h2>
+  <div class="repartition-chart">
+    <div
+      class="repartition-row"
+      *ngFor="let item of items"
+      [class.repartition-row--rejete]="item.rejete"
+    >
+      <span class="repartition-label">{{ item.libelle }}</span>
+      <div class="repartition-track">
+        <div
+          class="repartition-fill"
+          [style.width.%]="item.pourcentage"
+          [style.background]="item.couleur"
+        ></div>
+      </div>
+      <span class="repartition-count">{{ item.count }}</span>
+    </div>
+  </div>
+</section>

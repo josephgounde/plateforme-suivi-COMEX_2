@@ -1,0 +1,81 @@
+<div class="page">
+
+  <header class="page-header">
+    <div>
+      <h1>Journal des exports</h1>
+      <p class="page-sub">Tous les exports générés — réglementaires (DGI, Trésor, BCEAO) et opérationnels.</p>
+    </div>
+    <div class="filtres">
+      <label class="date-field">Du
+        <input type="date" [value]="filtreDateDebut" (change)="modifierDateDebut($any($event.target).value)" />
+      </label>
+      <label class="date-field">Au
+        <input type="date" [value]="filtreDateFin" (change)="modifierDateFin($any($event.target).value)" />
+      </label>
+      <app-dropdown-select
+        class="filtre-categorie"
+        [options]="categorieOptions"
+        [(ngModel)]="filtreCategorie"
+        (ngModelChange)="appliquerFiltres()"
+      />
+      <app-dropdown-select
+        class="filtre-type"
+        [options]="typeExportOptions"
+        [filtrable]="true"
+        [(ngModel)]="filtreTypeExport"
+        (ngModelChange)="appliquerFiltres()"
+      />
+    </div>
+  </header>
+
+  <p class="erreur" *ngIf="erreur">{{ erreur }}</p>
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="table-wrapper" *ngIf="!chargement">
+    <table>
+      <thead>
+        <tr>
+          <th>Généré le</th>
+          <th>Catégorie</th>
+          <th>Type</th>
+          <th>Période</th>
+          <th>Fichier</th>
+          <th>Taille</th>
+          <th>Par</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of entrees">
+          <td class="td-date">{{ e.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>
+            <span class="badge" [class.badge--reglementaire]="e.categorie === 'REGLEMENTAIRE'" [class.badge--operationnel]="e.categorie === 'OPERATIONNEL'">
+              {{ CATEGORIE_EXPORT_LABELS[e.categorie] }}
+            </span>
+          </td>
+          <td>{{ TYPE_EXPORT_LABELS[e.typeExport] }}</td>
+          <td class="td-periode">{{ e.dateDebut | date: 'dd/MM/yyyy' }} – {{ e.dateFin | date: 'dd/MM/yyyy' }}</td>
+          <td class="td-fichier">{{ e.nomFichier }}</td>
+          <td class="td-taille">{{ formaterTaille(e.tailleFichier) }}</td>
+          <td class="td-utilisateur">{{ e.createdBy }}</td>
+          <td class="td-action">
+            <button
+              type="button"
+              class="btn-telecharger"
+              [disabled]="telechargementsEnCours.has(e.exportReglementaireId)"
+              (click)="telecharger(e)"
+            >
+              {{ telechargementsEnCours.has(e.exportReglementaireId) ? '…' : '⬇' }}
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="entrees.length === 0">
+          <td colspan="8" class="td-vide">Aucun export ne correspond à ces filtres.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <app-pager *ngIf="!chargement && total > 0" [total]="total" [pageSize]="pageSize" [page]="page" (pageChange)="changerPage($event)" />
+
+</div>

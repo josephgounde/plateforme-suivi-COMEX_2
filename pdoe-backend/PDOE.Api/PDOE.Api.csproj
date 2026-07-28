@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!--
+    Host / composition root du monolithe modulaire (cf. DAT §4.2) : ne
+    contient aucune logique métier, seulement le wiring (DbContext,
+    MediatR, ApplicationParts) des projets modules ci-dessous. Le contrat
+    (DTOs générés par NSwag) et sa génération vivent dans PDOE.Shared.Kernel,
+    pas ici — l'hôte dépend des modules, jamais l'inverse.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\PDOE.Shared.Kernel\PDOE.Shared.Kernel.csproj" />
+    <ProjectReference Include="..\PDOE.Infrastructure\PDOE.Infrastructure.csproj" />
+    <ProjectReference Include="..\PDOE.Dossiers.API\PDOE.Dossiers.API.csproj" />
+    <ProjectReference Include="..\PDOE.Gateway\PDOE.Gateway.csproj" />
+    <ProjectReference Include="..\PDOE.Workflow.API\PDOE.Workflow.API.csproj" />
+    <ProjectReference Include="..\PDOE.Execution.API\PDOE.Execution.API.csproj" />
+    <ProjectReference Include="..\PDOE.Apurement.API\PDOE.Apurement.API.csproj" />
+    <ProjectReference Include="..\PDOE.Reporting.API\PDOE.Reporting.API.csproj" />
+    <ProjectReference Include="..\PDOE.CBS.Integration\PDOE.CBS.Integration.csproj" />
+    <ProjectReference Include="..\PDOE.Notifications\PDOE.Notifications.csproj" />
+    <ProjectReference Include="..\PDOE.Admin.API\PDOE.Admin.API.csproj" />
+  </ItemGroup>
+
+</Project>

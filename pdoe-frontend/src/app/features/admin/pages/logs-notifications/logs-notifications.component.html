@@ -1,0 +1,56 @@
+<div class="page">
+
+  <header class="page-header">
+    <div>
+      <h1>Logs de notifications</h1>
+      <p class="page-sub">Historique des envois SMS/Email (soumission, rejet...).</p>
+    </div>
+    <app-dropdown-select class="filtre-statut" [options]="statutOptions" [(ngModel)]="filtreStatut" />
+  </header>
+
+  <p class="erreur" *ngIf="erreur">{{ erreur }}</p>
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="table-wrapper" *ngIf="!chargement">
+    <table>
+      <thead>
+        <tr>
+          <th>Date d'envoi</th>
+          <th>Type d'événement</th>
+          <th>Canal</th>
+          <th>Destinataire</th>
+          <th>Statut</th>
+          <th>Dossier</th>
+          <th>Tentatives</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let n of notificationsFiltrees">
+          <td class="td-date">{{ n.dateEnvoi ? (n.dateEnvoi | date: 'dd/MM/yyyy HH:mm') : '—' }}</td>
+          <td>{{ n.typeEvenement }}</td>
+          <td><span class="badge badge--canal">{{ n.canal }}</span></td>
+          <td class="td-destinataire">{{ n.destinataire }}</td>
+          <td>
+            <span class="badge"
+              [class.badge--ok]="n.statut === StatutNotification.ENVOYE"
+              [class.badge--echec]="n.statut === StatutNotification.ECHEC || n.statut === StatutNotification.ECHEC_DEFINITIF"
+              [class.badge--attente]="n.statut === StatutNotification.EN_ATTENTE"
+            >
+              {{ n.statut }}
+            </span>
+            <span class="code-erreur" *ngIf="n.codeErreur">{{ n.codeErreur }}</span>
+          </td>
+          <td>
+            <a *ngIf="n.dossierId" [routerLink]="['/dossiers', n.dossierId]">#{{ n.dossierId }}</a>
+            <span *ngIf="!n.dossierId">—</span>
+          </td>
+          <td class="td-tentatives">{{ n.nbTentatives }}</td>
+        </tr>
+        <tr *ngIf="notificationsFiltrees.length === 0">
+          <td colspan="7" class="td-vide">Aucune notification.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

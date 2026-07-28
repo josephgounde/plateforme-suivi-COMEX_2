@@ -1,0 +1,13 @@
+<section class="section-block bar-block" *ngIf="items.length > 0">
+  <h2>{{ titre }}</h2>
+  <apx-chart
+    [series]="chartOptions.series"
+    [chart]="chartOptions.chart"
+    [xaxis]="chartOptions.xaxis"
+    [dataLabels]="chartOptions.dataLabels"
+    [plotOptions]="chartOptions.plotOptions"
+    [grid]="chartOptions.grid"
+    [tooltip]="chartOptions.tooltip"
+    [colors]="chartOptions.colors"
+  ></apx-chart>
+</section>

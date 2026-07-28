@@ -1,0 +1,27 @@
+:host {
+  display: inline-block;
+}
+
+.delai-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--ok {
+    color: #2e7d32;
+    background: #e8f5e9;
+  }
+
+  &--attention {
+    color: #e65100;
+    background: #fff3e0;
+  }
+
+  &--depasse {
+    color: var(--pdoe-red);
+    background: #fdecee;
+  }
+}

@@ -1,0 +1,46 @@
+.metriques-bandeau {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.metrique-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 110px;
+}
+
+.metrique-lbl {
+  font-size: 13px;
+  color: #767676;
+  white-space: nowrap;
+}
+
+.metrique-val {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--pdoe-ink);
+  line-height: 1.1;
+
+  &--success { color: #2e7d32; }
+  &--danger  { color: var(--pdoe-red); }
+  &--warning { color: #e65100; }
+}
+
+@media (max-width: 600px) {
+  .metriques-bandeau {
+    gap: 20px;
+    padding: 16px 18px;
+  }
+
+  .metrique-val {
+    font-size: 22px;
+  }
+}

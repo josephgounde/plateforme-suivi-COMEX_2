@@ -1,0 +1,6 @@
+@PDOE.Api_HostAddress = http://localhost:5072
+
+GET {{PDOE.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

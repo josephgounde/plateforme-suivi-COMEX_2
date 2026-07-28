@@ -1,0 +1,136 @@
+<div class="page">
+
+  <header class="page-header">
+    <h1>Gestion des utilisateurs</h1>
+    <button type="button" class="btn-primary" (click)="ouvrirFormulaire()" *ngIf="!afficherFormulaire">
+      + Nouvel utilisateur
+    </button>
+  </header>
+
+  <p class="succes" *ngIf="succes">✓ {{ succes }}</p>
+  <p class="erreur" *ngIf="erreur">{{ erreur }}</p>
+
+  <div class="creation-form" *ngIf="afficherFormulaire">
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Login AD</label>
+        <input [(ngModel)]="nouvel.loginAD" placeholder="Ex : gestionnaire.yao (obligatoire)" />
+      </div>
+      <div class="form-field">
+        <label>Nom</label>
+        <input [(ngModel)]="nouvel.nom" placeholder="Ex : Yao (obligatoire)" />
+      </div>
+      <div class="form-field">
+        <label>Prénom</label>
+        <input [(ngModel)]="nouvel.prenom" placeholder="Ex : Kouadio (obligatoire)" />
+      </div>
+      <div class="form-field">
+        <label>Email</label>
+        <input [(ngModel)]="nouvel.email" type="email" placeholder="Ex : gestionnaire.yao@afbci.ci (obligatoire)" />
+      </div>
+      <div class="form-field">
+        <label>Profil</label>
+        <app-dropdown-select [options]="profilOptions" [(ngModel)]="nouvel.profil" />
+      </div>
+    </div>
+    <p class="erreur" *ngIf="creationErreur">{{ creationErreur }}</p>
+    <div class="form-actions">
+      <button type="button" class="btn-cancel" (click)="annulerCreation()">Annuler</button>
+      <button
+        type="button"
+        class="btn-save"
+        [disabled]="!creationValide() || creationEnCours"
+        (click)="creer()"
+      >
+        {{ creationEnCours ? 'Création…' : 'Créer' }}
+      </button>
+    </div>
+  </div>
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="table-wrapper" *ngIf="!chargement">
+    <table>
+      <thead>
+        <tr>
+          <th>Login AD</th>
+          <th>Nom complet</th>
+          <th>Email</th>
+          <th>Profil</th>
+          <th>Statut</th>
+          <th>Mis à jour</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of utilisateurs" [class.row-inactif]="!u.estActif">
+          <td class="td-login">{{ u.loginAD }}</td>
+
+          <ng-container *ngIf="editIdentiteId === u.utilisateurId; else identiteFigee">
+            <td class="td-identite-edit">
+              <input class="edit-input" [(ngModel)]="editIdentite.prenom" placeholder="Prénom (obligatoire)" />
+              <input class="edit-input" [(ngModel)]="editIdentite.nom" placeholder="Nom (obligatoire)" />
+            </td>
+            <td class="td-identite-edit">
+              <input class="edit-input" [(ngModel)]="editIdentite.email" type="email" placeholder="Email (obligatoire)" />
+            </td>
+          </ng-container>
+          <ng-template #identiteFigee>
+            <td>{{ u.prenom }} {{ u.nom }}</td>
+            <td class="td-email">{{ u.email }}</td>
+          </ng-template>
+
+          <td>
+            <app-dropdown-select
+              class="select-profil"
+              [options]="profilOptions"
+              [value]="u.profil"
+              [disabled]="estSoiMeme(u) || enregistrementEnCours(u.utilisateurId) || editIdentiteId === u.utilisateurId"
+              (valueChange)="changerProfil(u, $event)"
+            />
+          </td>
+          <td>
+            <span class="badge" [class.badge--ok]="u.estActif">
+              {{ u.estActif ? 'Actif' : 'Désactivé' }}
+            </span>
+          </td>
+          <td class="td-date">{{ u.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="td-actions">
+            <ng-container *ngIf="editIdentiteId === u.utilisateurId; else actionsFigees">
+              <button type="button" class="btn-cancel" (click)="annulerEditionIdentite()">Annuler</button>
+              <button
+                type="button"
+                class="btn-save"
+                [disabled]="!identiteValide() || enregistrementEnCours(u.utilisateurId)"
+                (click)="enregistrerIdentite(u)"
+              >
+                {{ enregistrementEnCours(u.utilisateurId) ? '…' : 'OK' }}
+              </button>
+            </ng-container>
+            <ng-template #actionsFigees>
+              <button
+                type="button"
+                class="btn-edit"
+                [disabled]="enregistrementEnCours(u.utilisateurId) || (editIdentiteId !== null && editIdentiteId !== u.utilisateurId)"
+                (click)="demarrerEditionIdentite(u)"
+              >
+                Modifier
+              </button>
+              <button
+                type="button"
+                class="btn-toggle"
+                [class.btn-toggle--reactiver]="!u.estActif"
+                [disabled]="estSoiMeme(u) || enregistrementEnCours(u.utilisateurId)"
+                [title]="estSoiMeme(u) ? 'Impossible de modifier son propre compte' : ''"
+                (click)="basculerActivation(u)"
+              >
+                {{ u.estActif ? 'Désactiver' : 'Activer' }}
+              </button>
+            </ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

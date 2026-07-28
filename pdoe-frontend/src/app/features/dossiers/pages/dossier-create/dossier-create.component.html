@@ -1,0 +1,334 @@
+<div class="page">
+
+  <a routerLink="/dashboard" class="back-link">← Retour</a>
+
+  <h1>{{ modeEdition ? 'Modifier le dossier' : 'Nouveau dossier' }}</h1>
+
+  <p class="loading" *ngIf="chargementInitial">Chargement du dossier…</p>
+
+  <form
+    class="dossier-form"
+    [formGroup]="formulaire"
+    *ngIf="!chargementInitial"
+    (ngSubmit)="enregistrer()"
+  >
+
+    <!-- ═══ Numéro de compte + vérification signature ═══ -->
+    <section class="form-section">
+      <h2>Compte client</h2>
+
+      <div class="compte-verif-row">
+        <div class="form-field">
+          <label for="numCompte">Numéro de compte</label>
+          <input
+            id="numCompte"
+            type="text"
+            formControlName="numCompte"
+            placeholder="CI00123456789"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="btn-verify"
+          *ngIf="!modeEdition && etapeSignature === 'saisie'"
+          [disabled]="!formulaire.get('numCompte')?.value"
+          (click)="lancerVerificationSignature()"
+        >
+          Vérifier la signature
+        </button>
+      </div>
+
+      <!-- Le flux de vérification n'apparaît qu'en mode création -->
+      <ng-container *ngIf="!modeEdition">
+
+        <p class="signature-status signature-status--loading" *ngIf="etapeSignature === 'verification'">
+          Vérification en cours auprès d'ABS2000…
+        </p>
+
+        <p class="signature-status signature-status--error" *ngIf="etapeSignature === 'echec'">
+          Signature introuvable ou invalide pour ce compte.
+          <button type="button" class="btn-retry" (click)="recommencerVerification()">
+            Réessayer
+          </button>
+        </p>
+
+        <!-- Mode VISUEL ou LES_DEUX : comparaison de l'image -->
+        <div
+          class="signature-visuelle"
+          *ngIf="etapeSignature === 'confirmation_visuelle' && resultatVerification?.imageSignature"
+        >
+          <p class="signature-visuelle-hint">
+            Comparez la signature ci-dessous avec celle du document papier du client.
+          </p>
+          <img
+            class="signature-image"
+            [src]="'data:image/png;base64,' + resultatVerification?.imageSignature"
+            alt="Signature enregistrée pour ce compte"
+          />
+
+          <label class="signature-checkbox">
+            <input type="checkbox" [(ngModel)]="confirmationVisuelleCochee" [ngModelOptions]="{ standalone: true }" />
+            <span>Je confirme que les signatures correspondent</span>
+          </label>
+
+          <div class="form-field">
+            <label for="initiales">Vos initiales</label>
+            <input
+              id="initiales"
+              type="text"
+              [(ngModel)]="initialesAgent"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Ex : KL"
+              maxlength="4"
+            />
+          </div>
+
+          <button
+            type="button"
+            class="btn-verify"
+            [disabled]="!confirmationVisuelleCochee || !initialesAgent.trim()"
+            (click)="confirmerSignatureVisuelle()"
+          >
+            Confirmer la signature
+          </button>
+        </div>
+
+        <p class="signature-status signature-status--ok" *ngIf="etapeSignature === 'validee'">
+          ✓ Signature vérifiée — vous pouvez compléter le dossier.
+        </p>
+
+      </ng-container>
+
+      <hr class="section-divider" />
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="matriculeClient">Matricule du client</label>
+          <input
+            id="matriculeClient"
+            type="text"
+            formControlName="matriculeClient"
+            placeholder="Ex : CLI-0001"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="nomClient">Nom du client</label>
+          <input id="nomClient" type="text" formControlName="nomClient" placeholder="Ex : Société Ivoirienne de Cacao SA" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="nifClient">NCC (numéro de compte contribuable) du client</label>
+          <input id="nifClient" type="text" formControlName="nifClient" placeholder="Ex : 9601990K, 1923786L…" />
+        </div>
+
+        <div class="form-field">
+          <label for="adressePostaleClient">Adresse postale du client</label>
+          <input id="adressePostaleClient" type="text" formControlName="adressePostaleClient" placeholder="Ex : 01 BP 1234 Abidjan 01" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="adresseGeographiqueClient">Adresse géographique du client</label>
+          <input id="adresseGeographiqueClient" type="text" formControlName="adresseGeographiqueClient" placeholder="Ex : Cocody Riviera, Rue des Jardins" />
+        </div>
+
+        <div class="form-field">
+          <label for="telephoneClient">Téléphone du client</label>
+          <input id="telephoneClient" type="text" formControlName="telephoneClient" placeholder="Ex : +225 07 00 00 00 00" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="codeBanque">Code banque (Afriland CI)</label>
+          <input id="codeBanque" type="text" formControlName="codeBanque" placeholder="Ex : CI014" />
+        </div>
+
+        <div class="form-field">
+          <label for="qualiteResidence">Qualité de la résidence du client</label>
+          <app-dropdown-select id="qualiteResidence" [options]="qualiteResidenceOptions" formControlName="qualiteResidence" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="dateOuvertureCompte">Date d'ouverture du compte</label>
+          <input id="dateOuvertureCompte" type="date" formControlName="dateOuvertureCompte" />
+        </div>
+
+        <div class="form-field">
+          <label for="anneeExerciceCompte">Année d'exercice (compte)</label>
+          <input id="anneeExerciceCompte" type="number" formControlName="anneeExerciceCompte" placeholder="Ex : 2026" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Informations du dossier — verrouillées tant que la signature n'est pas validée (création) ═══ -->
+    <section class="form-section">
+      <h2>Informations de l'opération</h2>
+
+      <div class="form-field">
+        <label for="nomBeneficiaire">Nom du bénéficiaire</label>
+        <input id="nomBeneficiaire" type="text" formControlName="nomBeneficiaire" placeholder="Ex : Ets Industriel France SAS" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="typeOperation">Type d'opération</label>
+          <app-dropdown-select id="typeOperation" [options]="typeOperationOptions" formControlName="typeOperation" />
+        </div>
+
+        <div class="form-field">
+          <label for="natureTransaction">Nature de la transaction</label>
+          <input id="natureTransaction" type="text" formControlName="natureTransaction" placeholder="Ex : Règlement facture fournisseur" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="montant">Montant</label>
+          <input id="montant" type="number" formControlName="montant" min="1" placeholder="Ex : 5000000 (minimum 1)" />
+        </div>
+
+        <div class="form-field">
+          <label for="devise">Devise</label>
+          <input id="devise" type="text" formControlName="devise" maxlength="3" placeholder="Ex : XOF (code ISO, 3 lettres)" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="paysBeneficiaire">Pays du bénéficiaire</label>
+          <app-dropdown-select id="paysBeneficiaire" [options]="paysOptions" [filtrable]="true" formControlName="paysBeneficiaire" placeholder="Sélectionner un pays…" />
+        </div>
+
+        <div class="form-field">
+          <label for="typeCompteDebite">Type de compte débité</label>
+          <app-dropdown-select id="typeCompteDebite" [options]="typeCompteOptions" formControlName="typeCompteDebite" />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="motif">Motif</label>
+        <textarea id="motif" formControlName="motif" rows="3" placeholder="Ex : Paiement fournisseur — facture n° 2026-0456"></textarea>
+      </div>
+    </section>
+
+    <!-- ═══ Champs réglementaires — checklist de domiciliation BCEAO ═══ -->
+    <section class="form-section">
+      <h2>Domiciliation réglementaire</h2>
+      <p class="section-hint">Facultatifs — à renseigner dès que connus, corrigeables jusqu'à la clôture du dossier.</p>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="referenceDomiciliation">Référence de domiciliation</label>
+          <input id="referenceDomiciliation" type="text" formControlName="referenceDomiciliation" placeholder="Facultatif" />
+        </div>
+
+        <div class="form-field">
+          <label for="codeStatistiqueOperateur">Code statistique de l'opérateur économique</label>
+          <input id="codeStatistiqueOperateur" type="text" formControlName="codeStatistiqueOperateur" placeholder="Ex : 104, 408, 503, 210…" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Coordonnées bancaires — indicatives, confirmées ensuite par la Trésorerie ═══ -->
+    <section class="form-section">
+      <h2>Coordonnées bancaires du bénéficiaire</h2>
+      <p class="section-hint">
+        Informations préliminaires transmises par le client — la Trésorerie les confirmera ou les corrigera à l'étape 4.
+      </p>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="codeSwiftIndicatif">Code SWIFT</label>
+          <input id="codeSwiftIndicatif" type="text" formControlName="codeSwiftIndicatif" maxlength="11" placeholder="Facultatif — Ex : BNPAFRPP" />
+        </div>
+
+        <div class="form-field">
+          <label for="banqueCorrespondanteIndicative">Banque correspondante</label>
+          <input id="banqueCorrespondanteIndicative" type="text" formControlName="banqueCorrespondanteIndicative" placeholder="Facultatif — Ex : BNP Paribas" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ Règle réglementaire — informative, dépend du type d'opération ═══ -->
+    <section class="form-section" *ngIf="regleApurement as regle">
+      <h2>Règle d'apurement applicable</h2>
+      <p class="regle-delai">{{ regle.delaiLibelle }}</p>
+      <p class="regle-reference">{{ regle.referenceReglementaire }}</p>
+      <ul class="checklist-documents">
+        <li *ngFor="let item of checklistDocuments">
+          <span class="checklist-doc-nom">{{ item.document }}</span>
+          <span
+            class="checklist-doc-etat"
+            [class.checklist-doc-etat--obligatoire]="item.etat === 'Obligatoire'"
+            [class.checklist-doc-etat--facultatif]="item.etat === 'Facultatif'"
+            [class.checklist-doc-etat--non-requis]="item.etat === 'Non requis'"
+          >
+            {{ item.etat }}
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ═══ Documents justificatifs — création (mise en attente) et
+         édition (envoi immédiat, dossierId déjà connu) ═══ -->
+    <section class="form-section">
+      <h2>Documents justificatifs</h2>
+      <p class="section-hint">Ordre de transfert et pièces justificatives — formats jpeg ou pdf.</p>
+
+      <ul class="fichiers-list" *ngIf="modeEdition && documentsExistants.length > 0">
+        <li *ngFor="let doc of documentsExistants">
+          <span class="fichier-type">{{ typeDocumentLabels[doc.typeDocument] }}</span>
+          <span class="fichier-nom">{{ doc.nomFichier }}</span>
+          <span class="fichier-reference" *ngIf="doc.referenceDocument">Réf. {{ doc.referenceDocument }}</span>
+        </li>
+      </ul>
+
+      <div class="upload-row">
+        <app-dropdown-select [options]="documentsUploadOptions" [(ngModel)]="typeDocumentSelectionne" [ngModelOptions]="{ standalone: true }" />
+        <input
+          type="text"
+          [(ngModel)]="referenceDocumentSaisie"
+          [ngModelOptions]="{ standalone: true }"
+          [placeholder]="referenceDocumentPlaceholderActuel"
+        />
+        <input type="file" accept=".jpg,.jpeg,.pdf" [disabled]="uploadEnCours" (change)="selectionnerFichier($event)" />
+        <button type="button" class="btn-secondary" [disabled]="!fichierSelectionne || uploadEnCours" (click)="ajouterFichier()">
+          {{ uploadEnCours ? 'Envoi…' : '+ Ajouter' }}
+        </button>
+      </div>
+
+      <p class="form-error" *ngIf="uploadErreur">
+        Échec de l'envoi du document — réessayez.
+      </p>
+
+      <ul class="fichiers-list" *ngIf="!modeEdition && fichiersEnAttente.length > 0">
+        <li *ngFor="let f of fichiersEnAttente; let i = index">
+          <span class="fichier-type">{{ typeDocumentLabels[f.typeDocument] }}</span>
+          <span class="fichier-nom">{{ f.fichier.name }}</span>
+          <span class="fichier-reference" *ngIf="f.referenceDocument">Réf. {{ f.referenceDocument }}</span>
+          <button type="button" class="btn-retirer" (click)="retirerFichier(i)">✕</button>
+        </li>
+      </ul>
+    </section>
+
+    <p class="form-error" *ngIf="erreurEnregistrement">
+      Une erreur est survenue lors de l'enregistrement — réessayez.
+    </p>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary" [disabled]="!peutEnregistrer || enregistrement">
+        {{ enregistrement ? 'Enregistrement…' : modeEdition ? 'Enregistrer les modifications' : 'Créer le dossier' }}
+      </button>
+    </div>
+
+  </form>
+
+</div>

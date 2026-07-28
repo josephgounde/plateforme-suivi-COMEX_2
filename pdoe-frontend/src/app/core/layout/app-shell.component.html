@@ -1,0 +1,133 @@
+<div class="app-shell">
+
+  <app-toast-container />
+
+  <div class="sidebar-backdrop" *ngIf="sidebarOuverte" (click)="sidebarOuverte = false"></div>
+
+  <aside class="app-sidebar" [class.app-sidebar--ouverte]="sidebarOuverte">
+    <a routerLink="/dashboard" class="sidebar-brand" (click)="sidebarOuverte = false">
+      <span class="sidebar-logo-plate">
+        <img src="logo-afriland-first-bank.png" alt="Afriland First Bank" />
+      </span>
+      <span class="sidebar-tagline">Suivi des opérations COMEX</span>
+    </a>
+
+    <!-- Identité (avatar + nom) : même bloc sobre pour tous les
+         profils, quelle que soit la source de la navigation
+         ci-dessous (cf. commentaire suivant) — plus de carte/fond
+         distincte pour certains profils, le rôle reste visible dans
+         la topbar (.topbar-profil) donc pas dupliqué ici. -->
+    <div class="sidebar-identite">
+      <span class="sidebar-identite-avatar">{{ initiales }}</span>
+      <span class="sidebar-identite-nom">{{ auth.currentUser?.nomComplet }}</span>
+    </div>
+
+    <!-- Un dashboard routé peut pousser ses propres onglets de section
+         via DashboardNavService (ex: AgentAccueilDashboardComponent —
+         Brouillons/Rejetés/En cours/Validés) : dans ce cas ils
+         remplacent le lien générique unique. Hors dashboard (ex:
+         /dossiers/nouveau) ou pour un profil qui n'a pas encore ce
+         pont, on retombe sur la navigation par route simple. Les deux
+         partagent la même classe .sidebar-nav-item — un seul style de
+         barre latérale pour tous les profils. -->
+    <nav class="sidebar-nav">
+      <ng-container *ngIf="dashboardNav.items().length > 0; else navParRoute">
+        <button
+          type="button"
+          class="sidebar-nav-item"
+          *ngFor="let item of dashboardNav.items()"
+          [class.sidebar-nav-item--actif]="dashboardNav.activeId() === item.id"
+          (click)="dashboardNav.select(item.id); sidebarOuverte = false"
+        >
+          <span class="nav-icon">{{ item.icone }}</span>
+          <span class="nav-label">{{ item.libelle }}</span>
+          <span class="nav-count" *ngIf="item.count !== undefined">{{ item.count }}</span>
+        </button>
+      </ng-container>
+
+      <ng-template #navParRoute>
+        <a
+          *ngFor="let item of navItems"
+          [routerLink]="item.route"
+          [queryParams]="item.queryParams"
+          routerLinkActive="sidebar-nav-item--actif"
+          [routerLinkActiveOptions]="{ exact: true, matrixParams: 'exact', queryParams: 'exact', fragment: 'ignored' }"
+          class="sidebar-nav-item"
+          (click)="sidebarOuverte = false"
+        >
+          <span class="nav-icon">{{ item.icone }}</span>
+          <span class="nav-label">{{ item.libelle }}</span>
+        </a>
+      </ng-template>
+    </nav>
+
+    <div class="sidebar-footer">
+      <p class="sidebar-footer-espace">PSCOMEX · Espace {{ profilLabel }}</p>
+      <p class="sidebar-footer-copyright">© {{ anneeCourante }} Afriland First Bank</p>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button type="button" class="topbar-burger" (click)="sidebarOuverte = !sidebarOuverte" aria-label="Menu">
+        ☰
+      </button>
+
+      <div class="topbar-spacer"></div>
+
+      <div class="topbar-actions">
+        <div class="topbar-bell-wrap">
+          <button
+            type="button"
+            class="topbar-bell"
+            [class.topbar-bell--actif]="clocheOuverte"
+            (click)="clocheOuverte = !clocheOuverte"
+            aria-label="Notifications"
+          >
+            🔔
+            <span class="topbar-bell-badge" *ngIf="notifs.notifications().length > 0">
+              {{ notifs.notifications().length }}
+            </span>
+          </button>
+
+          <div class="topbar-bell-backdrop" *ngIf="clocheOuverte" (click)="clocheOuverte = false"></div>
+
+          <div class="topbar-bell-panel" *ngIf="clocheOuverte">
+            <div class="topbar-bell-titre">Notifications</div>
+
+            <div class="topbar-bell-empty" *ngIf="notifs.notifications().length === 0">
+              Aucune notification.
+            </div>
+
+            <ul class="topbar-bell-list" *ngIf="notifs.notifications().length > 0">
+              <li class="topbar-bell-row" *ngFor="let n of notifs.notifications()">
+                <span class="topbar-bell-icone">📬</span>
+                <span class="topbar-bell-texte">{{ notifs.libelle(n) }}</span>
+                <a
+                  *ngIf="n.dossierId"
+                  class="topbar-bell-lien"
+                  [routerLink]="['/dossiers', n.dossierId]"
+                  (click)="clocheOuverte = false"
+                >
+                  Voir →
+                </a>
+                <button type="button" class="topbar-bell-fermer" (click)="notifs.ignorer(n.notificationId)">✕</button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <span class="topbar-profil">{{ profilLabel }}</span>
+        <span class="topbar-divider"></span>
+        <button type="button" class="topbar-logout" (click)="auth.logout()">
+          Déconnexion
+        </button>
+      </div>
+    </header>
+
+    <main class="shell-content" #shellContent>
+      <router-outlet />
+    </main>
+  </div>
+
+</div>

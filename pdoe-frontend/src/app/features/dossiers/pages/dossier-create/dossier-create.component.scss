@@ -1,0 +1,465 @@
+.page {
+  padding: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #595959;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--pdoe-red);
+  }
+}
+
+h1 {
+  margin: 0 0 20px;
+  font-size: 20px;
+  color: var(--pdoe-ink);
+}
+
+.loading {
+  font-size: 13px;
+  color: #999999;
+}
+
+.form-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+
+  h2 {
+    margin: 0 0 14px;
+    font-size: 14px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pdoe-ink);
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 11px;
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    background: #fafafa;
+    transition: border-color 0.15s ease, background 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+
+    &:disabled {
+      background: #f0f0f0;
+      color: #999999;
+      cursor: not-allowed;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  app-dropdown-select {
+    width: 100%;
+  }
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// ── Numéro de compte + bouton de vérification, sur une même ligne
+// (contrairement aux .form-row habituelles, empilées en mobile) ─
+
+.compte-verif-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+
+  .form-field {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+// Ligne grise séparant le numéro de compte + sa vérification du
+// reste des informations client, en dessous.
+.section-divider {
+  margin: 20px 0 18px;
+  border: none;
+  border-top: 1px solid #e0e0e0;
+}
+
+// ── Flux de vérification de signature ───────────────────────
+
+.btn-verify {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-ink);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: #333333;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.compte-verif-row .btn-verify {
+  width: auto;
+  margin-top: 0;
+  padding: 9px 16px;
+}
+
+.signature-status {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  font-size: 12px;
+  border-radius: 6px;
+
+  &--loading {
+    color: #1565c0;
+    background: #e3f2fd;
+  }
+
+  &--error {
+    color: var(--pdoe-red);
+    background: #fdecee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  &--ok {
+    color: #2e7d32;
+    background: #e8f5e9;
+  }
+}
+
+.btn-retry {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pdoe-red);
+  background: #ffffff;
+  border: 1px solid var(--pdoe-red);
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #fdecee;
+  }
+}
+
+.signature-visuelle {
+  margin-top: 10px;
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+}
+
+.signature-visuelle-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #595959;
+}
+
+.signature-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.signature-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--pdoe-ink);
+  cursor: pointer;
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--pdoe-red);
+  }
+}
+
+// ── Coordonnées bancaires indicatives ────────────────────────
+
+.section-hint {
+  margin: -6px 0 14px;
+  font-size: 12px;
+  color: #595959;
+}
+
+// ── Règle réglementaire (délai + référence) ───────────────────
+
+.regle-delai {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--pdoe-ink);
+}
+
+.regle-reference {
+  margin: 0 0 14px;
+  font-size: 12px;
+  font-style: italic;
+  color: #595959;
+}
+
+// ── Checklist documentaire ───────────────────────────────────
+
+.checklist-documents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checklist-documents li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  background: #fafafa;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+}
+
+.checklist-doc-nom {
+  color: var(--pdoe-ink);
+}
+
+.checklist-doc-etat {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  color: #999999;
+  background: #f0f0f0;
+
+  &--obligatoire {
+    color: var(--pdoe-red);
+    background: #fdecee;
+  }
+
+  &--facultatif {
+    color: #1565c0;
+    background: #e3f2fd;
+  }
+
+  &--non-requis {
+    color: #999999;
+    background: #f0f0f0;
+  }
+}
+
+// ── Documents justificatifs (upload) ─────────────────────────
+
+.upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+
+  app-dropdown-select,
+  input[type='text'],
+  input[type='file'] {
+    flex: 1 1 160px;
+  }
+}
+
+.btn-secondary {
+  flex-shrink: 0;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #fafafa;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.fichiers-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fichiers-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+  background: #fafafa;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+}
+
+.fichier-type {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+.fichier-nom {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #595959;
+}
+
+.fichier-reference {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #999999;
+}
+
+.btn-retirer {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  font-size: 11px;
+  color: #999999;
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 50%;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--pdoe-red);
+    border-color: var(--pdoe-red);
+  }
+}
+
+// ── Erreurs et actions ───────────────────────────────────────
+
+.form-error {
+  margin: 0 0 14px;
+  padding: 9px 11px;
+  font-size: 12px;
+  color: var(--pdoe-red);
+  background: #fdecee;
+  border-radius: 6px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-primary {
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ── Responsive ───────────────────────────────────────────────
+// Au-delà de 480px, les paires de champs passent en deux colonnes côte à côte.
+
+@media (min-width: 480px) {
+  .form-row {
+    flex-direction: row;
+
+    .form-field {
+      flex: 1;
+      margin-bottom: 0;
+    }
+  }
+
+  .form-row + .form-field,
+  .form-section .form-row {
+    margin-bottom: 14px;
+  }
+}
+
+@media (min-width: 600px) {
+  .form-actions {
+    .btn-primary {
+      min-width: 220px;
+    }
+  }
+}

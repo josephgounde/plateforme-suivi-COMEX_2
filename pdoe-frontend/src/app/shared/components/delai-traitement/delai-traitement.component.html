@@ -1,0 +1,7 @@
+<span
+  class="delai-badge"
+  [class.delai-badge--ok]="etat === 'ok'"
+  [class.delai-badge--attention]="etat === 'attention'"
+  [class.delai-badge--depasse]="etat === 'depasse'"
+  [title]="'Délai imparti : ' + delaiHeures + 'h'"
+>{{ libelle }}</span>

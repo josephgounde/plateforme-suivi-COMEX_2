@@ -1,0 +1,14 @@
+<Solution>
+  <Project Path="PDOE.Api/PDOE.Api.csproj" />
+  <Project Path="PDOE.Shared.Kernel/PDOE.Shared.Kernel.csproj" />
+  <Project Path="PDOE.Infrastructure/PDOE.Infrastructure.csproj" />
+  <Project Path="PDOE.Dossiers.API/PDOE.Dossiers.API.csproj" />
+  <Project Path="PDOE.Gateway/PDOE.Gateway.csproj" />
+  <Project Path="PDOE.Workflow.API/PDOE.Workflow.API.csproj" />
+  <Project Path="PDOE.Execution.API/PDOE.Execution.API.csproj" />
+  <Project Path="PDOE.Apurement.API/PDOE.Apurement.API.csproj" />
+  <Project Path="PDOE.Reporting.API/PDOE.Reporting.API.csproj" />
+  <Project Path="PDOE.CBS.Integration/PDOE.CBS.Integration.csproj" />
+  <Project Path="PDOE.Notifications/PDOE.Notifications.csproj" />
+  <Project Path="PDOE.Admin.API/PDOE.Admin.API.csproj" />
+</Solution>

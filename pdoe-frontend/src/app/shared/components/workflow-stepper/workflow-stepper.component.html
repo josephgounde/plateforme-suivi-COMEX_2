@@ -1,0 +1,48 @@
+<div
+  class="stepper"
+  [class.stepper--compact]="compact"
+  [class.stepper--rejete]="rejeteDefinitif"
+  role="img"
+  [attr.aria-label]="
+    rejeteDefinitif
+      ? 'Dossier rejeté définitivement'
+      : 'Position du dossier dans le circuit COMEX'
+  "
+>
+
+  <ng-container *ngIf="rejeteDefinitif">
+    <span class="stepper-rejete-badge">Rejeté définitivement</span>
+  </ng-container>
+
+  <ng-container *ngIf="!rejeteDefinitif">
+    <div class="stepper-track">
+      <ng-container *ngFor="let etape of etapes; let last = last">
+        <div
+          class="stepper-step"
+          [class.is-complete]="etape.etat === 'complete'"
+          [class.is-courante]="etape.etat === 'courante'"
+          [class.is-alerte]="etape.etat === 'alerte'"
+          [class.is-a-venir]="etape.etat === 'a_venir'"
+          [class.is-ignoree]="etape.etat === 'ignoree'"
+          [title]="etape.etat === 'ignoree' ? etape.libelleCourt + ' — désactivée, non traversée par ce dossier' : etape.libelleCourt"
+        >
+          <span class="stepper-dot">
+            <span class="stepper-dot-check" *ngIf="etape.etat === 'complete'">✓</span>
+            <span class="stepper-dot-skip" *ngIf="etape.etat === 'ignoree'">–</span>
+            <span class="stepper-dot-number" *ngIf="etape.etat !== 'complete' && etape.etat !== 'ignoree'">{{
+              etape.numero
+            }}</span>
+          </span>
+          <span class="stepper-label" *ngIf="!compact">{{ etape.libelleCourt }}</span>
+        </div>
+
+        <div
+          class="stepper-connector"
+          *ngIf="!last"
+          [class.is-complete]="etape.etat === 'complete'"
+        ></div>
+      </ng-container>
+    </div>
+  </ng-container>
+
+</div>

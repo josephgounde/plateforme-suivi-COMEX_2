@@ -1,0 +1,67 @@
+<div class="page">
+
+  <header class="page-header">
+    <div>
+      <h1>Checklist d'apurement</h1>
+      <p class="page-sub">Items proposés sur l'écran Apurement — réordonnancement, activation et ajout.</p>
+    </div>
+    <button class="btn-add" *ngIf="!afficherFormulaireAjout" (click)="ouvrirFormulaireAjout()">
+      + Item
+    </button>
+  </header>
+
+  <p class="erreur" *ngIf="erreur">{{ erreur }}</p>
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <form class="form-ajout" *ngIf="afficherFormulaireAjout" (ngSubmit)="ajouter()">
+    <div class="form-field">
+      <label for="nouveauLibelle">Libellé</label>
+      <input id="nouveauLibelle" [(ngModel)]="nouveauLibelle" name="nouveauLibelle" placeholder="Ex : Copie de la déclaration en douane" />
+    </div>
+    <p class="erreur" *ngIf="erreurAjout">{{ erreurAjout }}</p>
+    <div class="form-actions">
+      <button type="button" class="btn-cancel" (click)="annulerAjout()">Annuler</button>
+      <button type="submit" class="btn-save" [disabled]="!ajoutValide() || ajoutEnCours">
+        {{ ajoutEnCours ? '…' : 'Créer' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="table-wrapper" *ngIf="!chargement">
+    <table>
+      <thead>
+        <tr>
+          <th>Ordre</th>
+          <th>Libellé</th>
+          <th>Actif</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let it of items; let i = index" [class.row-inactive]="!it.actif">
+          <td class="td-ordre">{{ it.ordre }}</td>
+          <td class="td-libelle">{{ it.libelle }}</td>
+          <td>
+            <label class="switch">
+              <input
+                type="checkbox"
+                [checked]="it.actif"
+                [disabled]="toggleEnCours.has(it.checklistItemId)"
+                (change)="basculerActif(it)"
+              />
+              <span class="switch-track"></span>
+            </label>
+          </td>
+          <td class="td-actions">
+            <button class="btn-move" [disabled]="!peutMonter(i) || reordonnancementEnCours" (click)="monter(i)">↑</button>
+            <button class="btn-move" [disabled]="!peutDescendre(i) || reordonnancementEnCours" (click)="descendre(i)">↓</button>
+          </td>
+        </tr>
+        <tr *ngIf="items.length === 0">
+          <td colspan="4" class="td-vide">Aucun item de checklist.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

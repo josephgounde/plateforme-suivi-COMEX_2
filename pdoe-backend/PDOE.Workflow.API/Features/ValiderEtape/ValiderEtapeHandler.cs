@@ -1,0 +1,91 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using PDOE.Api.Contracts;
+using PDOE.Infrastructure;
+using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Notifications;
+using PDOE.Shared.Kernel.Common;
+using PDOE.Workflow.API.Common;
+
+namespace PDOE.Workflow.API.Features.ValiderEtape;
+
+public class ValiderEtapeHandler(PdoeDbContext db, INotificationSender sender) : IRequestHandler<ValiderEtapeCommand, WorkflowTransitionResponse>
+{
+    public async Task<WorkflowTransitionResponse> Handle(ValiderEtapeCommand command, CancellationToken cancellationToken)
+    {
+        var request = command.Request;
+
+        var dossier = await db.Dossiers
+            .Include(d => d.EtapesWorkflow)
+            .FirstOrDefaultAsync(d => d.DossierId == command.DossierId, cancellationToken);
+
+        if (dossier is null)
+            throw new DomainException(404, ErrorResponseCode.DOSSIER_INTROUVABLE, "Dossier introuvable.");
+
+        var codeCourant = WorkflowEngine.CodeEtapeCourante(dossier);
+
+        // Sur une étape générique, niveauValidation reste obligatoire côté contrat mais ne pilote rien — l'avancement suit l'ordre configuré.
+        if (dossier.EtapeGeneriqueCode is null && request.NiveauValidation != codeCourant)
+        {
+            throw new DomainException(422, ErrorResponseCode.STATUT_INVALIDE_POUR_ACTION,
+                $"Le dossier est actuellement sur {codeCourant}, pas {request.NiveauValidation}.");
+        }
+
+        // Seule vraie précondition côté front : confirmation de commande déjà enregistrée. soldeCompteVerifie/conformiteBCEAO/lcbftConforme
+        // ne sont envoyés par aucune UI, pas de blocage dessus. Clé sur codeCourant (pas request.NiveauValidation) pour rester valide si repositionné.
+        if (codeCourant == "ETAPE_2_GESTIONNAIRE" && dossier.DateConfirmationClient is null)
+        {
+            throw new DomainException(422, ErrorResponseCode.DATE_CONFIRMATION_CLIENT_MANQUANTE,
+                "La confirmation de commande (dateConfirmationClient) doit être enregistrée avant validation.");
+        }
+
+        var now = DateTime.UtcNow;
+        var statutAvant = dossier.StatutElectronique;
+
+        await WorkflowEngine.AvancerVersEtapeSuivante(db, dossier, cancellationToken);
+
+        dossier.UpdatedAt = now;
+        dossier.UpdatedBy = CurrentUser.Login;
+
+        var etape = new EtapeWorkflow
+        {
+            DossierId = dossier.DossierId,
+            NiveauValidation = WorkflowEngine.CodeEtapeCourante(dossier),
+            StatutAvant = statutAvant,
+            StatutApres = dossier.StatutElectronique,
+            Action = nameof(ActionWorkflow.VALIDATION),
+            AgentLogin = CurrentUser.Login,
+            DateAction = now,
+            CreatedAt = now,
+            CreatedBy = CurrentUser.Login,
+        };
+        dossier.EtapesWorkflow.Add(etape);
+        JournalAuditWriter.EnregistrerTransition(db, dossier, etape);
+
+        // Notifie le titulaire de l'étape où le dossier vient d'atterrir, quel que soit le chemin pris pour y arriver.
+        var destinataireLogin = etape.NiveauValidation switch
+        {
+            "ETAPE_2_GESTIONNAIRE" => dossier.GestionnaireAssigneLogin,
+            "ETAPE_3_COMEX" => "comex",
+            "ETAPE_4_TRESORERIE" => "tresorerie",
+            _ => null,
+        };
+        if (destinataireLogin is not null)
+        {
+            await NotificationWriter.EnregistrerEtEnvoyer(
+                db, sender, dossier.DossierId, "DOSSIER_SOUMIS", $"{destinataireLogin}@afbci.ci", cancellationToken);
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new WorkflowTransitionResponse
+        {
+            DossierId = dossier.DossierId,
+            ReferenceInterne = dossier.ReferenceInterne,
+            StatutAvant = Enum.Parse<StatutDossier>(statutAvant),
+            StatutApres = Enum.Parse<StatutDossier>(dossier.StatutElectronique),
+            Action = ActionWorkflow.VALIDATION,
+            DateAction = now,
+        };
+    }
+}

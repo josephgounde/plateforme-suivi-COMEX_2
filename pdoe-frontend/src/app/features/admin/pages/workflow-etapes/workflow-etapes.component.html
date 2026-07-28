@@ -1,0 +1,78 @@
+<div class="page">
+
+  <header class="page-header">
+    <div>
+      <h1>Étapes du circuit</h1>
+      <p class="page-sub">Réordonnancement, activation et ajout — sans déploiement.</p>
+    </div>
+    <button class="btn-add" *ngIf="!afficherFormulaireAjout" (click)="ouvrirFormulaireAjout()">
+      + Étape personnalisée
+    </button>
+  </header>
+
+  <p class="erreur" *ngIf="erreur">{{ erreur }}</p>
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <form class="form-ajout" *ngIf="afficherFormulaireAjout" (ngSubmit)="ajouter()">
+    <div class="form-row">
+      <div class="form-field">
+        <label for="nouveauCode">Code</label>
+        <input id="nouveauCode" [(ngModel)]="nouveauCode" name="nouveauCode" placeholder="Ex : ETAPE_8_CONFORMITE (majuscules, chiffres, _ uniquement)" />
+      </div>
+      <div class="form-field">
+        <label for="nouveauLibelle">Libellé</label>
+        <input id="nouveauLibelle" [(ngModel)]="nouveauLibelle" name="nouveauLibelle" placeholder="Ex : Contrôle conformité" />
+      </div>
+      <div class="form-field form-field--ordre">
+        <label for="nouvelOrdre">Position</label>
+        <input id="nouvelOrdre" type="number" min="1" [(ngModel)]="nouvelOrdre" name="nouvelOrdre" placeholder="Ex : 8 (minimum 1)" />
+      </div>
+    </div>
+    <p class="erreur" *ngIf="erreurAjout">{{ erreurAjout }}</p>
+    <div class="form-actions">
+      <button type="button" class="btn-cancel" (click)="annulerAjout()">Annuler</button>
+      <button type="submit" class="btn-save" [disabled]="!ajoutValide() || ajoutEnCours">
+        {{ ajoutEnCours ? '…' : 'Créer' }}
+      </button>
+    </div>
+  </form>
+
+  <div class="table-wrapper" *ngIf="!chargement">
+    <table>
+      <thead>
+        <tr>
+          <th>Ordre</th>
+          <th>Libellé</th>
+          <th>Code</th>
+          <th>Type</th>
+          <th>Actif</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let e of etapes; let i = index" [class.row-inactive]="!e.actif">
+          <td class="td-ordre">{{ e.ordre }}</td>
+          <td class="td-libelle">{{ e.libelle }}</td>
+          <td class="td-code">{{ e.code }}</td>
+          <td><span class="badge badge--type">{{ e.typeEtape }}</span></td>
+          <td>
+            <label class="switch" [title]="e.code === etapeInitiation ? 'Étape d\'entrée — ne peut pas être désactivée' : ''">
+              <input
+                type="checkbox"
+                [checked]="e.actif"
+                [disabled]="e.code === etapeInitiation || toggleEnCours.has(e.code)"
+                (change)="basculerActif(e)"
+              />
+              <span class="switch-track"></span>
+            </label>
+          </td>
+          <td class="td-actions">
+            <button class="btn-move" [disabled]="!peutMonter(i) || reordonnancementEnCours" (click)="monter(i)">↑</button>
+            <button class="btn-move" [disabled]="!peutDescendre(i) || reordonnancementEnCours" (click)="descendre(i)">↓</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

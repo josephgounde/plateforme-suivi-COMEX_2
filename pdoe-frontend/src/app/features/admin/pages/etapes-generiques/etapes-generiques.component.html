@@ -1,0 +1,69 @@
+<div class="page">
+
+  <header class="page-header">
+    <h1>Dossiers sur étape personnalisée</h1>
+    <p class="page-sub">Étapes ajoutées sans tableau de bord dédié — cf. Étapes du circuit.</p>
+  </header>
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="empty-state" *ngIf="!chargement && dossiers.length === 0">
+    Aucun dossier n'est actuellement positionné sur une étape personnalisée.
+  </div>
+
+  <div class="table-wrapper" *ngIf="!chargement && dossiers.length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Référence</th>
+          <th>Client</th>
+          <th>Étape</th>
+          <th>Sous-état</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let d of dossiers">
+          <tr>
+            <td class="td-ref">{{ d.referenceInterne }}</td>
+            <td>{{ d.nomClient }}</td>
+            <td>{{ libelleEtape(d) }}</td>
+            <td>
+              <span class="badge"
+                [class.badge--warning]="d.etapeGenerique?.sousEtat === SousEtat.EN_ATTENTE"
+                [class.badge--ok]="d.etapeGenerique?.sousEtat === SousEtat.VALIDE"
+                [class.badge--danger]="d.etapeGenerique?.sousEtat === SousEtat.REJETE"
+              >{{ d.etapeGenerique?.sousEtat }}</span>
+            </td>
+            <td class="td-actions">
+              <button class="btn-save" [disabled]="actionEnCours.has(d.dossierId)" (click)="valider(d)">
+                Valider
+              </button>
+              <button class="btn-edit" (click)="basculerRejet(d.dossierId)">
+                {{ rejetOuvert.has(d.dossierId) ? 'Annuler' : 'Rejeter' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="rejetOuvert.has(d.dossierId)">
+            <td colspan="5" class="td-rejet">
+              <input
+                class="edit-input edit-input--motif"
+                placeholder="Ex : pièce justificative manquante (obligatoire)"
+                [ngModel]="motifRejet(d.dossierId)"
+                (ngModelChange)="modifierMotifRejet(d.dossierId, $event)"
+              />
+              <button
+                class="btn-save"
+                [disabled]="!peutRejeter(d.dossierId) || actionEnCours.has(d.dossierId)"
+                (click)="rejeter(d)"
+              >
+                Confirmer le rejet
+              </button>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+
+</div>

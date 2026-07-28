@@ -1,0 +1,478 @@
+.page {
+  padding: 16px;
+  max-width: 620px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #595959;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--pdoe-red);
+  }
+}
+
+.apurement-header {
+  margin-bottom: 20px;
+}
+
+.dossier-ref {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pdoe-red);
+}
+
+.apurement-header h1 {
+  margin: 4px 0 0;
+  font-size: 19px;
+  color: var(--pdoe-ink);
+}
+
+.apurement-block {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--pdoe-ink);
+  }
+}
+
+.btn-exporter {
+  margin-left: auto;
+  padding: 8px 18px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #2e7d32;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+
+  &:hover:not(:disabled) { background: #256428; }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+// ── Résumé échéance/solde ───────────────────────────────────
+
+.apurement-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  &--depasse {
+    border-left: 4px solid var(--pdoe-red);
+  }
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-label {
+  font-size: 11px;
+  color: #999999;
+}
+
+.summary-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--pdoe-ink);
+}
+
+.depassement-banniere {
+  margin-bottom: 20px;
+  padding: 14px;
+  background: #fdecee;
+  border: 1px solid #f5c0c6;
+  border-radius: 8px;
+
+  p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: var(--pdoe-red);
+  }
+}
+
+// ── Boutons ──────────────────────────────────────────────────
+
+.btn-primary {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-danger {
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-add {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--pdoe-red);
+  background: #fdecee;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+
+  &:hover {
+    background: #fad9dd;
+  }
+}
+
+.btn-cancel {
+  padding: 9px 14px;
+  font-size: 12px;
+  color: #595959;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #e5e5e5;
+  }
+}
+
+// ── Paiements ────────────────────────────────────────────────
+
+.empty-state {
+  padding: 14px;
+  font-size: 12px;
+  color: #999999;
+  background: #fafafa;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.paiement-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.paiement-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.paiement-montant {
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+.paiement-ref {
+  color: #999999;
+}
+
+.paiement-form {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+// ── Champs de formulaire (partagés paiement) ────────────────
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pdoe-ink);
+  }
+
+  input {
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 1px solid #d9d9d9;
+    border-radius: 5px;
+    background: #ffffff;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.erreur-msg {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--pdoe-red);
+}
+
+// ── Documents ────────────────────────────────────────────────
+
+.document-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.document-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.document-nom {
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+.document-type {
+  color: #999999;
+}
+
+.btn-toggle-upload {
+  padding: 0;
+  font-size: 12px;
+  color: #595959;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--pdoe-red);
+  }
+}
+
+.upload-panel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 6px;
+}
+
+app-dropdown-select.upload-type-select {
+  flex: 1 1 160px;
+}
+
+.upload-file-input {
+  flex: 1 1 160px;
+  font-size: 12px;
+}
+
+.upload-reference-input {
+  flex: 1 1 160px;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.btn-upload {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.upload-erreur {
+  font-size: 11px;
+  color: var(--pdoe-red);
+  width: 100%;
+}
+
+// ── Checklist ────────────────────────────────────────────────
+
+.checklist-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checklist-item {
+  label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--pdoe-ink);
+    cursor: pointer;
+  }
+
+  input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--pdoe-red);
+  }
+}
+
+// ── Alertes ──────────────────────────────────────────────────
+
+.alerte-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.alerte-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #fff8f0;
+  border: 1px solid #ffe0b2;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.alerte-type {
+  font-weight: 600;
+  color: #e65100;
+}
+
+.alerte-statut {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #f0f0f0;
+  color: #595959;
+
+  &--ok {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+}
+
+// ── États globaux ────────────────────────────────────────────
+
+.loading,
+.erreur-page {
+  padding: 40px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #999999;
+}
+
+// ── Responsive ───────────────────────────────────────────────
+
+@media (min-width: 480px) {
+  .form-row {
+    flex-direction: row;
+
+    .form-field {
+      flex: 1;
+    }
+  }
+}

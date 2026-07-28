@@ -1,0 +1,455 @@
+<div class="dashboard-page">
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <div class="dashboard-shell" *ngIf="!chargement">
+  <aside class="dashboard-notif">
+    <app-notification-panel [dossiers]="dossiers" />
+  </aside>
+
+  <div class="dashboard-content">
+
+    <app-repartition-chart titre="Répartition entre vos files" [items]="repartitionQueues" />
+
+    <section class="section-block reglementaire-block">
+      <h2>Exports réglementaires</h2>
+
+      <div class="reglementaire-controls">
+        <label class="date-field">
+          Du
+          <input
+            type="date"
+            [value]="reglementaireDateDebut"
+            (change)="modifierReglementaireDateDebut($any($event.target).value)"
+          />
+        </label>
+        <label class="date-field">
+          Au
+          <input
+            type="date"
+            [value]="reglementaireDateFin"
+            (change)="modifierReglementaireDateFin($any($event.target).value)"
+          />
+        </label>
+      </div>
+
+      <div class="reglementaire-buttons">
+        <button
+          type="button"
+          class="btn-exporter"
+          [disabled]="exportCrpiDgiEnCours"
+          (click)="exporterCrpiDgi()"
+        >
+          {{ exportCrpiDgiEnCours ? 'Export…' : 'CRPI DGI (.xlsx)' }}
+        </button>
+        <button
+          type="button"
+          class="btn-exporter"
+          [disabled]="exportCrpiTresorEnCours"
+          (click)="exporterCrpiTresor()"
+        >
+          {{ exportCrpiTresorEnCours ? 'Export…' : 'CRPI Trésor (.xlsx)' }}
+        </button>
+        <button
+          type="button"
+          class="btn-exporter"
+          [disabled]="exportSituationBceaoEnCours"
+          (click)="exporterSituationBceao()"
+        >
+          {{ exportSituationBceaoEnCours ? 'Export…' : 'Situation BCEAO (.xlsx)' }}
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════════ Contrôle (étape 3) ═══════════════ -->
+    <section class="dossier-section" *ngIf="vueActive === 'controle'">
+      <h2>
+        Contrôle réglementaire
+        <span class="count-badge">{{ dossiersControle.length }}</span>
+      </h2>
+
+      <div class="empty-state" *ngIf="dossiersControle.length === 0">
+        Aucun dossier en contrôle.
+      </div>
+
+      <ul class="dossier-list" *ngIf="dossiersControle.length > 0">
+        <li class="dossier-row" *ngFor="let dossier of dossiersControleAffiches">
+
+          <div class="dossier-top">
+            <div class="dossier-main">
+              <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+              <span class="dossier-client">{{ dossier.nomClient }}</span>
+            </div>
+            <div class="dossier-meta">
+              <span>{{ typeLabels[dossier.typeOperation] }}</span>
+              <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+              <app-delai-traitement
+                *ngIf="delaiHeures"
+                [dateDebut]="dossier.dateDerniereAction"
+                [delaiHeures]="delaiHeures"
+              />
+            </div>
+            <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Examiner →</a>
+          </div>
+
+            <button
+              type="button"
+              class="btn-toggle-upload"
+              (click)="basculerPanneauUpload(dossier.dossierId)"
+            >
+              {{ etatUpload(dossier.dossierId).ouvert ? '▾' : '▸' }} Joindre une pièce
+            </button>
+
+            <div class="upload-panel" *ngIf="etatUpload(dossier.dossierId).ouvert">
+              <app-dropdown-select
+                class="upload-type-select"
+                [options]="typeDocumentOptions"
+                [value]="etatUpload(dossier.dossierId).typeDocument"
+                (valueChange)="changerTypeDocument(dossier.dossierId, $event)"
+              />
+
+              <input
+                type="text"
+                class="upload-reference-input"
+                [placeholder]="referenceDocumentPlaceholderPour(dossier.dossierId)"
+                [value]="etatUpload(dossier.dossierId).referenceDocument"
+                (input)="modifierReferenceDocument(dossier.dossierId, $any($event.target).value)"
+              />
+
+              <input
+                type="file"
+                class="upload-file-input"
+                (change)="selectionnerFichier(dossier.dossierId, $event)"
+              />
+
+              <button
+                type="button"
+                class="btn-upload"
+                [disabled]="!etatUpload(dossier.dossierId).fichier || etatUpload(dossier.dossierId).enCours"
+                (click)="envoyerDocument(dossier.dossierId)"
+              >
+                {{ etatUpload(dossier.dossierId).enCours ? 'Envoi…' : 'Envoyer' }}
+              </button>
+
+              <span class="upload-erreur" *ngIf="etatUpload(dossier.dossierId).erreur">
+                Échec de l'envoi — réessayez.
+              </span>
+            </div>
+
+            <span class="upload-succes" *ngIf="etatUpload(dossier.dossierId).succes">
+              ✓ Pièce jointe ajoutée.
+            </span>
+
+            <div class="transmission-bloc">
+              <button
+                type="button"
+                class="btn-upload"
+                [disabled]="transmissionEnCours.has(dossier.dossierId)"
+                (click)="validerEtTransmettre(dossier)"
+              >
+                {{ transmissionEnCours.has(dossier.dossierId) ? 'Transmission…' : 'Valider et transmettre à Trésorerie' }}
+              </button>
+            </div>
+
+            <div class="rejet-bloc">
+              <button type="button" class="btn-rejeter-toggle" (click)="basculerRejet(dossier.dossierId)">
+                {{ rejetOuvert.has(dossier.dossierId) ? 'Annuler le rejet' : 'Rejeter pour correction' }}
+              </button>
+
+              <div class="rejet-form" *ngIf="rejetOuvert.has(dossier.dossierId)">
+                <label class="rejet-label">
+                  Motif du rejet
+                  <textarea
+                    rows="2"
+                    [value]="motifRejet(dossier.dossierId)"
+                    (input)="modifierMotifRejet(dossier.dossierId, $any($event.target).value)"
+                    placeholder="Ex : pièce justificative manquante"
+                  ></textarea>
+                </label>
+                <label class="rejet-label">
+                  Renvoyer à
+                  <app-dropdown-select
+                    [options]="ciblesRejetOptions"
+                    [value]="cibleRejet(dossier.dossierId)"
+                    (valueChange)="modifierCibleRejet(dossier.dossierId, $event)"
+                  />
+                </label>
+                <button
+                  type="button"
+                  class="btn-rejeter"
+                  [disabled]="!peutRejeter(dossier) || rejetEnCours.has(dossier.dossierId)"
+                  (click)="rejeter(dossier)"
+                >
+                  {{ rejetEnCours.has(dossier.dossierId) ? 'Rejet en cours' : 'Confirmer le rejet' }}
+                </button>
+              </div>
+            </div>
+
+        </li>
+      </ul>
+      <app-pager [total]="dossiersControle.length" [pageSize]="pageSize" [page]="pageControle" (pageChange)="pageControle = $event"></app-pager>
+    </section>
+
+    <!-- Execution (etape 5) -->
+    <section class="dossier-section" *ngIf="vueActive === 'execution'">
+      <h2>
+        Exécution
+        <span class="count-badge">{{ dossiersExecution.length }}</span>
+      </h2>
+
+      <div class="empty-state" *ngIf="dossiersExecution.length === 0">
+        Aucun dossier en exécution.
+      </div>
+
+      <ul class="dossier-list" *ngIf="dossiersExecution.length > 0">
+        <li class="dossier-row" *ngFor="let dossier of dossiersExecutionAffiches">
+          <div class="dossier-top">
+            <div class="dossier-main">
+              <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+              <span class="dossier-client">{{ dossier.nomClient }}</span>
+            </div>
+            <div class="dossier-meta">
+              <span>{{ typeLabels[dossier.typeOperation] }}</span>
+              <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+            </div>
+            <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+            <button
+              type="button"
+              class="btn-detail"
+              *ngIf="dossier.statutElectronique !== StatutDossier.ANTI_FRACTIONNEMENT_DETECTE"
+              (click)="ouvrirExecution(dossier)"
+            >
+              Exécuter →
+            </button>
+          </div>
+
+          <div class="alerte-fractionnement" *ngIf="dossier.statutElectronique === StatutDossier.ANTI_FRACTIONNEMENT_DETECTE">
+            <p class="alerte-texte">
+              ⚠ Fractionnement signalé — en attente de décision (Direction / Admin DSIRI).
+            </p>
+          </div>
+        </li>
+      </ul>
+      <app-pager [total]="dossiersExecution.length" [pageSize]="pageSize" [page]="pageExecution" (pageChange)="pageExecution = $event"></app-pager>
+    </section>
+
+    <!-- ═══════════════ Apurement (étape 6) ═══════════════ -->
+    <section class="dossier-section" *ngIf="vueActive === 'apurement'">
+      <h2>
+        Apurement
+        <span class="count-badge">{{ dossiersApurement.length }}</span>
+      </h2>
+
+      <div class="empty-state" *ngIf="dossiersApurement.length === 0">
+        Aucun dossier en apurement.
+      </div>
+
+      <ul class="dossier-list" *ngIf="dossiersApurement.length > 0">
+        <li
+          class="dossier-row"
+          [class.dossier-row--urgent]="estUrgent(dossier)"
+          *ngFor="let dossier of dossiersApurementAffiches"
+        >
+          <div class="dossier-top">
+            <div class="dossier-main">
+              <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+              <span class="dossier-client">{{ dossier.nomClient }}</span>
+            </div>
+            <div class="dossier-meta">
+              <span class="statut-badge" [class.statut-badge--urgent]="estUrgent(dossier)">
+                {{ statutLabels[dossier.statutElectronique] }}
+              </span>
+            </div>
+            <a class="btn-detail" [routerLink]="['/apurement', dossier.dossierId]">Apurer →</a>
+          </div>
+        </li>
+      </ul>
+      <app-pager [total]="dossiersApurement.length" [pageSize]="pageSize" [page]="pageApurement" (pageChange)="pageApurement = $event"></app-pager>
+    </section>
+
+    <!-- Dossiers déjà passés par ce profil (Contrôle/Exécution/
+         Apurement) mais désormais archivés ou rejetés définitivement
+         — lecture seule. -->
+    <section class="dossier-section" *ngIf="vueActive === 'historique'">
+      <h2>
+        Historique — dossiers déjà transmis
+        <span class="count-badge">{{ dossiersHistorique.length }}</span>
+      </h2>
+
+      <div class="empty-state" *ngIf="dossiersHistorique.length === 0">
+        Aucun dossier dans l'historique.
+      </div>
+
+      <ul class="dossier-list" *ngIf="dossiersHistorique.length > 0">
+        <li class="dossier-row" *ngFor="let dossier of dossiersHistoriqueAffiches">
+          <div class="dossier-top">
+            <div class="dossier-main">
+              <span class="dossier-ref">{{ dossier.referenceInterne }}</span>
+              <span class="dossier-client">{{ dossier.nomClient }}</span>
+            </div>
+            <div class="dossier-meta">
+              <span class="statut-badge">{{ statutLabels[dossier.statutElectronique] }}</span>
+              <span class="dossier-montant">{{ dossier.montant | number }} {{ dossier.devise }}</span>
+            </div>
+            <a class="btn-detail" [routerLink]="['/dossiers', dossier.dossierId]">Voir →</a>
+          </div>
+        </li>
+      </ul>
+      <app-pager [total]="dossiersHistorique.length" [pageSize]="pageSize" [page]="pageHistorique" (pageChange)="pageHistorique = $event"></app-pager>
+    </section>
+
+  </div>
+  </div>
+
+  <!-- ═══════════════ Modale d'exécution (étape 5) ═══════════════
+       Ouverte directement depuis "Exécuter →" ci-dessus — plus de
+       page séparée, cf. en-tête de comex-dashboard.component.ts. -->
+  <div class="modal-backdrop" *ngIf="dossierExecutionOuvert" (click)="fermerExecution()"></div>
+
+  <div class="modal-execution" *ngIf="dossierExecutionOuvert" role="dialog" aria-modal="true">
+    <button type="button" class="modal-close" (click)="fermerExecution()" aria-label="Fermer">✕</button>
+
+    <header class="execution-header">
+      <span class="dossier-ref">{{ dossierExecutionOuvert.referenceInterne }}</span>
+      <h2>{{ dossierExecutionOuvert.nomClient }}</h2>
+      <p class="dossier-montant">{{ dossierExecutionOuvert.montant | number }} {{ dossierExecutionOuvert.devise }}</p>
+    </header>
+
+    <p class="execution-hint" *ngIf="basculeEnCours">
+      Bascule vers ABS2000/SWIFT en cours…
+    </p>
+
+    <ng-container *ngIf="!basculeEnCours">
+
+      <!-- Déclaration du retour ABS2000/SWIFT -->
+      <ng-container *ngIf="dossierExecutionOuvert.statutElectronique === StatutDossier.EN_EXECUTION_SWIFT">
+        <p class="execution-hint">
+          Opération effectuée dans Suivi Transfert. Une fois terminée, renseignez
+          les références ci-dessous pour déclarer son exécution.
+        </p>
+
+        <form class="execution-form" [formGroup]="executionFormulaire" (ngSubmit)="declarerExecution()">
+          <div class="form-field">
+            <label for="referenceABS">Référence ABS</label>
+            <input id="referenceABS" type="text" formControlName="referenceABS" placeholder="Ex : ABS-2026-004512 (obligatoire)" />
+          </div>
+
+          <div class="form-field">
+            <label for="referenceSWIFT">Référence SWIFT</label>
+            <input id="referenceSWIFT" type="text" formControlName="referenceSWIFT" placeholder="Ex : SWFT26040012345 (obligatoire)" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for="numeroAC">N° Attestation/Autorisation de Change</label>
+              <input id="numeroAC" type="text" formControlName="numeroAC" placeholder="Ex : 0181/2026AC, 0189/2026AC…" />
+            </div>
+
+            <div class="form-field">
+              <label for="codeTRF">Code TRF (formulaire de change)</label>
+              <input id="codeTRF" type="text" formControlName="codeTRF" placeholder="Ex : 0017TE26, 1851TE26…" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for="dateExecution">Date d'exécution</label>
+              <input id="dateExecution" type="date" formControlName="dateExecution" title="Date d'exécution (obligatoire)" />
+            </div>
+
+            <div class="form-field">
+              <label for="montantExecute">Montant exécuté</label>
+              <input id="montantExecute" type="number" formControlName="montantExecute" min="0.01" step="0.01" placeholder="Ex : 5000000 (minimum 0.01)" />
+            </div>
+          </div>
+
+          <p class="execution-error" *ngIf="declarationErreur">
+            Échec de la déclaration — vérifiez les informations saisies.
+          </p>
+
+          <button type="submit" class="btn-primary" [disabled]="executionFormulaire.invalid || declarationEnCours">
+            {{ declarationEnCours ? 'Enregistrement…' : "Déclarer l'exécution" }}
+          </button>
+        </form>
+
+        <div class="modal-divider">ou, si un fractionnement est constaté sur la plateforme externe</div>
+
+        <div class="signalement-bloc">
+          <button
+            type="button"
+            class="btn-signaler-toggle"
+            (click)="basculerSignalement(dossierExecutionOuvert.dossierId)"
+          >
+            {{ signalementOuvert.has(dossierExecutionOuvert.dossierId) ? 'Annuler le signalement' : 'Signaler un fractionnement' }}
+          </button>
+
+          <div class="signalement-form" *ngIf="signalementOuvert.has(dossierExecutionOuvert.dossierId)">
+            <label class="signalement-label">
+              Constat sur la plateforme externe d'exécution
+              <textarea
+                rows="2"
+                [value]="motifSignalement(dossierExecutionOuvert.dossierId)"
+                (input)="modifierMotifSignalement(dossierExecutionOuvert.dossierId, $any($event.target).value)"
+                placeholder="Ex : 3 virements distincts vers le même bénéficiaire ce mois-ci"
+              ></textarea>
+            </label>
+            <button
+              type="button"
+              class="btn-signaler"
+              [disabled]="!motifSignalement(dossierExecutionOuvert.dossierId).trim() || signalementEnCours.has(dossierExecutionOuvert.dossierId)"
+              (click)="signalerFractionnement(dossierExecutionOuvert)"
+            >
+              {{ signalementEnCours.has(dossierExecutionOuvert.dossierId) ? 'Signalement…' : 'Confirmer le signalement' }}
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Déjà exécuté — lecture seule -->
+      <ng-container *ngIf="dossierExecutionOuvert.statutElectronique === StatutDossier.EXECUTE">
+        <h3>✓ Exécution déclarée</h3>
+
+        <dl class="execution-summary">
+          <div class="summary-row">
+            <dt>Référence ABS</dt>
+            <dd>{{ dossierExecutionOuvert.referenceABS }}</dd>
+          </div>
+          <div class="summary-row">
+            <dt>Référence SWIFT</dt>
+            <dd>{{ dossierExecutionOuvert.referenceSWIFT }}</dd>
+          </div>
+          <div class="summary-row" *ngIf="dossierExecutionOuvert.numeroAC">
+            <dt>N° Attestation/Autorisation de Change</dt>
+            <dd>{{ dossierExecutionOuvert.numeroAC }}</dd>
+          </div>
+          <div class="summary-row" *ngIf="dossierExecutionOuvert.codeTRF">
+            <dt>Code TRF</dt>
+            <dd>{{ dossierExecutionOuvert.codeTRF }}</dd>
+          </div>
+          <div class="summary-row">
+            <dt>Date d'exécution</dt>
+            <dd>{{ dossierExecutionOuvert.dateExecution | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+          <div class="summary-row">
+            <dt>Montant exécuté</dt>
+            <dd>{{ dossierExecutionOuvert.montantExecute | number }} {{ dossierExecutionOuvert.devise }}</dd>
+          </div>
+          <div class="summary-row summary-row--highlight" *ngIf="dossierExecutionOuvert.dateEcheanceApurement">
+            <dt>Échéance d'apurement</dt>
+            <dd>{{ dossierExecutionOuvert.dateEcheanceApurement | date: 'dd/MM/yyyy' }}</dd>
+          </div>
+        </dl>
+
+        <a
+          class="btn-secondary"
+          [routerLink]="['/apurement', dossierExecutionOuvert.dossierId]"
+          (click)="fermerExecution()"
+        >
+          Suivre l'apurement →
+        </a>
+      </ng-container>
+
+    </ng-container>
+  </div>
+
+</div>

@@ -1,0 +1,47 @@
+/* Styles globaux : fondations partagées (typo/reset) + palette échantillonnée
+   depuis le vrai logo Afriland First Bank. */
+:root {
+  --pdoe-red: #e30613;
+  --pdoe-red-rgb: 227, 6, 19;
+  --pdoe-red-hover: #b80510;
+  --pdoe-ink: #1a1a1a;
+  --pdoe-gray: #8b8b8a;
+  --pdoe-gray-light: #c0bfbf;
+  /* Étape courante du stepper de circuit (WorkflowStepperComponent) —
+     distincte du rouge, désormais réservé au rejet définitif d'un
+     dossier, pour qu'un dossier "en cours normal" ne soit plus
+     visuellement confondu avec un dossier rejeté. */
+  --pdoe-orange: #f57c00;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  color: var(--pdoe-ink);
+  background: #f5f6f8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pdoe-red);
+  outline-offset: 2px;
+}

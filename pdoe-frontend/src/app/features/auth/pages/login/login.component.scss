@@ -1,0 +1,190 @@
+// Mobile-first, 3 paliers : <480px pleine largeur, 480px+ carte centrée
+// en 2 colonnes, 768px+ largeur/espacements un peu plus généreux.
+
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(160deg, var(--pdoe-ink) 0%, #2d0a12 100%);
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 28px 20px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+// ── En-tête ──────────────────────────────────────────────────
+
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-logo {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  margin: 0 auto 16px;
+}
+
+.login-header h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--pdoe-red);
+  letter-spacing: 0.04em;
+}
+
+.login-subtitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #595959;
+}
+
+// ── Formulaire ───────────────────────────────────────────────
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pdoe-ink);
+  }
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    background: #fafafa;
+    transition: border-color 0.15s ease;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pdoe-red);
+      background: #ffffff;
+    }
+  }
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--pdoe-red);
+}
+
+.login-error {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--pdoe-red);
+  background: #fdecee;
+  border-radius: 6px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pdoe-red);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--pdoe-red-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ── Connexion rapide (dev) ─────────────────────────────────────
+
+.quick-login {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #ececec;
+}
+
+.quick-login-label {
+  margin: 0 0 10px;
+  font-size: 11px;
+  text-align: center;
+  color: #999999;
+}
+
+.quick-login-grid {
+  display: grid;
+  grid-template-columns: 1fr; // base : empilé sur très petits écrans
+  gap: 8px;
+}
+
+.quick-login-btn {
+  padding: 9px 8px;
+  font-size: 12px;
+  color: var(--pdoe-ink);
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: #fdecee;
+    border-color: var(--pdoe-red);
+  }
+}
+
+// ── Paliers responsive ──────────────────────────────────────────
+
+// À partir de 480px : assez de largeur pour deux colonnes
+// dans la grille de connexion rapide.
+@media (min-width: 480px) {
+  .quick-login-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+// À partir de 768px (tablette/desktop) : carte légèrement plus
+// large et respiration accrue, sans changer la structure.
+@media (min-width: 768px) {
+  .login-card {
+    max-width: 400px;
+    padding: 36px 32px;
+  }
+
+  .login-header h1 {
+    font-size: 24px;
+  }
+}

@@ -1,0 +1,23 @@
+# .NET build output (each pdoe-backend/*/ project)
+pdoe-backend/**/bin/
+pdoe-backend/**/obj/
+
+# Visual Studio local state
+pdoe-backend/.vs/
+*.user
+*.suo
+
+# Local secrets — see appsettings.Development.json.example for the template
+pdoe-backend/PDOE.Api/appsettings.Development.json
+
+# Runtime-uploaded files, not source
+pdoe-backend/.local-storage/
+
+# Office lock files
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# OS junk
+Thumbs.db
+.DS_Store

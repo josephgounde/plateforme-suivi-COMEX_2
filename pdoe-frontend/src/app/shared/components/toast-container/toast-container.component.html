@@ -1,0 +1,12 @@
+<div class="toast-stack">
+  <div
+    class="toast"
+    [class.toast--success]="toast.type === 'success'"
+    [class.toast--error]="toast.type === 'error'"
+    *ngFor="let toast of toastService.toasts()"
+  >
+    <span class="toast-icon">{{ toast.type === 'success' ? '✓' : '✕' }}</span>
+    <span class="toast-message">{{ toast.message }}</span>
+    <button type="button" class="toast-close" (click)="toastService.fermer(toast.id)" aria-label="Fermer">✕</button>
+  </div>
+</div>

@@ -1,0 +1,238 @@
+<div class="dashboard-page">
+
+  <p class="loading" *ngIf="chargement">Chargement…</p>
+
+  <ng-container *ngIf="!chargement && dashboard">
+
+    <div class="dashboard-shell">
+    <aside class="dashboard-notif">
+      <app-notification-panel [dossiers]="tousLesDossiers" />
+    </aside>
+
+    <div class="dashboard-content">
+
+    <ng-container *ngIf="vueActive === 'repartition'">
+      <div class="vue-header">
+        <h2>Vue d'ensemble</h2>
+        <button
+          type="button"
+          class="btn-exporter"
+          [disabled]="exportRapportEnCours"
+          (click)="exporterRapportActivite()"
+        >
+          {{ exportRapportEnCours ? 'Export…' : "Rapport d'activité mensuel (.xlsx)" }}
+        </button>
+      </div>
+
+      <app-metriques-bandeau [items]="metriquesApercu" />
+
+      <section class="section-block reglementaire-block">
+        <h2>Exports réglementaires</h2>
+
+        <div class="reglementaire-controls">
+          <label class="date-field">
+            Du
+            <input
+              type="date"
+              [value]="reglementaireDateDebut"
+              (change)="modifierReglementaireDateDebut($any($event.target).value)"
+            />
+          </label>
+          <label class="date-field">
+            Au
+            <input
+              type="date"
+              [value]="reglementaireDateFin"
+              (change)="modifierReglementaireDateFin($any($event.target).value)"
+            />
+          </label>
+        </div>
+
+        <div class="reglementaire-buttons">
+          <button
+            type="button"
+            class="btn-exporter"
+            [disabled]="exportCrpiDgiEnCours"
+            (click)="exporterCrpiDgi()"
+          >
+            {{ exportCrpiDgiEnCours ? 'Export…' : 'CRPI DGI (.xlsx)' }}
+          </button>
+          <button
+            type="button"
+            class="btn-exporter"
+            [disabled]="exportCrpiTresorEnCours"
+            (click)="exporterCrpiTresor()"
+          >
+            {{ exportCrpiTresorEnCours ? 'Export…' : 'CRPI Trésor (.xlsx)' }}
+          </button>
+          <button
+            type="button"
+            class="btn-exporter"
+            [disabled]="exportSituationBceaoEnCours"
+            (click)="exporterSituationBceao()"
+          >
+            {{ exportSituationBceaoEnCours ? 'Export…' : 'Situation BCEAO (.xlsx)' }}
+          </button>
+        </div>
+      </section>
+
+      <div class="charts-grid">
+        <app-gauge-chart titre="Taux d'apurement" [valeur]="tauxApurementPourcent" couleur="#2e7d32" />
+        <app-bar-chart titre="Dossiers par gestionnaire" [items]="dossiersParGestionnaire" />
+      </div>
+
+      <app-repartition-chart titre="Répartition par statut" [items]="repartitionParStatut" />
+    </ng-container>
+
+    <section class="section-block" *ngIf="vueActive === 'goulots'">
+      <h2>
+        Goulots d'étranglement
+        <span class="count-badge">{{ dossiersEnRetard.length }}</span>
+        <button
+          type="button"
+          class="btn-exporter"
+          [disabled]="exportRetardEnCours || dossiersEnRetard.length === 0"
+          (click)="exporterDossiersEnRetard()"
+        >
+          {{ exportRetardEnCours ? 'Export…' : 'Exporter (.xlsx)' }}
+        </button>
+      </h2>
+
+      <div class="empty-state" *ngIf="dossiersEnRetard.length === 0">
+        Aucun dossier en retard.
+      </div>
+
+      <ul class="retard-list" *ngIf="dossiersEnRetard.length > 0">
+        <li
+          class="retard-row"
+          [class]="urgenceClass(retard)"
+          *ngFor="let retard of dossiersEnRetard"
+        >
+          <div class="retard-main">
+            <span class="dossier-ref">{{ retard.referenceInterne }}</span>
+            <span class="retard-client">{{ retard.nomClient }}</span>
+            <span class="retard-meta">
+              {{ retard.dernierAgent }} · {{ retard.heuresDepuisDerniereAction }}h d'inactivité
+            </span>
+          </div>
+
+          <div class="retard-stepper">
+            <app-workflow-stepper
+              [statut]="retard.statutElectronique"
+              [compact]="true"
+              [etapesTraversees]="retard.etapesTraverseesCodes"
+            />
+          </div>
+
+          <a class="btn-detail" [routerLink]="['/dossiers', retard.dossierId]">Voir →</a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="section-block section-block--scrollable" *ngIf="vueActive === 'tous-dossiers'">
+      <h2>
+        Tous les dossiers
+        <span class="count-badge">{{ tousLesDossiers.length }}</span>
+      </h2>
+
+      <div class="empty-state" *ngIf="tousLesDossiers.length === 0">
+        Aucun dossier.
+      </div>
+
+      <div class="table-wrapper" *ngIf="tousLesDossiers.length > 0">
+        <table class="dossier-table">
+          <colgroup>
+            <col style="width: 12%" />
+            <col style="width: 19%" />
+            <col style="width: 8%" />
+            <col style="width: 11%" />
+            <col style="width: 13%" />
+            <col style="width: 9%" />
+            <col style="width: 18%" />
+            <col style="width: 10%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Référence</th>
+              <th>Client</th>
+              <th>Type</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Agent</th>
+              <th>Action</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of tousLesDossiersAffiches">
+              <td class="td-ref">{{ d.referenceInterne }}</td>
+              <td>
+                <span class="td-client">{{ d.nomClient }}</span>
+                <br />
+                <span class="td-compte">{{ d.numCompte }}</span>
+              </td>
+              <td>
+                <span class="badge badge--type">{{ typeLabels[d.typeOperation] }}</span>
+              </td>
+              <td class="td-montant">{{ d.montant | number }} {{ d.devise }}</td>
+              <td>
+                <span [class]="'badge ' + statutClass(d.statutElectronique)">
+                  {{ statutLabels[d.statutElectronique] }}
+                </span>
+              </td>
+              <td class="td-agent">{{ d.updatedBy }}</td>
+              <td class="td-actions">
+                <div class="actions-row">
+                  <button
+                    type="button"
+                    class="btn-lever-alerte"
+                    *ngIf="d.statutElectronique === StatutDossier.ANTI_FRACTIONNEMENT_DETECTE"
+                    [disabled]="leverAlerteEnCours.has(d.dossierId)"
+                    (click)="leverAlerte(d)"
+                  >
+                    {{ leverAlerteEnCours.has(d.dossierId) ? '…' : "Lever l'alerte" }}
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-rejeter-def-toggle"
+                    *ngIf="peutRejeterDefinitivement(d)"
+                    (click)="basculerRejetDefinitif(d.dossierId)"
+                  >
+                    {{ rejetDefOuvert.has(d.dossierId) ? 'Annuler' : 'Rejet définitif' }}
+                  </button>
+                </div>
+
+                <div class="rejet-def-form" *ngIf="rejetDefOuvert.has(d.dossierId)">
+                  <textarea
+                    rows="2"
+                    [value]="motifRejetDefinitif(d.dossierId)"
+                    (input)="modifierMotifRejetDefinitif(d.dossierId, $any($event.target).value)"
+                    placeholder="Motif — Ex : fraude confirmée, abandon client"
+                  ></textarea>
+                  <button
+                    type="button"
+                    class="btn-rejeter-def"
+                    [disabled]="!motifRejetDefinitif(d.dossierId).trim() || rejetDefEnCours.has(d.dossierId)"
+                    (click)="rejeterDefinitivement(d)"
+                  >
+                    {{ rejetDefEnCours.has(d.dossierId) ? 'Clôture…' : 'Confirmer la clôture' }}
+                  </button>
+                </div>
+              </td>
+              <td class="td-voir">
+                <a class="btn-detail" [routerLink]="['/dossiers', d.dossierId]">Voir →</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <app-pager [total]="tousLesDossiers.length" [pageSize]="pageSize" [page]="pageTousDossiers" (pageChange)="pageTousDossiers = $event"></app-pager>
+      </div>
+    </section>
+
+    </div>
+    </div>
+
+  </ng-container>
+
+</div>
