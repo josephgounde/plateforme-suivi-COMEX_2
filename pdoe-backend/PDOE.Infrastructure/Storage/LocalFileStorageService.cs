@@ -27,4 +27,18 @@ public class LocalFileStorageService(IConfiguration configuration) : IFileStorag
 
         return new StoredFile(cheminComplet, hash, octets.LongLength);
     }
+
+    public async Task<StoredFile> SaveExportAsync(string nomFichier, byte[] contenu, CancellationToken cancellationToken)
+    {
+        var racine = configuration["Storage:ReportingArchiveRootPath"]
+            ?? throw new InvalidOperationException("Configuration manquante : Storage:ReportingArchiveRootPath.");
+
+        Directory.CreateDirectory(racine);
+        var cheminComplet = Path.Combine(racine, nomFichier);
+
+        await File.WriteAllBytesAsync(cheminComplet, contenu, cancellationToken);
+
+        var hash = Convert.ToHexString(SHA256.HashData(contenu)).ToLowerInvariant();
+        return new StoredFile(cheminComplet, hash, contenu.LongLength);
+    }
 }

@@ -1,10 +1,10 @@
 using ClosedXML.Excel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using PDOE.Api.Contracts;
 using PDOE.Infrastructure;
 using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Storage;
 using PDOE.Reporting.API.Common;
 using PDOE.Reporting.API.Excel;
 using PDOE.Shared.Kernel.Common;
@@ -14,7 +14,7 @@ namespace PDOE.Reporting.API.Features.ExporterRapportActiviteMensuel;
 /// "Volume par type" = dossiers ouverts (CreatedAt) dans le mois. "Délai moyen"/"taux de rejet" = étapes de
 /// workflow (DateAction) survenues dans le mois, même si le dossier a été ouvert un mois précédent — sinon un
 /// dossier ouvert fin de mois N et décidé début N+1 ne remonterait dans aucun des deux rapports.
-public class ExporterRapportActiviteMensuelHandler(PdoeDbContext db, IConfiguration configuration) : IRequestHandler<ExporterRapportActiviteMensuelQuery, byte[]>
+public class ExporterRapportActiviteMensuelHandler(PdoeDbContext db, IFileStorageService storage) : IRequestHandler<ExporterRapportActiviteMensuelQuery, byte[]>
 {
     public async Task<byte[]> Handle(ExporterRapportActiviteMensuelQuery request, CancellationToken cancellationToken)
     {
@@ -112,7 +112,7 @@ public class ExporterRapportActiviteMensuelHandler(PdoeDbContext db, IConfigurat
         var octets = stream.ToArray();
 
         var archive = await ExportReglementaireArchiver.ArchiverAsync(
-            configuration, "ACTIVITE_MENSUELLE", premierJourMois, dernierJourMois, octets, cancellationToken);
+            storage, "ACTIVITE_MENSUELLE", premierJourMois, dernierJourMois, octets, cancellationToken);
 
         var export = new ExportReglementaire
         {

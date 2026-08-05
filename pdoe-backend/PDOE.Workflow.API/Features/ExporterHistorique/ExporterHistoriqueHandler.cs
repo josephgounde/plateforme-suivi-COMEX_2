@@ -4,13 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using PdfSharpCore.Drawing;
 using PDOE.Api.Contracts;
 using PDOE.Infrastructure;
+using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Storage;
 using PDOE.Shared.Kernel.Common;
 using PDOE.Shared.Kernel.Pdf;
+using PDOE.Workflow.API.Common;
 
 namespace PDOE.Workflow.API.Features.ExporterHistorique;
 
 /// Export interne (Agent COMEX, Audit) — mêmes données que GET /workflow/{dossierId}/historique, mis en forme en PDF via PdoeDocumentPdf.
-public class ExporterHistoriqueHandler(PdoeDbContext db) : IRequestHandler<ExporterHistoriqueQuery, byte[]>
+public class ExporterHistoriqueHandler(PdoeDbContext db, IFileStorageService storage) : IRequestHandler<ExporterHistoriqueQuery, byte[]>
 {
     public async Task<byte[]> Handle(ExporterHistoriqueQuery query, CancellationToken cancellationToken)
     {
@@ -72,6 +75,28 @@ public class ExporterHistoriqueHandler(PdoeDbContext db) : IRequestHandler<Expor
             pdf.Y += hauteurCarte + 10;
         }
 
-        return pdf.Finaliser("Direction des Opérations Internationales — Service COMEX");
+        var octets = pdf.Finaliser("Direction des Opérations Internationales — Service COMEX");
+
+        var archive = await ExportArchiver.ArchiverAsync(storage, "HISTORIQUE_DOSSIER", dossier.ReferenceInterne, octets, cancellationToken);
+        var aujourdhui = DateOnly.FromDateTime(DateTime.UtcNow);
+        var export = new ExportReglementaire
+        {
+            Categorie = "OPERATIONNEL",
+            TypeExport = "HISTORIQUE_DOSSIER",
+            DateDebut = aujourdhui,
+            DateFin = aujourdhui,
+            NomFichier = archive.NomFichier,
+            CheminFichier = archive.Chemin,
+            HashSHA256 = archive.HashSHA256,
+            TailleFichier = archive.Taille,
+            CreatedBy = CurrentUser.Login,
+        };
+        db.ExportsReglementaires.Add(export);
+        await db.SaveChangesAsync(cancellationToken);
+
+        JournalAuditWriter.EnregistrerExport(db, export, dossier.ReferenceInterne);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return octets;
     }
 }

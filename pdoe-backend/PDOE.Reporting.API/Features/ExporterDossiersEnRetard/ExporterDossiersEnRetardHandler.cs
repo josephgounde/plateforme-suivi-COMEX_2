@@ -1,8 +1,8 @@
 using ClosedXML.Excel;
 using MediatR;
-using Microsoft.Extensions.Configuration;
 using PDOE.Infrastructure;
 using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Storage;
 using PDOE.Reporting.API.Common;
 using PDOE.Reporting.API.Excel;
 using PDOE.Reporting.API.Features.GetDossiersEnRetard;
@@ -11,7 +11,7 @@ using PDOE.Shared.Kernel.Common;
 namespace PDOE.Reporting.API.Features.ExporterDossiersEnRetard;
 
 /// Même données que GET /reporting/dossiers-en-retard, en xlsx — cf. mockExporterDossiersEnRetard côté frontend.
-public class ExporterDossiersEnRetardHandler(IMediator mediator, PdoeDbContext db, IConfiguration configuration) : IRequestHandler<ExporterDossiersEnRetardQuery, byte[]>
+public class ExporterDossiersEnRetardHandler(IMediator mediator, PdoeDbContext db, IFileStorageService storage) : IRequestHandler<ExporterDossiersEnRetardQuery, byte[]>
 {
     public async Task<byte[]> Handle(ExporterDossiersEnRetardQuery request, CancellationToken cancellationToken)
     {
@@ -51,7 +51,7 @@ public class ExporterDossiersEnRetardHandler(IMediator mediator, PdoeDbContext d
         // Rapport instantané (pas de période) : DateDebut = DateFin = date du jour.
         var aujourdhui = DateOnly.FromDateTime(DateTime.UtcNow);
         var archive = await ExportReglementaireArchiver.ArchiverAsync(
-            configuration, "DOSSIERS_EN_RETARD", aujourdhui, aujourdhui, octets, cancellationToken);
+            storage, "DOSSIERS_EN_RETARD", aujourdhui, aujourdhui, octets, cancellationToken);
 
         var export = new ExportReglementaire
         {

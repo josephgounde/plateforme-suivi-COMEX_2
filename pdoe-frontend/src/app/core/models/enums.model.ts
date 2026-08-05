@@ -154,7 +154,9 @@ export enum TypeExport {
   CRPI_TRESOR = 'CRPI_TRESOR',
   SITUATION_BCEAO = 'SITUATION_BCEAO',
   DOSSIERS_EN_RETARD = 'DOSSIERS_EN_RETARD',
-  ACTIVITE_MENSUELLE = 'ACTIVITE_MENSUELLE'
+  ACTIVITE_MENSUELLE = 'ACTIVITE_MENSUELLE',
+  FICHE_DOSSIER = 'FICHE_DOSSIER',
+  HISTORIQUE_DOSSIER = 'HISTORIQUE_DOSSIER'
 }
 
 // ── Mode de vérification de la signature ABS2000 (v5.2) ───────
@@ -283,5 +285,7 @@ export const TYPE_EXPORT_LABELS: Record<TypeExport, string> = {
   [TypeExport.CRPI_TRESOR]: 'CRPI — Direction du Trésor',
   [TypeExport.SITUATION_BCEAO]: 'Situation Statistique BCEAO',
   [TypeExport.DOSSIERS_EN_RETARD]: 'Dossiers en retard',
-  [TypeExport.ACTIVITE_MENSUELLE]: "Rapport d'activité mensuelle"
+  [TypeExport.ACTIVITE_MENSUELLE]: "Rapport d'activité mensuelle",
+  [TypeExport.FICHE_DOSSIER]: 'Fiche dossier',
+  [TypeExport.HISTORIQUE_DOSSIER]: 'Historique du dossier'
 };

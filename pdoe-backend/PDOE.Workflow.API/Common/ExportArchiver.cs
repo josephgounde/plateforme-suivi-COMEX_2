@@ -1,21 +1,20 @@
 using PDOE.Infrastructure.Storage;
 
-namespace PDOE.Reporting.API.Common;
+namespace PDOE.Workflow.API.Common;
 
-// Calcule le nom de fichier (type + période + horodatage) puis délègue l'écriture à IFileStorageService.SaveExportAsync
-// — même mécanisme de stockage que les pièces jointes (SaveAsync), juste un nom déjà calculé plutôt qu'un GUID.
-internal static class ExportReglementaireArchiver
+// Calcule le nom de fichier (type + référence dossier + horodatage) puis délègue l'écriture à
+// IFileStorageService.SaveExportAsync — même mécanisme de stockage que les pièces jointes.
+internal static class ExportArchiver
 {
     public static async Task<FichierArchive> ArchiverAsync(
         IFileStorageService storage,
         string typeExport,
-        DateOnly dateDebut,
-        DateOnly dateFin,
+        string referenceDossier,
         byte[] contenu,
         CancellationToken cancellationToken)
     {
         var horodatage = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-        var nomFichier = $"{typeExport}_{dateDebut:yyyyMMdd}_{dateFin:yyyyMMdd}_{horodatage}.xlsx";
+        var nomFichier = $"{typeExport}_{referenceDossier}_{horodatage}.pdf";
 
         var stocke = await storage.SaveExportAsync(nomFichier, contenu, cancellationToken);
 

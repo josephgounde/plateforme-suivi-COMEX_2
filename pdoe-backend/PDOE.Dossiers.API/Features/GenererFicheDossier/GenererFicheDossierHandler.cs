@@ -3,14 +3,18 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PdfSharpCore.Drawing;
 using PDOE.Api.Contracts;
+using PDOE.Dossiers.API.Common;
 using PDOE.Infrastructure;
+using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Storage;
 using PDOE.Shared.Kernel.Common;
 using PDOE.Shared.Kernel.Pdf;
 
 namespace PDOE.Dossiers.API.Features.GenererFicheDossier;
 
-/// Export interne, une page, sur le gabarit partagé PdoeDocumentPdf (cf. CDC_PDOE_v5.docx).
-public class GenererFicheDossierHandler(PdoeDbContext db) : IRequestHandler<GenererFicheDossierQuery, byte[]>
+/// Export interne, sur le gabarit partagé PdoeDocumentPdf (cf. CDC_PDOE_v5.docx) : informations
+/// générales, règle d'apurement applicable, documents joints et paiements partiels.
+public class GenererFicheDossierHandler(PdoeDbContext db, IFileStorageService storage) : IRequestHandler<GenererFicheDossierQuery, byte[]>
 {
     public async Task<byte[]> Handle(GenererFicheDossierQuery query, CancellationToken cancellationToken)
     {
@@ -18,6 +22,16 @@ public class GenererFicheDossierHandler(PdoeDbContext db) : IRequestHandler<Gene
 
         if (dossier is null)
             throw new DomainException(404, ErrorResponseCode.DOSSIER_INTROUVABLE, "Dossier introuvable.");
+
+        var documents = await db.Documents
+            .Where(doc => doc.DossierId == query.DossierId)
+            .OrderBy(doc => doc.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var paiements = await db.PaiementsPartiels
+            .Where(p => p.DossierId == query.DossierId)
+            .OrderBy(p => p.DatePaiement)
+            .ToListAsync(cancellationToken);
 
         var culture = CultureInfo.GetCultureInfo("fr-FR");
 
@@ -54,8 +68,11 @@ public class GenererFicheDossierHandler(PdoeDbContext db) : IRequestHandler<Gene
 
         var policeTitre = new XFont("Arial", 17, XFontStyle.Bold);
         var policeBadge = new XFont("Arial", 11, XFontStyle.Bold);
+        var policeSection = new XFont("Arial", 12, XFontStyle.Bold);
         var policeLabel = new XFont("Arial", 10, XFontStyle.Bold);
         var policeValeur = new XFont("Arial", 10, XFontStyle.Regular);
+        var policeTexte = new XFont("Arial", 9.5, XFontStyle.Regular);
+        var policeVide = new XFont("Arial", 9.5, XFontStyle.Italic);
 
         pdf.TexteCentre("Fiche dossier de synthèse", policeTitre, PdoeDocumentPdf.Encre);
         pdf.Y += 26;
@@ -93,6 +110,113 @@ public class GenererFicheDossierHandler(PdoeDbContext db) : IRequestHandler<Gene
 
         pdf.Gfx.DrawRectangle(new XPen(PdoeDocumentPdf.GrisClair, 0.75), xCarte, yCarteDebut, largeurCarte, pdf.Y - yCarteDebut);
 
-        return pdf.Finaliser("Direction du réseau — Département des Opérations - Service COMEX");
+        pdf.Y += 32;
+
+        // ── Règle d'apurement applicable ──
+        pdf.SautDePageSiNecessaire(80);
+        pdf.Gfx.DrawString("Règle d'apurement applicable", policeSection, new XSolidBrush(PdoeDocumentPdf.Rouge), new XPoint(pdf.MargeX, pdf.Y + 12));
+        pdf.Y += 22;
+
+        if (ReglesApurement.Table.TryGetValue(dossier.TypeOperation, out var regle))
+        {
+            pdf.Gfx.DrawString(regle.DelaiLibelle, policeTexte, new XSolidBrush(PdoeDocumentPdf.Encre),
+                new XRect(pdf.MargeX, pdf.Y, pdf.LargeurUtile, 30), XStringFormats.TopLeft);
+            pdf.Y += 28;
+            pdf.Gfx.DrawString(regle.ReferenceReglementaire, policeVide, new XSolidBrush(PdoeDocumentPdf.Gris),
+                new XRect(pdf.MargeX, pdf.Y, pdf.LargeurUtile, 14), XStringFormats.TopLeft);
+            pdf.Y += 20;
+        }
+        else
+        {
+            pdf.Gfx.DrawString("Aucune règle d'apurement référencée pour ce type d'opération.", policeVide, new XSolidBrush(PdoeDocumentPdf.Gris), new XPoint(pdf.MargeX, pdf.Y + 10));
+            pdf.Y += 20;
+        }
+
+        pdf.Y += 12;
+
+        // ── Documents ──
+        pdf.SautDePageSiNecessaire(80);
+        pdf.Gfx.DrawString("Documents", policeSection, new XSolidBrush(PdoeDocumentPdf.Rouge), new XPoint(pdf.MargeX, pdf.Y + 12));
+        pdf.Y += 22;
+
+        if (documents.Count == 0)
+        {
+            pdf.Gfx.DrawString("Aucun document joint.", policeVide, new XSolidBrush(PdoeDocumentPdf.Gris), new XPoint(pdf.MargeX, pdf.Y + 10));
+            pdf.Y += 20;
+        }
+        else
+        {
+            foreach (var document in documents)
+            {
+                pdf.SautDePageSiNecessaire(40);
+                var yLigne = pdf.Y;
+
+                pdf.Gfx.DrawString(document.TypeDocument, policeLabel, new XSolidBrush(PdoeDocumentPdf.Encre),
+                    new XRect(pdf.MargeX, yLigne, 170, 16), XStringFormats.TopLeft);
+                pdf.Gfx.DrawString(document.NomFichier, policeTexte, new XSolidBrush(PdoeDocumentPdf.Encre),
+                    new XRect(pdf.MargeX + 170, yLigne, pdf.LargeurUtile - 260, 16), XStringFormats.TopLeft);
+
+                var etat = document.EstObligatoire ? "Obligatoire" : "Facultatif";
+                var validite = document.EstValide ? "Validé" : "Non validé";
+                pdf.Gfx.DrawString($"{etat} — {validite}", policeVide, new XSolidBrush(PdoeDocumentPdf.Gris),
+                    new XRect(pdf.MargeX, yLigne + 14, pdf.LargeurUtile, 14), XStringFormats.TopLeft);
+
+                pdf.Y += 32;
+            }
+        }
+
+        pdf.Y += 12;
+
+        // ── Paiements partiels ──
+        pdf.SautDePageSiNecessaire(80);
+        pdf.Gfx.DrawString("Paiements partiels", policeSection, new XSolidBrush(PdoeDocumentPdf.Rouge), new XPoint(pdf.MargeX, pdf.Y + 12));
+        pdf.Y += 22;
+
+        if (paiements.Count == 0)
+        {
+            pdf.Gfx.DrawString("Aucun paiement partiel enregistré.", policeVide, new XSolidBrush(PdoeDocumentPdf.Gris), new XPoint(pdf.MargeX, pdf.Y + 10));
+            pdf.Y += 20;
+        }
+        else
+        {
+            foreach (var paiement in paiements)
+            {
+                pdf.SautDePageSiNecessaire(40);
+                var yLigne = pdf.Y;
+
+                pdf.Gfx.DrawString(
+                    $"{paiement.MontantPaiement.ToString("N0", culture)} {paiement.Devise} — {paiement.DatePaiement:dd/MM/yyyy}",
+                    policeLabel, new XSolidBrush(PdoeDocumentPdf.Encre), new XPoint(pdf.MargeX, yLigne + 12));
+                pdf.Gfx.DrawString(
+                    $"Réf. {paiement.ReferencePaiement} — Solde restant : {paiement.SoldeRestant.ToString("N0", culture)} {paiement.Devise}",
+                    policeVide, new XSolidBrush(PdoeDocumentPdf.Gris), new XRect(pdf.MargeX, yLigne + 14, pdf.LargeurUtile, 14), XStringFormats.TopLeft);
+
+                pdf.Y += 32;
+            }
+        }
+
+        var octets = pdf.Finaliser("Direction du réseau — Département des Opérations - Service COMEX");
+
+        var archive = await ExportArchiver.ArchiverAsync(storage, "FICHE_DOSSIER", dossier.ReferenceInterne, octets, cancellationToken);
+        var aujourdhui = DateOnly.FromDateTime(DateTime.UtcNow);
+        var export = new ExportReglementaire
+        {
+            Categorie = "OPERATIONNEL",
+            TypeExport = "FICHE_DOSSIER",
+            DateDebut = aujourdhui,
+            DateFin = aujourdhui,
+            NomFichier = archive.NomFichier,
+            CheminFichier = archive.Chemin,
+            HashSHA256 = archive.HashSHA256,
+            TailleFichier = archive.Taille,
+            CreatedBy = CurrentUser.Login,
+        };
+        db.ExportsReglementaires.Add(export);
+        await db.SaveChangesAsync(cancellationToken);
+
+        JournalAuditWriter.EnregistrerExport(db, export, dossier.ReferenceInterne);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return octets;
     }
 }

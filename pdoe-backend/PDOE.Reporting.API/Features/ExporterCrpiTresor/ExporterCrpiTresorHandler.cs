@@ -1,9 +1,9 @@
 using ClosedXML.Excel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using PDOE.Infrastructure;
 using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Storage;
 using PDOE.Reporting.API.Common;
 using PDOE.Reporting.API.Reglementaire;
 using PDOE.Shared.Kernel.Common;
@@ -12,7 +12,7 @@ namespace PDOE.Reporting.API.Features.ExporterCrpiTresor;
 
 /// Gabarit Trésor (crpi-tresor.xlsx) — 4 feuilles reçu/émis × UEMOA/hors UEMOA.
 /// En-têtes de période pas réécrites (gabarit source incohérent, à vérifier à la main) ; NUMERO AC seulement sur "EMIS HORS UEMOA".
-public class ExporterCrpiTresorHandler(PdoeDbContext db, IConfiguration configuration) : IRequestHandler<ExporterCrpiTresorQuery, byte[]>
+public class ExporterCrpiTresorHandler(PdoeDbContext db, IFileStorageService storage) : IRequestHandler<ExporterCrpiTresorQuery, byte[]>
 {
     public async Task<byte[]> Handle(ExporterCrpiTresorQuery query, CancellationToken cancellationToken)
     {
@@ -105,7 +105,7 @@ public class ExporterCrpiTresorHandler(PdoeDbContext db, IConfiguration configur
         var octets = stream.ToArray();
 
         var archive = await ExportReglementaireArchiver.ArchiverAsync(
-            configuration, "CRPI_TRESOR", DateOnly.FromDateTime(debut), DateOnly.FromDateTime(finDate), octets, cancellationToken);
+            storage, "CRPI_TRESOR", DateOnly.FromDateTime(debut), DateOnly.FromDateTime(finDate), octets, cancellationToken);
 
         var export = new ExportReglementaire
         {

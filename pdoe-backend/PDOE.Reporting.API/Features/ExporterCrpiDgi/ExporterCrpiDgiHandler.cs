@@ -1,9 +1,9 @@
 using ClosedXML.Excel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using PDOE.Infrastructure;
 using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Storage;
 using PDOE.Reporting.API.Common;
 using PDOE.Reporting.API.Reglementaire;
 using PDOE.Shared.Kernel.Common;
@@ -12,7 +12,7 @@ namespace PDOE.Reporting.API.Features.ExporterCrpiDgi;
 
 /// Gabarit DGI (crpi-dgi.xlsx) — feuilles émis/reçus seulement, la DGI ne distingue pas UEMOA.
 /// "Comptes commerciaux" reste vide : PDOE n'a pas de registre de comptes, à compléter à la main.
-public class ExporterCrpiDgiHandler(PdoeDbContext db, IConfiguration configuration) : IRequestHandler<ExporterCrpiDgiQuery, byte[]>
+public class ExporterCrpiDgiHandler(PdoeDbContext db, IFileStorageService storage) : IRequestHandler<ExporterCrpiDgiQuery, byte[]>
 {
     private const string NomBanque = "AFRILAND FIRST BANK CI";
 
@@ -84,7 +84,7 @@ public class ExporterCrpiDgiHandler(PdoeDbContext db, IConfiguration configurati
         var octets = stream.ToArray();
 
         var archive = await ExportReglementaireArchiver.ArchiverAsync(
-            configuration, "CRPI_DGI", DateOnly.FromDateTime(debut), DateOnly.FromDateTime(finDate), octets, cancellationToken);
+            storage, "CRPI_DGI", DateOnly.FromDateTime(debut), DateOnly.FromDateTime(finDate), octets, cancellationToken);
 
         var export = new ExportReglementaire
         {

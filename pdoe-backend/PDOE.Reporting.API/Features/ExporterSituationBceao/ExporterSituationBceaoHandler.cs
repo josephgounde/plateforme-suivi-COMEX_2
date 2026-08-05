@@ -1,9 +1,9 @@
 using ClosedXML.Excel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using PDOE.Infrastructure;
 using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Storage;
 using PDOE.Reporting.API.Common;
 using PDOE.Reporting.API.Reglementaire;
 using PDOE.Shared.Kernel.Common;
@@ -12,7 +12,7 @@ namespace PDOE.Reporting.API.Features.ExporterSituationBceao;
 
 /// Gabarit BCEAO (situation-bceao.xlsx), même classification que le Trésor mais colonnes différentes.
 /// "Qualité de la résidence" et "Secteur d'activité" restent vides — non modélisés dans Dossier.
-public class ExporterSituationBceaoHandler(PdoeDbContext db, IConfiguration configuration) : IRequestHandler<ExporterSituationBceaoQuery, byte[]>
+public class ExporterSituationBceaoHandler(PdoeDbContext db, IFileStorageService storage) : IRequestHandler<ExporterSituationBceaoQuery, byte[]>
 {
     public async Task<byte[]> Handle(ExporterSituationBceaoQuery query, CancellationToken cancellationToken)
     {
@@ -66,7 +66,7 @@ public class ExporterSituationBceaoHandler(PdoeDbContext db, IConfiguration conf
         var octets = stream.ToArray();
 
         var archive = await ExportReglementaireArchiver.ArchiverAsync(
-            configuration, "SITUATION_BCEAO", DateOnly.FromDateTime(debut), DateOnly.FromDateTime(finDate), octets, cancellationToken);
+            storage, "SITUATION_BCEAO", DateOnly.FromDateTime(debut), DateOnly.FromDateTime(finDate), octets, cancellationToken);
 
         var export = new ExportReglementaire
         {
