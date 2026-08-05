@@ -19,13 +19,15 @@
 
       <div class="compte-verif-row">
         <div class="form-field">
-          <label for="numCompte">Numéro de compte</label>
+          <label for="numCompte">Numéro de compte <span class="required-mark">*</span></label>
           <input
             id="numCompte"
             type="text"
             formControlName="numCompte"
             placeholder="CI00123456789"
+            [class.champ-invalide]="champInvalide('numCompte')"
           />
+          <p class="field-error" *ngIf="champInvalide('numCompte')">{{ champErreur('numCompte') }}</p>
         </div>
 
         <button
@@ -104,18 +106,27 @@
 
       <div class="form-row">
         <div class="form-field">
-          <label for="matriculeClient">Matricule du client</label>
+          <label for="matriculeClient">Matricule du client <span class="required-mark">*</span></label>
           <input
             id="matriculeClient"
             type="text"
             formControlName="matriculeClient"
             placeholder="Ex : CLI-0001"
+            [class.champ-invalide]="champInvalide('matriculeClient')"
           />
+          <p class="field-error" *ngIf="champInvalide('matriculeClient')">{{ champErreur('matriculeClient') }}</p>
         </div>
 
         <div class="form-field">
-          <label for="nomClient">Nom du client</label>
-          <input id="nomClient" type="text" formControlName="nomClient" placeholder="Ex : Société Ivoirienne de Cacao SA" />
+          <label for="nomClient">Nom du client <span class="required-mark">*</span></label>
+          <input
+            id="nomClient"
+            type="text"
+            formControlName="nomClient"
+            placeholder="Ex : Société Ivoirienne de Cacao SA"
+            [class.champ-invalide]="champInvalide('nomClient')"
+          />
+          <p class="field-error" *ngIf="champInvalide('nomClient')">{{ champErreur('nomClient') }}</p>
         </div>
       </div>
 
@@ -173,49 +184,89 @@
       <h2>Informations de l'opération</h2>
 
       <div class="form-field">
-        <label for="nomBeneficiaire">Nom du bénéficiaire</label>
-        <input id="nomBeneficiaire" type="text" formControlName="nomBeneficiaire" placeholder="Ex : Ets Industriel France SAS" />
+        <label for="nomBeneficiaire">Nom du bénéficiaire <span class="required-mark">*</span></label>
+        <input
+          id="nomBeneficiaire"
+          type="text"
+          formControlName="nomBeneficiaire"
+          placeholder="Ex : Ets Industriel France SAS"
+          [class.champ-invalide]="champInvalide('nomBeneficiaire')"
+        />
+        <p class="field-error" *ngIf="champInvalide('nomBeneficiaire')">{{ champErreur('nomBeneficiaire') }}</p>
       </div>
 
       <div class="form-row">
         <div class="form-field">
-          <label for="typeOperation">Type d'opération</label>
+          <label for="typeOperation">Type d'opération <span class="required-mark">*</span></label>
           <app-dropdown-select id="typeOperation" [options]="typeOperationOptions" formControlName="typeOperation" />
+          <p class="field-error" *ngIf="champInvalide('typeOperation')">{{ champErreur('typeOperation') }}</p>
         </div>
 
         <div class="form-field">
-          <label for="natureTransaction">Nature de la transaction</label>
-          <input id="natureTransaction" type="text" formControlName="natureTransaction" placeholder="Ex : Règlement facture fournisseur" />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label for="montant">Montant</label>
-          <input id="montant" type="number" formControlName="montant" min="1" placeholder="Ex : 5000000 (minimum 1)" />
-        </div>
-
-        <div class="form-field">
-          <label for="devise">Devise</label>
-          <input id="devise" type="text" formControlName="devise" maxlength="3" placeholder="Ex : XOF (code ISO, 3 lettres)" />
+          <label for="natureTransaction">Nature de la transaction <span class="required-mark">*</span></label>
+          <input
+            id="natureTransaction"
+            type="text"
+            formControlName="natureTransaction"
+            placeholder="Ex : Règlement facture fournisseur"
+            [class.champ-invalide]="champInvalide('natureTransaction')"
+          />
+          <p class="field-error" *ngIf="champInvalide('natureTransaction')">{{ champErreur('natureTransaction') }}</p>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-field">
-          <label for="paysBeneficiaire">Pays du bénéficiaire</label>
+          <label for="montant">Montant <span class="required-mark">*</span></label>
+          <input
+            id="montant"
+            type="number"
+            formControlName="montant"
+            min="1"
+            placeholder="Ex : 5000000 (minimum 1)"
+            [class.champ-invalide]="champInvalide('montant')"
+          />
+          <p class="field-error" *ngIf="champInvalide('montant')">{{ champErreur('montant') }}</p>
+        </div>
+
+        <div class="form-field">
+          <label for="devise">Devise <span class="required-mark">*</span></label>
+          <input
+            id="devise"
+            type="text"
+            formControlName="devise"
+            maxlength="3"
+            placeholder="Ex : XOF (code ISO, 3 lettres)"
+            [class.champ-invalide]="champInvalide('devise')"
+          />
+          <p class="field-error" *ngIf="champInvalide('devise')">{{ champErreur('devise') }}</p>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="paysBeneficiaire">Pays du bénéficiaire <span class="required-mark">*</span></label>
           <app-dropdown-select id="paysBeneficiaire" [options]="paysOptions" [filtrable]="true" formControlName="paysBeneficiaire" placeholder="Sélectionner un pays…" />
+          <p class="field-error" *ngIf="champInvalide('paysBeneficiaire')">{{ champErreur('paysBeneficiaire') }}</p>
         </div>
 
         <div class="form-field">
-          <label for="typeCompteDebite">Type de compte débité</label>
+          <label for="typeCompteDebite">Type de compte débité <span class="required-mark">*</span></label>
           <app-dropdown-select id="typeCompteDebite" [options]="typeCompteOptions" formControlName="typeCompteDebite" />
+          <p class="field-error" *ngIf="champInvalide('typeCompteDebite')">{{ champErreur('typeCompteDebite') }}</p>
         </div>
       </div>
 
       <div class="form-field">
-        <label for="motif">Motif</label>
-        <textarea id="motif" formControlName="motif" rows="3" placeholder="Ex : Paiement fournisseur — facture n° 2026-0456"></textarea>
+        <label for="motif">Motif <span class="required-mark">*</span></label>
+        <textarea
+          id="motif"
+          formControlName="motif"
+          rows="3"
+          placeholder="Ex : Paiement fournisseur — facture n° 2026-0456"
+          [class.champ-invalide]="champInvalide('motif')"
+        ></textarea>
+        <p class="field-error" *ngIf="champInvalide('motif')">{{ champErreur('motif') }}</p>
       </div>
     </section>
 

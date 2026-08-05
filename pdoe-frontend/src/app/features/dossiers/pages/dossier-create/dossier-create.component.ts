@@ -335,15 +335,37 @@ export class DossierCreateComponent implements OnInit {
 
   // ── Soumission ────────────────────────────────────────────
 
+  // Ne dépend plus de formulaire.valid : le bouton reste cliquable même formulaire invalide,
+  // pour que enregistrer() puisse déclencher markAllAsTouched() et afficher les erreurs de champ.
   get peutEnregistrer(): boolean {
     if (this.modeEdition) {
-      return this.formulaire.valid;
+      return true;
     }
-    return this.etapeSignature === 'validee' && this.formulaire.valid;
+    return this.etapeSignature === 'validee';
+  }
+
+  // Vrai si le champ est en erreur ET que l'utilisateur y a déjà touché — évite d'afficher
+  // les astérisques comme des erreurs avant même la première interaction.
+  champInvalide(nom: string): boolean {
+    const controle = this.formulaire.get(nom);
+    return !!controle && controle.invalid && (controle.touched || controle.dirty);
+  }
+
+  champErreur(nom: string): string {
+    const controle = this.formulaire.get(nom);
+    if (!controle?.errors) return '';
+    if (controle.errors['required']) return 'Ce champ est obligatoire.';
+    if (controle.errors['min']) return 'Le montant doit être supérieur à 0.';
+    return '';
   }
 
   enregistrer(): void {
     if (!this.peutEnregistrer) {
+      return;
+    }
+
+    if (this.formulaire.invalid) {
+      this.formulaire.markAllAsTouched();
       return;
     }
 

@@ -81,6 +81,11 @@ h1 {
       color: #999999;
       cursor: not-allowed;
     }
+
+    &.champ-invalide {
+      border-color: var(--pdoe-red);
+      background: #fdecee;
+    }
   }
 
   textarea {
@@ -90,6 +95,16 @@ h1 {
   app-dropdown-select {
     width: 100%;
   }
+}
+
+.required-mark {
+  color: var(--pdoe-red);
+}
+
+.field-error {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--pdoe-red);
 }
 
 .form-row {
