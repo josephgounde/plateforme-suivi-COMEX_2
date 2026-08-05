@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "pdoe-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "pdoe-frontend", "run", "start"],
+      "port": 4200
+    },
+    {
+      "name": "pdoe-backend",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "pdoe-backend/PDOE.Api", "--launch-profile", "http"],
+      "port": 5072
+    }
+  ]
+}
