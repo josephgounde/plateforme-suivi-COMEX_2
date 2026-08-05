@@ -1,6 +1,8 @@
 namespace PDOE.CBS.Integration;
 
-/// Accès ABS2000 en lecture seule (taux, signature, solde) — tous mockés faute d'un vrai accès pour l'instant.
+/// Accès ABS2000 en lecture seule (taux, signature, solde). Les Handlers de ce module ne parlent qu'à
+/// ICbsClient (PDOE.Infrastructure.Cbs) — bascule mock/réel pilotée par Cbs:BypassValidation dans Program.cs,
+/// voir MockCbsClient/HttpCbsClient.
 public static class ModuleMarker
 {
 }
