@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PDOE.Api.Contracts;
 using PDOE.Workflow.API.Features.CreerEtapeConfig;
@@ -10,6 +11,7 @@ namespace PDOE.Workflow.API.Controllers;
 
 [ApiController]
 [Route("workflow-config")]
+[Authorize(Policy = "AdminDsiri")]
 public class WorkflowConfigController(IMediator mediator) : ControllerBase
 {
     [HttpGet("etapes")]

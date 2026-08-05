@@ -13,6 +13,10 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from '../auth/auth.service';
 
+// Endpoints [AllowAnonymous] appelés avant toute session : un 401 dessus (OTP_INVALID, credentials
+// LDAP invalides) est une erreur de saisie, pas une session expirée — ne doit pas déclencher logout().
+const URLS_AUTH_ANONYMES = ['/auth/login', '/auth/otp/verifier', '/auth/otp/renvoyer'];
+
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   constructor(private auth: AuthService) {}
@@ -26,7 +30,8 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((error: HttpErrorResponse) => {
-        if (error.status === 401) {
+        const appelAuthAnonyme = URLS_AUTH_ANONYMES.some(url => req.url.includes(url));
+        if (error.status === 401 && !appelAuthAnonyme) {
           this.auth.logout();
         }
         return throwError(() => error);

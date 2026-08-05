@@ -20,6 +20,7 @@ public class PdoeDbContext(DbContextOptions<PdoeDbContext> options) : DbContext(
     public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
     public DbSet<JournalAudit> JournalAudit => Set<JournalAudit>();
     public DbSet<ExportReglementaire> ExportsReglementaires => Set<ExportReglementaire>();
+    public DbSet<OtpChallenge> OtpChallenges => Set<OtpChallenge>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

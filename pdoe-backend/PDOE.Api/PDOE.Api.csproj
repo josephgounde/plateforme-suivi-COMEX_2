@@ -26,5 +26,8 @@
     <ProjectReference Include="..\PDOE.Notifications\PDOE.Notifications.csproj" />
     <ProjectReference Include="..\PDOE.Admin.API\PDOE.Admin.API.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
+  </ItemGroup>
 
 </Project>

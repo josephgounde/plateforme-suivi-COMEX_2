@@ -4,8 +4,8 @@ export const environment = {
   apiUrl: 'http://localhost:5072/api',
   // mock.interceptor.ts route tout vers MockDataService quand true; voir HANDOFF_CONNEXION_FRONT_BACK.md pour l'état des surfaces prêtes.
   useMock: false,
-  // Reste true indépendamment de useMock : PDOE.Gateway (AuthController) n'existe pas encore côté backend.
-  useMockAuth: true,
+  // PDOE.Gateway (AuthController) est branché côté backend — login/OTP/JWT réels.
+  useMockAuth: false,
   appVersion: '5.2.0',
   appName: 'PDOE — AfrilandFirstBank CI'
 };

@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PDOE.Api.Contracts;
 using PDOE.Apurement.API.Features.CreerChecklistItemConfig;
@@ -11,6 +12,7 @@ namespace PDOE.Apurement.API.Controllers;
 
 [ApiController]
 [Route("checklist-config")]
+[Authorize(Policy = "AdminDsiri")]
 public class ChecklistConfigController(IMediator mediator) : ControllerBase
 {
     [HttpGet("items")]

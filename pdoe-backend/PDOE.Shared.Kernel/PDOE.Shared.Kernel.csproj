@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Requis par CurrentUser (Common/CurrentUser.cs) pour IHttpContextAccessor — tous les consommateurs de
+         Shared.Kernel finissent de toute façon hébergés dans PDOE.Api (ASP.NET Core), donc sans coût réel. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="NSwag.MSBuild" Version="14.7.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

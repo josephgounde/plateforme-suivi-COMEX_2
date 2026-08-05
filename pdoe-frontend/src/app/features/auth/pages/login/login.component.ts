@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../../../../environments/environment';
 import { AuthErrorCode, AuthService } from '../../../../core/auth/auth.service';
 
 interface QuickLoginOption {
@@ -35,6 +36,11 @@ export class LoginComponent {
   form: FormGroup;
   loading = false;
   erreur = '';
+  motDePasseVisible = false;
+
+  // Cache la connexion rapide en mode réel : ces logins ("gestionnaire", "admin"...) ne correspondent pas
+  // forcément aux LoginAD réels de Utilisateurs (ex. "gestionnaire.diallo", "admin.dsiri").
+  readonly modeMock = environment.useMockAuth;
 
   // Reflète le mapping profilParLogin de AuthService.
   readonly connexionsRapides: QuickLoginOption[] = [
@@ -56,6 +62,10 @@ export class LoginComponent {
       login: ['', Validators.required],
       password: ['', Validators.required]
     });
+  }
+
+  togglerVisibiliteMotDePasse(): void {
+    this.motDePasseVisible = !this.motDePasseVisible;
   }
 
   connexionRapide(login: string): void {

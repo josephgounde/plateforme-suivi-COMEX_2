@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PDOE.Admin.API.Features.GetParametre;
 using PDOE.Admin.API.Features.ListParametrage;
@@ -9,6 +10,7 @@ namespace PDOE.Admin.API.Controllers;
 
 [ApiController]
 [Route("parametrage")]
+[Authorize(Policy = "AdminDsiri")]
 public class ParametrageController(IMediator mediator) : ControllerBase
 {
     [HttpGet]

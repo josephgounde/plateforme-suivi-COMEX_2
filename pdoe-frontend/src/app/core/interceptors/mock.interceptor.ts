@@ -8,8 +8,9 @@ import { delay } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { MockDataService, MockHttpError } from '../mock/mock-data.service';
 
-// Surfaces sans contrôleur backend réel — restent mockées même quand useMock = false.
-const TOUJOURS_MOCKE = /^\/(utilisateurs|auth\/logout$)/;
+// Plus aucune surface listée ici : /utilisateurs (PDOE.Admin.API) et /auth/logout (PDOE.Gateway) ont maintenant
+// un contrôleur backend réel — regex conservée vide pour ne pas casser d'éventuel futur besoin similaire.
+const TOUJOURS_MOCKE = /^$/;
 
 export const mockInterceptor: HttpInterceptorFn = (req, next) => {
   const url = req.url.replace(/.*\/api/, '');

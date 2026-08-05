@@ -12,7 +12,7 @@ public class HttpNotificationSender(HttpClient http) : INotificationSender
         try
         {
             var response = await http.PostAsJsonAsync(
-                "api/v1/envoyer",
+                http.BaseAddress,
                 new
                 {
                     to = destinataire,

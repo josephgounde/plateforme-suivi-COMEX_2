@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PDOE.Api.Contracts;
 using PDOE.Notifications.Features.ListNotificationTemplates;
@@ -9,6 +10,7 @@ namespace PDOE.Notifications.Controllers;
 
 [ApiController]
 [Route("notification-templates")]
+[Authorize(Policy = "AdminDsiri")]
 public class NotificationTemplatesController(IMediator mediator) : ControllerBase
 {
     [HttpGet]
