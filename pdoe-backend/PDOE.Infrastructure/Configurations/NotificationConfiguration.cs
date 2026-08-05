@@ -18,7 +18,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         builder.Property(n => n.Corps).HasColumnType("nvarchar(max)").IsRequired();
         builder.Property(n => n.MessageIdGateway).HasMaxLength(100);
         builder.Property(n => n.Statut).HasMaxLength(20).HasDefaultValue("EN_ATTENTE");
-        builder.Property(n => n.CodeErreur).HasMaxLength(50);
+        builder.Property(n => n.CodeErreur).HasMaxLength(500);
         builder.Property(n => n.NbTentatives).HasDefaultValue(0);
         builder.Property(n => n.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         builder.Property(n => n.CreatedBy).HasMaxLength(100).IsRequired();

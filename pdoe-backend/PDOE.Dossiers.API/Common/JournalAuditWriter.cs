@@ -21,4 +21,19 @@ internal static class JournalAuditWriter
             CreatedBy = etape.AgentLogin,
         });
     }
+
+    // EntiteId pointe l'ExportReglementaire déjà sauvegardé, pas besoin de redupliquer le chemin dans Description.
+    public static void EnregistrerExport(PdoeDbContext db, ExportReglementaire export, string referenceDossier)
+    {
+        db.JournalAudit.Add(new JournalAudit
+        {
+            Categorie = "REPORTING",
+            TypeAction = "EXPORT_RAPPORT",
+            Description = $"Export {export.TypeExport} du dossier {referenceDossier} généré.",
+            EntiteType = "ExportReglementaire",
+            EntiteId = export.ExportReglementaireId.ToString(),
+            DateAction = export.CreatedAt,
+            CreatedBy = export.CreatedBy,
+        });
+    }
 }

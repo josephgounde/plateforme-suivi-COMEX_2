@@ -8,7 +8,7 @@ public class JournalAudit
     /// <summary>AUTHENTIFICATION | UTILISATEUR | PARAMETRAGE | WORKFLOW | REPORTING</summary>
     public string Categorie { get; set; } = null!;
 
-    /// <summary>CONNEXION_REUSSIE, CONNEXION_ECHEC, DECONNEXION, UTILISATEUR_CREE, EXPORT_RAPPORT, ...</summary>
+    /// <summary>CONNEXION_REUSSIE, CONNEXION_ECHEC, OTP_ENVOYE, OTP_ENVOI_ECHEC, DECONNEXION, UTILISATEUR_CREE, EXPORT_RAPPORT, ...</summary>
     public string TypeAction { get; set; } = null!;
     public string Description { get; set; } = null!;
 

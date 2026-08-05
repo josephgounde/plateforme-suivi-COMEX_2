@@ -54,6 +54,13 @@ public class RejeterEtapeHandler(PdoeDbContext db, INotificationSender sender) :
             dossier.EtapesWorkflow.Add(etapeGenerique);
             JournalAuditWriter.EnregistrerTransition(db, dossier, etapeGenerique);
 
+            // Pas de cible configurable sur une étape générique : on retombe sur le créateur, comme le rejet vers ETAPE_1_INITIATION plus bas.
+            if (dossier.CreatedBy is not null)
+            {
+                await NotificationWriter.EnregistrerEtEnvoyer(
+                    db, sender, dossier.DossierId, "DOSSIER_REJETE", $"{dossier.CreatedBy}@afbci.ci", cancellationToken);
+            }
+
             await db.SaveChangesAsync(cancellationToken);
 
             return new WorkflowTransitionResponse

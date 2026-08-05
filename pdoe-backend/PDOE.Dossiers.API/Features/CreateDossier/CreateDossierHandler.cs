@@ -49,7 +49,8 @@ public class CreateDossierHandler(PdoeDbContext db) : IRequestHandler<CreateDoss
             TelephoneClient = request.TelephoneClient,
             CodeBanque = request.CodeBanque,
             QualiteResidence = request.QualiteResidence?.ToString(),
-            DateOuvertureCompte = request.DateOuvertureCompte is not null ? DateOnly.FromDateTime(request.DateOuvertureCompte.Value.UtcDateTime) : null,
+            // .Date (pas .UtcDateTime) : cf. commentaire équivalent dans CreerPaiementHandler.
+            DateOuvertureCompte = request.DateOuvertureCompte is not null ? DateOnly.FromDateTime(request.DateOuvertureCompte.Value.Date) : null,
             AnneeExerciceCompte = request.AnneeExerciceCompte,
             TypeCompteDebite = request.TypeCompteDebite.ToString(),
             CodeSwiftIndicatif = request.CodeSwiftIndicatif,

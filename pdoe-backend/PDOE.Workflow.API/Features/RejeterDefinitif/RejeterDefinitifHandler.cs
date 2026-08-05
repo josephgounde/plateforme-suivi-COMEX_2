@@ -3,13 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using PDOE.Api.Contracts;
 using PDOE.Infrastructure;
 using PDOE.Infrastructure.Entities;
+using PDOE.Infrastructure.Notifications;
 using PDOE.Shared.Kernel.Common;
 using PDOE.Workflow.API.Common;
 
 namespace PDOE.Workflow.API.Features.RejeterDefinitif;
 
-/// <summary>Réservé Direction/Admin DSIRI/Super Admin en théorie — non applicable sans PDOE.Gateway (Auth).</summary>
-public class RejeterDefinitifHandler(PdoeDbContext db) : IRequestHandler<RejeterDefinitifCommand, WorkflowTransitionResponse>
+/// <summary>Réservé Direction/Admin DSIRI/Super Admin en théorie — WorkflowController n'a pour l'instant que la policy globale "authentifié", pas de rôle dédié.</summary>
+public class RejeterDefinitifHandler(PdoeDbContext db, INotificationSender sender) : IRequestHandler<RejeterDefinitifCommand, WorkflowTransitionResponse>
 {
     /// EXECUTE et tout statut en aval — l'opération est déjà partie, plus rien à annuler.
     private static readonly HashSet<StatutDossier> StatutsDejaExecutes =
@@ -70,6 +71,9 @@ public class RejeterDefinitifHandler(PdoeDbContext db) : IRequestHandler<Rejeter
         };
         dossier.EtapesWorkflow.Add(etape);
         JournalAuditWriter.EnregistrerTransition(db, dossier, etape);
+
+        // Rejet terminal : notifie gestionnaire + Agent d'accueil + Direction + Admin DSIRI, quel que soit le point du circuit d'où il vient.
+        await RejetNotifications.NotifierPartiesConcernees(db, sender, dossier, "DOSSIER_REJETE_DEFINITIF", cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
 

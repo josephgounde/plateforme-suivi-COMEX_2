@@ -51,7 +51,10 @@ public class CreerPaiementHandler(PdoeDbContext db) : IRequestHandler<CreerPaiem
             DossierId = dossier.DossierId,
             MontantPaiement = request.MontantPaiement,
             Devise = request.Devise,
-            DatePaiement = DateOnly.FromDateTime(request.DatePaiement.UtcDateTime),
+            // .Date (pas .UtcDateTime) : on veut la date calendaire choisie par l'utilisateur,
+            // pas l'instant UTC — sinon un serveur en UTC+1 recule la date d'un jour (minuit
+            // local converti en UTC tombe la veille).
+            DatePaiement = DateOnly.FromDateTime(request.DatePaiement.Date),
             ReferencePaiement = request.ReferencePaiement,
             SoldeRestant = soldeRestant,
             CreatedAt = now,

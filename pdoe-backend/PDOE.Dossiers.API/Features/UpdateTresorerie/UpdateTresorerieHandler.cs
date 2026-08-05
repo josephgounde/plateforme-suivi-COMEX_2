@@ -24,7 +24,8 @@ public class UpdateTresorerieHandler(PdoeDbContext db) : IRequestHandler<UpdateT
         if (request.DeviseCotation is not null) dossier.DeviseCotation = request.DeviseCotation;
         if (request.CorrespondantDesigne is not null) dossier.CorrespondantDesigne = request.CorrespondantDesigne;
         if (request.BicCorrespondant is not null) dossier.BicCorrespondant = request.BicCorrespondant;
-        if (request.DateDebit is not null) dossier.DateDebit = DateOnly.FromDateTime(request.DateDebit.Value.UtcDateTime);
+        // .Date (pas .UtcDateTime) : cf. commentaire équivalent dans CreerPaiementHandler.
+        if (request.DateDebit is not null) dossier.DateDebit = DateOnly.FromDateTime(request.DateDebit.Value.Date);
         if (request.Couverture is not null) dossier.Couverture = request.Couverture;
         if (request.DisponibiliteFonds is not null) dossier.DisponibiliteFonds = request.DisponibiliteFonds.Value;
 

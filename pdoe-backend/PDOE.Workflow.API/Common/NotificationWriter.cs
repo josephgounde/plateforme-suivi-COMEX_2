@@ -38,7 +38,10 @@ internal static class NotificationWriter
         var resultat = await sender.EnvoyerAsync(notification.Canal, destinataire, notification.Sujet, notification.Corps, cancellationToken);
         notification.Statut = resultat.Succes ? "ENVOYE" : "ECHEC";
         notification.MessageIdGateway = resultat.MessageIdGateway;
-        notification.CodeErreur = resultat.CodeErreur;
+        // Tronqué à la taille de la colonne : un message d'erreur réseau/gateway peut dépasser
+        // n'importe quelle limite fixe, et on ne veut jamais qu'une erreur de notification fasse
+        // échouer (SqlException de troncature) la transition métier qui l'a déclenchée.
+        notification.CodeErreur = resultat.CodeErreur is { Length: > 500 } ? resultat.CodeErreur[..500] : resultat.CodeErreur;
 
         db.Notifications.Add(notification);
     }

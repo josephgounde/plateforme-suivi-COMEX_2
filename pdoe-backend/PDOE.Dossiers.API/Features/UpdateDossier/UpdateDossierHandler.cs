@@ -35,7 +35,8 @@ public class UpdateDossierHandler(PdoeDbContext db) : IRequestHandler<UpdateDoss
         if (request.TelephoneClient is not null) dossier.TelephoneClient = request.TelephoneClient;
         if (request.CodeBanque is not null) dossier.CodeBanque = request.CodeBanque;
         if (request.QualiteResidence is not null) dossier.QualiteResidence = request.QualiteResidence.ToString();
-        if (request.DateOuvertureCompte is not null) dossier.DateOuvertureCompte = DateOnly.FromDateTime(request.DateOuvertureCompte.Value.UtcDateTime);
+        // .Date (pas .UtcDateTime) : cf. commentaire équivalent dans CreerPaiementHandler.
+        if (request.DateOuvertureCompte is not null) dossier.DateOuvertureCompte = DateOnly.FromDateTime(request.DateOuvertureCompte.Value.Date);
         if (request.AnneeExerciceCompte is not null) dossier.AnneeExerciceCompte = request.AnneeExerciceCompte;
         if (request.TypeCompteDebite is not null) dossier.TypeCompteDebite = request.TypeCompteDebite.ToString()!;
         if (request.CodeSwiftIndicatif is not null) dossier.CodeSwiftIndicatif = request.CodeSwiftIndicatif;

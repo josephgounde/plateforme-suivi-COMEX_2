@@ -64,7 +64,9 @@ public class NotificationRetryService(IServiceScopeFactory scopeFactory, ILogger
             notification.DateEnvoi = now;
             notification.Statut = resultat.Succes ? "ENVOYE" : "ECHEC";
             notification.MessageIdGateway = resultat.MessageIdGateway ?? notification.MessageIdGateway;
-            notification.CodeErreur = resultat.Succes ? null : resultat.CodeErreur;
+            // Tronqué à la taille de la colonne : cf. commentaire équivalent dans NotificationWriter.
+            notification.CodeErreur = resultat.Succes ? null
+                : resultat.CodeErreur is { Length: > 500 } ? resultat.CodeErreur[..500] : resultat.CodeErreur;
         }
 
         if (echecs.Count > 0)
