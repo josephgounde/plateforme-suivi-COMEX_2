@@ -6,13 +6,34 @@
     }
   },
   "ConnectionStrings": {
-    "PdoeDb": "Server=YOUR_SQL_INSTANCE;Database=PDOE_DB;Trusted_Connection=True;TrustServerCertificate=true;Encrypt=false;"
+    // "PdoeDb": "Server=YOUR_SQL_INSTANCE;Database=PDOE_DB;Trusted_Connection=True;TrustServerCertificate=true;Encrypt=false;",
+    "PdoeDb": "Server=PCDEV56-103\\SQLEXPRESS;Database=PDOE_DB;Integrated Security=True;Persist Security Info=False;Pooling=False;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;"
+
   },
   "Storage": {
-    "DocumentsRootPath": "C:\\path\\to\\pdoe-backend\\.local-storage\\documents",
-    "ReportingArchiveRootPath": "C:\\path\\to\\pdoe-backend\\.local-storage\\reporting-reglementaire"
+    "DocumentsRootPath": "C:\\Users\\GOUNDET\\Desktop\\projet_COMEX\\PSO-COMEX\\plateforme-suivi-COMEX_2\\pdoe-backend\\.local-storage\\documents",
+    "ReportingArchiveRootPath": "C:\\Users\\GOUNDET\\Desktop\\projet_COMEX\\PSO-COMEX\\plateforme-suivi-COMEX_2\\pdoe-backend\\.local-storage\\reporting-reglementaire"
   },
   "Messagerie": {
-    "BaseUrl": "https://your-mail-service-host/MailService/Afriland/api/v1/SendEmail"
+    "BaseUrl": "http://172.19.52.35/MailServiceLive/Afriland/api/v1/SendMail"
+  },
+  "Jwt": {
+    "Key": "mYcDYtBsteBx+w4Fuq2m0+euohtQVrv5ErBzPX7SMWC5Sio3W8KDpBxZ8VrHN+Cv",
+    "Issuer": "PDOE",
+    "Audience": "PDOE",
+    "ExpirationMinutes": 480
+  },
+  "Ldap": {
+    // Passerelle HTTP interne AFBCI vers l'AD (pas un bind LDAP direct) — même famille d'API que Messagerie:BaseUrl.
+    "BaseUrl": "http://172.19.52.35/MailServiceLive/Afriland/api/v1/ActiveDirectory",
+    "BypassValidation": false
+  },
+  "Cbs": {
+    // Base URL ABS2000 — inconnue pour l'instant, à renseigner quand l'accès sera fourni (cf. HttpCbsClient).
+    "BaseUrl": "",
+    "BypassValidation": true
+  },
+  "Otp": {
+    "LogCodeInConsole": false
   }
 }

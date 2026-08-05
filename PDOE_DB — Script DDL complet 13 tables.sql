@@ -93,6 +93,15 @@
 --    (nouveau job PDOE.Workflow.API/BackgroundJobs) qui déclenche ces
 --    3 alertes à échéance et NotificationRetryService (PDOE.Notifications/
 --    BackgroundJobs) qui referme enfin le retry NbTentatives/ECHEC.
+--  + v5.21 : ExportsReglementaires.TypeExport — FICHE_DOSSIER/
+--    HISTORIQUE_DOSSIER (NOUVEAUX) rejoignent TypeExport : les exports
+--    PDF par dossier (GenererFicheDossierHandler, ExporterHistoriqueHandler)
+--    n'étaient tracés nulle part, contrairement aux exports Reporting.
+--  + v5.22 : Table OtpChallenges (NOUVELLE) : le défi OTP vivait en mémoire
+--    du process (InMemoryOtpChallengeStore) — perdu à chaque redémarrage,
+--    incompatible avec plusieurs instances. DbOtpChallengeStore le
+--    persiste désormais ici, même durée de vie transitoire (quelques
+--    minutes).
 -- ============================================================
 
 USE master;
@@ -496,7 +505,7 @@ CREATE TABLE dbo.Notifications
     Corps               NVARCHAR(MAX)   NOT NULL,
     MessageIdGateway    NVARCHAR(100)   NULL,
     Statut              NVARCHAR(20)    NOT NULL    CONSTRAINT DF_Notifs_Statut DEFAULT ('EN_ATTENTE'),
-    CodeErreur          NVARCHAR(50)    NULL,
+    CodeErreur          NVARCHAR(500)   NULL,
     NbTentatives        INT             NOT NULL    CONSTRAINT DF_Notifs_NbTentatives DEFAULT (0),
     DateEnvoi           DATETIME2       NULL,
     CreatedAt           DATETIME2       NOT NULL    CONSTRAINT DF_Notifs_CreatedAt DEFAULT (GETUTCDATE()),
@@ -566,7 +575,7 @@ CREATE TABLE dbo.ExportsReglementaires
 (
     ExportReglementaireId  INT             NOT NULL    IDENTITY(1,1),
     Categorie                NVARCHAR(20)    NOT NULL    CONSTRAINT DF_ExportsReglementaires_Categorie DEFAULT ('REGLEMENTAIRE') CONSTRAINT CK_ExportsReglementaires_Categorie CHECK (Categorie IN ('REGLEMENTAIRE', 'OPERATIONNEL')),
-    TypeExport              NVARCHAR(30)    NOT NULL,   -- CRPI_DGI / CRPI_TRESOR / SITUATION_BCEAO / DOSSIERS_EN_RETARD / ACTIVITE_MENSUELLE
+    TypeExport              NVARCHAR(30)    NOT NULL,   -- CRPI_DGI / CRPI_TRESOR / SITUATION_BCEAO / DOSSIERS_EN_RETARD / ACTIVITE_MENSUELLE / FICHE_DOSSIER / HISTORIQUE_DOSSIER
     DateDebut               DATE            NOT NULL,
     DateFin                 DATE            NOT NULL,
     NomFichier               NVARCHAR(255)   NOT NULL,
@@ -577,6 +586,26 @@ CREATE TABLE dbo.ExportsReglementaires
     CreatedBy                NVARCHAR(100)   NOT NULL,
 
     CONSTRAINT PK_ExportsReglementaires PRIMARY KEY CLUSTERED (ExportReglementaireId ASC)
+);
+GO
+
+-- Défi OTP entre login LDAP et vérification (login → otp/verifier|renvoyer). Remplace le
+-- stockage en mémoire du process (InMemoryOtpChallengeStore) — survit à un redémarrage du
+-- serveur et fonctionne avec plusieurs instances. Pas de FK vers Utilisateurs : ligne
+-- transitoire (quelques minutes), ne doit pas dépendre du cycle de vie du compte.
+CREATE TABLE dbo.OtpChallenges
+(
+    OtpToken        NVARCHAR(100)   NOT NULL,
+    LoginAD         NVARCHAR(100)   NOT NULL,
+    Code            NCHAR(6)        NOT NULL,
+    NomComplet      NVARCHAR(200)   NOT NULL,
+    Email           NVARCHAR(200)   NOT NULL,
+    Profil          NVARCHAR(30)    NOT NULL,
+    ExpiresAt       DATETIME2       NOT NULL,
+    Tentatives      INT             NOT NULL    CONSTRAINT DF_OtpChallenges_Tentatives DEFAULT (0),
+    CreatedAt       DATETIME2       NOT NULL    CONSTRAINT DF_OtpChallenges_CreatedAt DEFAULT (GETUTCDATE()),
+
+    CONSTRAINT PK_OtpChallenges PRIMARY KEY CLUSTERED (OtpToken ASC)
 );
 GO
 
@@ -701,6 +730,7 @@ INSERT INTO dbo.NotificationTemplates
 VALUES
     ('DOSSIER_SOUMIS', 'Nouveau dossier reçu', 'Un nouveau dossier COMEX vous a été transmis et attend votre validation.', 'EMAIL', 'SYSTEM'),
     ('DOSSIER_REJETE', 'Dossier rejeté',       'Un dossier que vous avez soumis a été rejeté et nécessite une correction.', 'EMAIL', 'SYSTEM'),
+    ('DOSSIER_REJETE_DEFINITIF', 'Dossier rejeté définitivement', 'Un dossier que vous avez soumis a été rejeté définitivement — le circuit est clos, aucune correction n''est possible.', 'EMAIL', 'SYSTEM'),
     ('DOSSIER_FRACTIONNEMENT', 'Alerte fractionnement signalée', 'Le COMEX a signalé un possible fractionnement sur un dossier — décision (levée d''alerte ou rejet définitif) en attente.', 'EMAIL', 'SYSTEM'),
     ('RELANCE_J14', 'Relance apurement — échéance dans 14 jours', 'L''échéance d''apurement de ce dossier approche (J-14) — une relance ou un début de justification est attendu.', 'EMAIL', 'SYSTEM'),
     ('MISE_EN_DEMEURE_J8', 'Mise en demeure — échéance dans 8 jours', 'L''échéance d''apurement de ce dossier est à 8 jours — une action est requise avant le dépassement du délai réglementaire BCEAO.', 'EMAIL', 'SYSTEM'),

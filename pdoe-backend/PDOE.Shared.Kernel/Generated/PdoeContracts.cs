@@ -96,6 +96,12 @@ namespace PDOE.Api.Contracts
         [System.Runtime.Serialization.EnumMember(Value = @"ACTIVITE_MENSUELLE")]
         ACTIVITE_MENSUELLE = 4,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"FICHE_DOSSIER")]
+        FICHE_DOSSIER = 5,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"HISTORIQUE_DOSSIER")]
+        HISTORIQUE_DOSSIER = 6,
+
     }
 
     /// <summary>
@@ -1703,6 +1709,9 @@ namespace PDOE.Api.Contracts
         [System.Text.Json.Serialization.JsonPropertyName("dateEnvoi")]
         public System.DateTimeOffset? DateEnvoi { get; set; }
 
+        [System.Text.Json.Serialization.JsonPropertyName("createdAt")]
+        public System.DateTimeOffset CreatedAt { get; set; }
+
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -2343,10 +2352,10 @@ namespace PDOE.Api.Contracts
 
         [System.Text.Json.Serialization.JsonPropertyName("profil")]
         [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ProfilUtilisateur>))]
-        public ProfilUtilisateur Profil { get; set; }
+        public ProfilUtilisateur? Profil { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("estActif")]
-        public bool EstActif { get; set; }
+        public bool? EstActif { get; set; }
 
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
@@ -3188,6 +3197,9 @@ namespace PDOE.Api.Contracts
 
         [System.Runtime.Serialization.EnumMember(Value = @"EXPORT_INTROUVABLE")]
         EXPORT_INTROUVABLE = 32,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"ABS_INDISPONIBLE")]
+        ABS_INDISPONIBLE = 33,
 
     }
 

@@ -1,9 +1,24 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PDOE.Api.Contracts;
+using PDOE.Gateway.Common;
+using PDOE.Gateway.Ldap;
 using PDOE.Infrastructure;
+using PDOE.Infrastructure.Cbs;
+using PDOE.Infrastructure.Ldap;
 using PDOE.Infrastructure.Notifications;
+using PDOE.Infrastructure.Otp;
 using PDOE.Infrastructure.Storage;
 using PDOE.Shared.Kernel.Common;
+
+// Sans ça, [Range(typeof(decimal), "0.0001", ...)] (généré par NSwag) plante en 500 sur tout serveur
+// dont la culture par défaut n'utilise pas le point comme séparateur décimal (ex. fr-FR → virgule) :
+// RangeAttribute parse ses bornes avec CultureInfo.CurrentCulture, pas une culture invariante.
+System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +31,8 @@ builder.Services.AddControllers()
     .AddApplicationPart(typeof(PDOE.Reporting.API.Controllers.ReportingController).Assembly)
     .AddApplicationPart(typeof(PDOE.Admin.API.Controllers.ParametrageController).Assembly)
     .AddApplicationPart(typeof(PDOE.CBS.Integration.Controllers.TauxChangeController).Assembly)
-    .AddApplicationPart(typeof(PDOE.Notifications.Controllers.NotificationsController).Assembly);
+    .AddApplicationPart(typeof(PDOE.Notifications.Controllers.NotificationsController).Assembly)
+    .AddApplicationPart(typeof(PDOE.Gateway.Controllers.AuthController).Assembly);
 
 builder.Services.AddMediatR(cfg =>
 {
@@ -28,6 +44,7 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(PDOE.Admin.API.Controllers.ParametrageController).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(PDOE.CBS.Integration.Controllers.TauxChangeController).Assembly);
     cfg.RegisterServicesFromAssembly(typeof(PDOE.Notifications.Controllers.NotificationsController).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(PDOE.Gateway.Controllers.AuthController).Assembly);
 });
 
 
@@ -41,11 +58,88 @@ builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
 // Notifications : journalise sans réseau en dev/test, voir INotificationSender.cs pour le plan de bascule HTTP.
 builder.Services.AddSingleton<INotificationSender, LocalNotificationSender>();
-/*builder.Services.AddHttpClient<INotificationSender, HttpNotificationSender>(client =>
+builder.Services.AddHttpClient<INotificationSender, HttpNotificationSender>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["Messagerie:BaseUrl"] ??
         throw new InvalidOperationException("Messagerie:BaseUrl is not configured."));
+});
+
+// Auth (PDOE.Gateway) : passerelle HTTP interne AFBCI vers l'AD (pas un bind LDAP direct, cf. HttpLdapAuthenticator —
+// même principe que HttpNotificationSender), OTP en mémoire (jamais persisté, cf. IOtpChallengeStore), JWT émis par
+// JwtTokenGenerator et validé ci-dessous.
+builder.Services.AddHttpContextAccessor();
+/*
+builder.Services.AddHttpClient<ILdapAuthenticator, HttpLdapAuthenticator>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Ldap:BaseUrl"] ??
+        throw new InvalidOperationException("Ldap:BaseUrl is not configured."));
 });*/
+
+var bypassLdap = builder.Configuration.GetValue<bool>("Ldap:BypassValidation");
+
+if (builder.Environment.IsDevelopment() && bypassLdap)
+{
+    // Dev-only singleton bypass: no HTTP client or AD connection required
+    builder.Services.AddSingleton<ILdapAuthenticator, BypassLdapAuthenticator>();
+}
+else
+{
+    // Real AD authentication setup
+    builder.Services.AddHttpClient<ILdapAuthenticator, HttpLdapAuthenticator>(client =>
+    {
+        var baseUrl = builder.Configuration["Ldap:BaseUrl"]
+            ?? throw new InvalidOperationException("Ldap:BaseUrl is missing from configuration.");
+
+        client.BaseAddress = new Uri(baseUrl);
+    });
+}
+
+// CBS (PDOE.CBS.Integration) : accès ABS2000 (taux de change, solde, signature) — même principe de bascule que Ldap ci-dessus.
+var bypassCbs = builder.Configuration.GetValue<bool>("Cbs:BypassValidation");
+
+if (builder.Environment.IsDevelopment() && bypassCbs)
+{
+    builder.Services.AddSingleton<ICbsClient, MockCbsClient>();
+}
+else
+{
+    builder.Services.AddHttpClient<ICbsClient, HttpCbsClient>(client =>
+    {
+        var baseUrl = builder.Configuration["Cbs:BaseUrl"]
+            ?? throw new InvalidOperationException("Cbs:BaseUrl is missing from configuration.");
+
+        client.BaseAddress = new Uri(baseUrl);
+    });
+}
+
+builder.Services.AddScoped<IOtpChallengeStore, DbOtpChallengeStore>();
+builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+        };
+    });
+
+// FallbackPolicy : tout endpoint sans [AllowAnonymous] exige un JWT valide par défaut (aucun [Authorize] à poser
+// partout). AdminDsiri/SuperAdmin : policies nommées pour les surfaces déjà documentées comme restreintes dans l'OpenAPI.
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    options.AddPolicy("AdminDsiri", p => p.RequireRole("ADMIN_DSIRI", "SUPER_ADMIN"));
+    options.AddPolicy("SuperAdmin", p => p.RequireRole("SUPER_ADMIN"));
+});
 
 // Déclenchent les alertes J-14/J-8/J0 (AlertesApurement) et retentent les notifications en échec — cf. leurs
 // commentaires de classe pour ce que ça referme (ModuleMarker.cs de PDOE.Notifications, DeclarerExecutionHandler).
@@ -63,6 +157,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Pont statique vers HttpContext.User pour CurrentUser.Login — cf. commentaire de classe dans CurrentUser.cs.
+CurrentUser.Configure(app.Services.GetRequiredService<IHttpContextAccessor>());
 
 // Contrôleurs déclarent des routes nues, en prod le proxy ajoute /api. UsePathBase reproduit ça ici sans proxy devant.
 app.UsePathBase("/api");
@@ -85,8 +182,14 @@ app.Use(async (context, next) =>
         context.Response.StatusCode = ex.StatusCode;
         await context.Response.WriteAsJsonAsync(new ErrorResponse { Code = ex.Code, Message = ex.Message });
     }
+    catch (AuthException ex)
+    {
+        context.Response.StatusCode = ex.StatusCode;
+        await context.Response.WriteAsJsonAsync(new AuthErrorResponse { Code = ex.Code, Message = ex.Message });
+    }
 });
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

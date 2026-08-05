@@ -2198,7 +2198,7 @@ components:
 
     TypeExport:
       type: string
-      enum: [CRPI_DGI, CRPI_TRESOR, SITUATION_BCEAO, DOSSIERS_EN_RETARD, ACTIVITE_MENSUELLE]
+      enum: [CRPI_DGI, CRPI_TRESOR, SITUATION_BCEAO, DOSSIERS_EN_RETARD, ACTIVITE_MENSUELLE, FICHE_DOSSIER, HISTORIQUE_DOSSIER]
 
     QualiteResidence:
       type: string
@@ -3179,6 +3179,9 @@ components:
           type: string
           format: date-time
           nullable: true
+        createdAt:
+          type: string
+          format: date-time
 
     NotificationTemplate:
       type: object
@@ -3513,9 +3516,12 @@ components:
         email:
           type: string
         profil:
-          $ref: '#/components/schemas/ProfilUtilisateur'
+          allOf:
+            - $ref: '#/components/schemas/ProfilUtilisateur'
+          nullable: true
         estActif:
           type: boolean
+          nullable: true
 
     GestionnaireClientResponse:
       type: object
@@ -3856,6 +3862,7 @@ components:
             - PARAMETRE_INTROUVABLE
             - FDI_MANQUANTE
             - EXPORT_INTROUVABLE
+            - ABS_INDISPONIBLE
         message:
           type: string
           description: Message lisible par l'humain
