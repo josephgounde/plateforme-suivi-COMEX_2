@@ -8,16 +8,19 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { DossierApiService } from '../../../../core/api/dossier-api.service';
 import { WorkflowApiService } from '../../../../core/api/workflow-api.service';
 import { ParametrageApiService } from '../../../../core/api/parametrage-api.service';
-import { Dossier, TresorerieUpdateRequest } from '../../../../core/models/dossier.model';
+import { ReportingApiService } from '../../../../core/api/reporting-api.service';
+import { Dossier, TresorerieUpdateRequest, DashboardData } from '../../../../core/models/dossier.model';
 import { StatutDossier, NiveauValidation, STATUT_LABELS, TYPE_OPERATION_LABELS } from '../../../../core/models/enums.model';
 import { MockWorkflowConfigStore } from '../../../../core/mock/mock-workflow-config.store';
 import { DelaiTraitementComponent } from '../../../../shared/components/delai-traitement/delai-traitement.component';
 import { RepartitionChartComponent, RepartitionItem } from '../../../../shared/components/repartition-chart/repartition-chart.component';
+import { MetriquesBandeauComponent, MetriqueItem } from '../../../../shared/components/metriques-bandeau/metriques-bandeau.component';
 import { NotificationPanelComponent } from '../../../../shared/components/notification-panel/notification-panel.component';
 import { DropdownSelectComponent, DropdownOption } from '../../../../shared/components/dropdown-select/dropdown-select.component';
 import { NotificationsService } from '../../../../core/notifications/notifications.service';
 import { DashboardNavService } from '../../../../core/layout/dashboard-nav.service';
 import { PagerComponent } from '../../../../shared/components/pager/pager.component';
+import { couleurStatutBadge } from '../../../../shared/utils/statut-couleur.util';
 
 const PAGE_SIZE = 8;
 
@@ -35,7 +38,7 @@ const STATUTS_FILE_ATTENTE: ReadonlySet<StatutDossier> = new Set([
 ]);
 
 // Un module = un onglet de la barre latérale qui remplace le contenu affiché, pas un ancrage de défilement.
-type VueTresorerie = 'file-attente' | 'historique';
+type VueTresorerie = 'file-attente' | 'historique' | 'statistiques';
 
 interface ModuleNav {
   vue: VueTresorerie;
@@ -53,6 +56,7 @@ interface ModuleNav {
     ReactiveFormsModule,
     DelaiTraitementComponent,
     RepartitionChartComponent,
+    MetriquesBandeauComponent,
     NotificationPanelComponent,
     DropdownSelectComponent,
     PagerComponent
@@ -67,6 +71,10 @@ export class TresorerieDashboardComponent implements OnInit, OnDestroy {
   // Délai imparti à l'étape Trésorerie (ParametreMetier.
   // DELAI_TRESORERIE_HEURES).
   delaiHeures: number | null = null;
+
+  // Onglet "Mes statistiques" — scopé côté backend aux dossiers où l'agent a personnellement enregistré
+  // une étape ETAPE_4_TRESORERIE (pas de champ d'assignation Trésorerie sur Dossier, contrairement au Gestionnaire).
+  mesStats: DashboardData | null = null;
 
   etatsLignes = new Map<number, EtatLigneTresorerie>();
   formulaires = new Map<number, FormGroup>();
@@ -87,6 +95,7 @@ export class TresorerieDashboardComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private workflowConfig: MockWorkflowConfigStore,
     private parametrageApi: ParametrageApiService,
+    private reporting: ReportingApiService,
     private dashboardNav: DashboardNavService,
     public notifs: NotificationsService
   ) {}
@@ -97,12 +106,43 @@ export class TresorerieDashboardComponent implements OnInit, OnDestroy {
     return (this.dashboardNav.activeId() as VueTresorerie | null) ?? 'file-attente';
   }
 
-  // Toujours les 2 modules, même à 0 : ce sont de vrais onglets de navigation, pas des ancres de défilement.
+  // Toujours les 3 modules, même à 0 : ce sont de vrais onglets de navigation, pas des ancres de défilement.
   get modulesNav(): ModuleNav[] {
     return [
       { vue: 'file-attente', icone: '📥', libelle: "File d'attente", count: this.dossiersFileAttente.length },
-      { vue: 'historique', icone: '📚', libelle: 'Historique', count: this.dossiersHistorique.length }
+      { vue: 'historique', icone: '📚', libelle: 'Historique', count: this.dossiersHistorique.length },
+      { vue: 'statistiques', icone: '📊', libelle: 'Mes statistiques', count: this.mesStats?.totalDossiers ?? 0 }
     ];
+  }
+
+  // ── Mes statistiques ── mêmes composants partagés (metriques-bandeau / repartition-chart) que Direction/Admin/COMEX.
+  get metriquesMesStats(): MetriqueItem[] {
+    if (!this.mesStats) return [];
+    const items: MetriqueItem[] = [
+      { libelle: 'Dossiers traités', valeur: String(this.mesStats.totalDossiers) }
+    ];
+    if (this.mesStats.dossiersEnRetard > 0) {
+      items.push({ libelle: 'En retard', valeur: String(this.mesStats.dossiersEnRetard), accent: 'danger' });
+    }
+    if (this.mesStats.dossiersApurementProche > 0) {
+      items.push({ libelle: 'Échéance < 30 j', valeur: String(this.mesStats.dossiersApurementProche), accent: 'warning' });
+    }
+    items.push({ libelle: "Taux d'apurement", valeur: `${Math.round(this.mesStats.tauxApurement * 100)} %`, accent: 'success' });
+    return items;
+  }
+
+  get repartitionMesStats(): RepartitionItem[] {
+    if (!this.mesStats) return [];
+    const entrees = Object.entries(this.mesStats.parStatut)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, ...entrees.map(([, count]) => count));
+    return entrees.map(([statut, count]) => ({
+      libelle: this.statutLabels[statut as StatutDossier],
+      couleur: couleurStatutBadge(statut as StatutDossier),
+      count,
+      pourcentage: Math.round((count / max) * 100)
+    }));
   }
 
   ngOnInit(): void {
@@ -143,6 +183,13 @@ export class TresorerieDashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.chargement = false;
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.reporting.getMesStatistiques().subscribe({
+      next: data => {
+        this.mesStats = data;
         this.cdr.detectChanges();
       }
     });

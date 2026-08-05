@@ -5,7 +5,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { DossierApiService } from '../../../../core/api/dossier-api.service';
-import { Dossier } from '../../../../core/models/dossier.model';
+import { ReportingApiService } from '../../../../core/api/reporting-api.service';
+import { Dossier, DashboardData } from '../../../../core/models/dossier.model';
 import {
   StatutDossier,
   TypeOperation,
@@ -15,6 +16,9 @@ import {
 import { HttpErrorResponse } from '@angular/common/http';
 import { DashboardNavService } from '../../../../core/layout/dashboard-nav.service';
 import { ToastService } from '../../../../core/toast/toast.service';
+import { MetriquesBandeauComponent, MetriqueItem } from '../../../../shared/components/metriques-bandeau/metriques-bandeau.component';
+import { RepartitionChartComponent, RepartitionItem } from '../../../../shared/components/repartition-chart/repartition-chart.component';
+import { couleurStatutBadge } from '../../../../shared/utils/statut-couleur.util';
 
 // Statuts "validés" côté Agent d'accueil : à partir de l'exécution réussie.
 const STATUTS_VALIDES: ReadonlySet<StatutDossier> = new Set([
@@ -36,7 +40,7 @@ import { PagerComponent } from '../../../../shared/components/pager/pager.compon
 const PAGE_SIZE = 12;
 
 // Un module = un onglet de la barre latérale qui remplace le contenu affiché, pas un ancrage de défilement.
-export type VueAgentAccueil = 'brouillons' | 'rejetes' | 'en-cours' | 'valides';
+export type VueAgentAccueil = 'brouillons' | 'rejetes' | 'en-cours' | 'valides' | 'statistiques';
 
 interface ModuleNav {
   vue: VueAgentAccueil;
@@ -48,7 +52,16 @@ interface ModuleNav {
 @Component({
   selector: 'app-agent-accueil-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, NotificationPanelComponent, DropdownSelectComponent, PagerComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    NotificationPanelComponent,
+    DropdownSelectComponent,
+    PagerComponent,
+    MetriquesBandeauComponent,
+    RepartitionChartComponent
+  ],
   templateUrl: './agent-accueil-dashboard.component.html',
   styleUrl: './agent-accueil-dashboard.component.scss'
 })
@@ -57,6 +70,10 @@ export class AgentAccueilDashboardComponent implements OnInit, OnDestroy {
   tousLesDossiers: Dossier[] = [];
   soumissionEnCours = new Set<number>();
   soumissionErreurs = new Map<number, string>();
+
+  // Onglet "Mes statistiques" — même DashboardResponse que les dashboards Direction/Admin/COMEX, mais
+  // scopé côté backend aux dossiers créés par l'agent courant (GetMesStatistiquesHandler).
+  mesStats: DashboardData | null = null;
 
   // Filtres (recherche/type/pays/tri) appliqués par-dessus la section active, pas des vues supplémentaires.
   // Recherche à validation explicite (bouton/Entrée) : rechercheSaisie = valeur du champ, recherche = valeur appliquée.
@@ -77,6 +94,7 @@ export class AgentAccueilDashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private dossierApi: DossierApiService,
+    private reporting: ReportingApiService,
     private cdr: ChangeDetectorRef,
     public notifs: NotificationsService,
     private dashboardNav: DashboardNavService,
@@ -102,6 +120,13 @@ export class AgentAccueilDashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.chargement = false;
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.reporting.getMesStatistiques().subscribe({
+      next: data => {
+        this.mesStats = data;
         this.cdr.detectChanges();
       }
     });
@@ -147,13 +172,14 @@ export class AgentAccueilDashboardComponent implements OnInit, OnDestroy {
     );
   }
 
-  // Toujours les 4 modules, même à 0 : ce sont de vrais onglets de navigation, pas des ancres de défilement.
+  // Toujours les 5 modules, même à 0 : ce sont de vrais onglets de navigation, pas des ancres de défilement.
   get modulesNav(): ModuleNav[] {
     return [
       { vue: 'brouillons', icone: '📝', libelle: 'Brouillons', count: this.brouillons.length },
       { vue: 'rejetes', icone: '⚠', libelle: 'Rejetés', count: this.dossiersRejetes.length },
       { vue: 'en-cours', icone: '⏳', libelle: 'En cours', count: this.dossiersEnCours.length },
-      { vue: 'valides', icone: '✓', libelle: 'Validés', count: this.dossiersValides.length }
+      { vue: 'valides', icone: '✓', libelle: 'Validés', count: this.dossiersValides.length },
+      { vue: 'statistiques', icone: '📊', libelle: 'Mes statistiques', count: this.mesStats?.totalDossiers ?? 0 }
     ];
   }
 
@@ -162,13 +188,45 @@ export class AgentAccueilDashboardComponent implements OnInit, OnDestroy {
   }
 
   // Dossiers de l'onglet actif, avant recherche/filtres/tri — délègue aux getters existants pour la logique métier.
+  // 'statistiques' n'affiche pas de liste de dossiers (cf. metriquesMesStats/repartitionMesStats) — [] par défaut.
   private get dossiersSection(): Dossier[] {
     switch (this.vueActive) {
       case 'brouillons': return this.brouillons;
       case 'rejetes': return this.dossiersRejetes;
       case 'en-cours': return this.dossiersEnCours;
       case 'valides': return this.dossiersValides;
+      case 'statistiques': return [];
     }
+  }
+
+  // ── Mes statistiques ── mêmes composants partagés (metriques-bandeau / repartition-chart) que Direction/Admin/COMEX.
+  get metriquesMesStats(): MetriqueItem[] {
+    if (!this.mesStats) return [];
+    const items: MetriqueItem[] = [
+      { libelle: 'Dossiers créés', valeur: String(this.mesStats.totalDossiers) }
+    ];
+    if (this.mesStats.dossiersEnRetard > 0) {
+      items.push({ libelle: 'En retard', valeur: String(this.mesStats.dossiersEnRetard), accent: 'danger' });
+    }
+    if (this.mesStats.dossiersApurementProche > 0) {
+      items.push({ libelle: 'Échéance < 30 j', valeur: String(this.mesStats.dossiersApurementProche), accent: 'warning' });
+    }
+    items.push({ libelle: "Taux d'apurement", valeur: `${Math.round(this.mesStats.tauxApurement * 100)} %`, accent: 'success' });
+    return items;
+  }
+
+  get repartitionMesStats(): RepartitionItem[] {
+    if (!this.mesStats) return [];
+    const entrees = Object.entries(this.mesStats.parStatut)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, ...entrees.map(([, count]) => count));
+    return entrees.map(([statut, count]) => ({
+      libelle: this.statutLabels[statut as StatutDossier],
+      couleur: couleurStatutBadge(statut as StatutDossier),
+      count,
+      pourcentage: Math.round((count / max) * 100)
+    }));
   }
 
   // Pays bénéficiaires réellement présents dans la section active — pas une liste figée qui proposerait des pays absents.

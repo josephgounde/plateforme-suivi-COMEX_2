@@ -147,6 +147,14 @@
     <app-pager [total]="dossiersHistorique.length" [pageSize]="pageSize" [page]="pageHistorique" (pageChange)="pageHistorique = $event"></app-pager>
   </section>
 
+  <section class="dossier-section" *ngIf="vueActive === 'statistiques'">
+    <h2>Mes statistiques</h2>
+    <p class="content-subtitle">Dossiers qui vous sont assignés uniquement.</p>
+
+    <app-metriques-bandeau [items]="metriquesMesStats" />
+    <app-repartition-chart titre="Répartition par statut" [items]="repartitionMesStats" />
+  </section>
+
   </div>
   </div>
 

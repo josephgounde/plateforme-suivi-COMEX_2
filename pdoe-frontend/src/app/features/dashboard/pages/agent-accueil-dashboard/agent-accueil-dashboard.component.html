@@ -12,6 +12,20 @@
 
   <div class="dashboard-content">
 
+    <ng-container *ngIf="vueActive === 'statistiques'">
+      <div class="content-topbar">
+        <div class="content-header">
+          <h1>Mes statistiques</h1>
+          <p class="content-subtitle">Dossiers créés par vous uniquement.</p>
+        </div>
+      </div>
+
+      <app-metriques-bandeau [items]="metriquesMesStats" />
+      <app-repartition-chart titre="Répartition par statut" [items]="repartitionMesStats" />
+    </ng-container>
+
+    <ng-container *ngIf="vueActive !== 'statistiques'">
+
     <div class="content-topbar">
       <div class="content-header">
         <h1>{{ libelleSectionActive }}</h1>
@@ -152,6 +166,8 @@
       <app-pager [total]="dossiersAffiches.length" [pageSize]="pageSize" [page]="page" (pageChange)="page = $event"></app-pager>
 
     </div>
+
+    </ng-container>
 
   </div>
   </div>

@@ -8,6 +8,7 @@ using PDOE.Reporting.API.Features.ExporterRapportActiviteMensuel;
 using PDOE.Reporting.API.Features.ExporterSituationBceao;
 using PDOE.Reporting.API.Features.GetDashboard;
 using PDOE.Reporting.API.Features.GetDossiersEnRetard;
+using PDOE.Reporting.API.Features.GetMesStatistiques;
 using PDOE.Reporting.API.Features.ListExportsReglementaires;
 using PDOE.Reporting.API.Features.TelechargerExportReglementaire;
 
@@ -25,6 +26,14 @@ public class ReportingController(IMediator mediator) : ControllerBase
         CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetDashboardQuery(periode), cancellationToken);
+        return Ok(result);
+    }
+
+    // Périmètre déterminé côté handler à partir de CurrentUser.Login — aucun paramètre, ne peut pas cibler un autre utilisateur.
+    [HttpGet("mes-statistiques")]
+    public async Task<ActionResult<DashboardResponse>> GetMesStatistiques(CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new GetMesStatistiquesQuery(), cancellationToken);
         return Ok(result);
     }
 

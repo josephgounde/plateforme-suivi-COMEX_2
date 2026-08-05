@@ -30,6 +30,12 @@ export class ReportingApiService {
     return this.http.get<DashboardData>(`${this.base}/reporting/dashboard`, { params });
   }
 
+  // GET /reporting/mes-statistiques — même forme que getDashboard(), mais scopé côté serveur à
+  // l'utilisateur courant (CreatedBy / GestionnaireAssigneLogin / étapes ETAPE_4_TRESORERIE selon le profil).
+  getMesStatistiques(): Observable<DashboardData> {
+    return this.http.get<DashboardData>(`${this.base}/reporting/mes-statistiques`);
+  }
+
   // GET /reporting/dossiers-en-retard — dossiers dépassant les délais configurés dans ParametrageMetier.
   getDossiersEnRetard(): Observable<DossierRetard[]> {
     return this.http.get<DossierRetard[]>(`${this.base}/reporting/dossiers-en-retard`);
