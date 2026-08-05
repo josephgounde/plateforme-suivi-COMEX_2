@@ -15,7 +15,7 @@
       [(ngModel)]="recherche"
     />
 
-    <app-dropdown-select class="filter-select" [options]="statutOptions" [(ngModel)]="filtreStatut" />
+    <app-dropdown-select class="filter-select" [options]="statutOptions" [filtrable]="true" [(ngModel)]="filtreStatut" />
 
     <app-dropdown-select class="filter-select" [options]="typeOptions" [(ngModel)]="filtreType" />
 

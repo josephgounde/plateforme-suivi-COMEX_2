@@ -3,6 +3,7 @@
 
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ReportingApiService } from '../../../../core/api/reporting-api.service';
 import { DossierApiService } from '../../../../core/api/dossier-api.service';
@@ -22,11 +23,13 @@ import {
 } from '../../../../core/models/dossier.model';
 import {
   StatutDossier,
+  TypeOperation,
   STATUT_LABELS,
   TYPE_OPERATION_LABELS
 } from '../../../../core/models/enums.model';
 import { DashboardNavService } from '../../../../core/layout/dashboard-nav.service';
 import { PagerComponent } from '../../../../shared/components/pager/pager.component';
+import { DropdownSelectComponent, DropdownOption } from '../../../../shared/components/dropdown-select/dropdown-select.component';
 
 const PAGE_SIZE = 10;
 
@@ -58,6 +61,7 @@ interface ModuleNav {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     RouterModule,
     WorkflowStepperComponent,
     RepartitionChartComponent,
@@ -65,7 +69,8 @@ interface ModuleNav {
     GaugeChartComponent,
     BarChartComponent,
     NotificationPanelComponent,
-    PagerComponent
+    PagerComponent,
+    DropdownSelectComponent
   ],
   templateUrl: './direction-dashboard.component.html',
   styleUrl: './direction-dashboard.component.scss'
@@ -89,6 +94,20 @@ export class DirectionDashboardComponent implements OnInit, OnDestroy {
   readonly typeLabels = TYPE_OPERATION_LABELS;
 
   readonly StatutDossier = StatutDossier;
+
+  // ── Recherche / filtres — "Tous les dossiers", même pattern que DossierListComponent.
+  recherche = '';
+  filtreStatut: StatutDossier | '' = '';
+  filtreType: TypeOperation | '' = '';
+
+  readonly statutOptions: DropdownOption[] = [
+    { value: '', label: 'Tous les statuts' },
+    ...Object.values(StatutDossier).map(s => ({ value: s, label: this.statutLabels[s] }))
+  ];
+  readonly typeOptions: DropdownOption[] = [
+    { value: '', label: 'Tous les types' },
+    ...Object.values(TypeOperation).map(t => ({ value: t, label: this.typeLabels[t] }))
+  ];
 
   // ── Alerte anti-fractionnement + rejet définitif ── le contrôle est porté par le COMEX, mais la Direction garde un droit d'override (comme Admin DSIRI).
   leverAlerteEnCours = new Set<number>();
@@ -231,11 +250,36 @@ export class DirectionDashboardComponent implements OnInit, OnDestroy {
   readonly pageSize = PAGE_SIZE;
   pageTousDossiers = 1;
 
+  get dossiersFiltres(): Dossier[] {
+    const texte = this.recherche.trim().toLowerCase();
+
+    return this.tousLesDossiers.filter(d => {
+      const matchTexte =
+        !texte ||
+        d.referenceInterne.toLowerCase().includes(texte) ||
+        d.nomClient.toLowerCase().includes(texte) ||
+        d.numCompte.toLowerCase().includes(texte);
+
+      const matchStatut = !this.filtreStatut || d.statutElectronique === this.filtreStatut;
+      const matchType = !this.filtreType || d.typeOperation === this.filtreType;
+
+      return matchTexte && matchStatut && matchType;
+    });
+  }
+
+  reinitialiserFiltres(): void {
+    this.recherche = '';
+    this.filtreStatut = '';
+    this.filtreType = '';
+    this.pageTousDossiers = 1;
+  }
+
   get tousLesDossiersAffiches(): Dossier[] {
-    const totalPages = Math.max(1, Math.ceil(this.tousLesDossiers.length / PAGE_SIZE));
+    const liste = this.dossiersFiltres;
+    const totalPages = Math.max(1, Math.ceil(liste.length / PAGE_SIZE));
     if (this.pageTousDossiers > totalPages) this.pageTousDossiers = totalPages;
     const debut = (this.pageTousDossiers - 1) * PAGE_SIZE;
-    return this.tousLesDossiers.slice(debut, debut + PAGE_SIZE);
+    return liste.slice(debut, debut + PAGE_SIZE);
   }
 
   urgenceClass(d: DossierRetard): string {

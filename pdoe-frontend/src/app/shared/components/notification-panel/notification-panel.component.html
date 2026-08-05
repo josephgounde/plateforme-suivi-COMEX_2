@@ -1,15 +1,15 @@
 <div class="notif-panel">
   <h2 class="notif-panel-titre">
     Notifications
-    <span class="notif-panel-badge" *ngIf="service.notifications().length > 0">{{ service.notifications().length }}</span>
+    <span class="notif-panel-badge" *ngIf="notificationsDuJour().length > 0">{{ notificationsDuJour().length }}</span>
   </h2>
 
-  <div class="notif-panel-empty" *ngIf="service.notifications().length === 0">
-    Aucune notification.
+  <div class="notif-panel-empty" *ngIf="notificationsDuJour().length === 0">
+    Aucune notification aujourd'hui.
   </div>
 
-  <ul class="notif-panel-list" *ngIf="service.notifications().length > 0">
-    <li class="notif-panel-row" *ngFor="let n of service.notifications()">
+  <ul class="notif-panel-list" *ngIf="notificationsDuJour().length > 0">
+    <li class="notif-panel-row" *ngFor="let n of notificationsDuJour()">
       <span class="notif-panel-icone">📬</span>
       <span class="notif-panel-texte">
         {{ service.libelle(n) }}

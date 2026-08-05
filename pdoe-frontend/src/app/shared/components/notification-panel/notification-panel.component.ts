@@ -20,6 +20,15 @@ export class NotificationPanelComponent {
 
   constructor(public service: NotificationsService) {}
 
+  // Panneau dashboard = alerte du jour, pas l'historique complet (celui-ci reste
+  // consultable via la page Admin > Logs notifications, qui appelle la même API sans ce filtre).
+  notificationsDuJour(): Notification[] {
+    const aujourdhui = new Date().toDateString();
+    return this.service.notifications().filter(
+      n => new Date(n.dateEnvoi ?? n.createdAt).toDateString() === aujourdhui
+    );
+  }
+
   dossierDe(notification: Notification): Dossier | undefined {
     return this.dossiers.find(d => d.dossierId === notification.dossierId);
   }

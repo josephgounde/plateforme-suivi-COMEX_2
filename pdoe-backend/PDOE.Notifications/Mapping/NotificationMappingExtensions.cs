@@ -18,6 +18,7 @@ public static class NotificationMappingExtensions
         CodeErreur = n.CodeErreur,
         NbTentatives = n.NbTentatives,
         DateEnvoi = n.DateEnvoi,
+        CreatedAt = n.CreatedAt,
     };
 
     public static NotificationTemplateResponse ToResponse(this NotificationTemplateEntity t) => new()

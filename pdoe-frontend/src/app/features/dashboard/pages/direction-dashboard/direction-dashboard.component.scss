@@ -115,7 +115,7 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 
     // Barre masquée : la carte a déjà sa bordure/coin arrondi, une barre visible casserait l'habillage.
@@ -281,11 +281,58 @@
 
 .retard-stepper { flex: 1 1 220px; min-width: 180px; }
 
+// ── Barre de filtres (Tous les dossiers) ─────────────────────
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.filter-search {
+  flex: 1 1 200px;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fafafa;
+
+  &:focus {
+    outline: none;
+    border-color: var(--pdoe-red);
+    background: #ffffff;
+  }
+}
+
+// app-dropdown-select se stylise lui-même ; seule sa participation à la flex-row reste à fixer ici.
+app-dropdown-select.filter-select {
+  flex: 1 1 160px;
+}
+
+.btn-reset {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #595959;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #e5e5e5;
+  }
+}
+
 // ── Tableau tous dossiers ────────────────────────────────────
 // table-layout: fixed + colgroup (cf. HTML) : colonnes à largeur fixe, contenu long passe à la ligne plutôt que d'élargir le tableau.
+// min-width plancher : sous ce seuil, width: 100% céderait le pas et écraserait les colonnes jusqu'à l'illisible —
+// le plancher force .table-wrapper à défiler horizontalement à la place (overflow-x: auto ci-dessus).
 
 .dossier-table {
   width: 100%;
+  min-width: 760px;
   table-layout: fixed;
   border-collapse: collapse;
   font-size: 12px;

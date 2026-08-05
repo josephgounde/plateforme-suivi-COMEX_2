@@ -3,6 +3,7 @@
   padding: 16px;
   max-width: 1280px;
   box-sizing: border-box;
+  margin:0 auto;
 
   // Hauteur bornée pour que .table-wrapper défile en interne avec un thead
   // sticky (sans ça, le sticky n'a rien à quoi s'accrocher).
@@ -39,6 +40,51 @@
   .charts-grid { grid-template-columns: 1fr; }
 }
 
+// ── Barre de filtres (Tous les dossiers) ─────────────────────
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+}
+
+.filter-search {
+  flex: 1 1 200px;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fafafa;
+
+  &:focus {
+    outline: none;
+    border-color: var(--pdoe-red);
+    background: #ffffff;
+  }
+}
+
+// app-dropdown-select se stylise lui-même ; seule sa participation à la flex-row reste à fixer ici.
+app-dropdown-select.filter-select {
+  flex: 1 1 160px;
+}
+
+.btn-reset {
+  padding: 8px 14px;
+  font-size: 12px;
+  color: #595959;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background: #e5e5e5;
+  }
+}
+
 // ── Section tableau ───────────────────────────────────────────
 
 .empty-state {
@@ -67,8 +113,11 @@
 }
 
 // table-layout: fixed + colgroup (cf. HTML) : colonnes à largeur fixe, contenu long passe à la ligne plutôt que d'élargir le tableau (même traitement que DirectionDashboardComponent).
+// min-width plancher (plus large qu'en Direction : colonne Gestionnaire porte un app-dropdown-select, pas juste du texte) —
+// sous ce seuil .table-wrapper défile horizontalement (overflow: auto ci-dessus) plutôt que d'écraser les colonnes.
 .dossier-table {
   width: 100%;
+  min-width: 820px;
   table-layout: fixed;
   border-collapse: collapse;
   font-size: 12px;

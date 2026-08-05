@@ -132,14 +132,37 @@
     <section class="section-block section-block--scrollable" *ngIf="vueActive === 'tous-dossiers'">
       <h2>
         Tous les dossiers
-        <span class="count-badge">{{ tousLesDossiers.length }}</span>
+        <span class="count-badge">{{ dossiersFiltres.length }} / {{ tousLesDossiers.length }}</span>
       </h2>
+
+      <div class="filter-bar" *ngIf="tousLesDossiers.length > 0">
+        <input
+          type="text"
+          class="filter-search"
+          placeholder="Référence, client, n° compte…"
+          [(ngModel)]="recherche"
+        />
+        <app-dropdown-select class="filter-select" [options]="statutOptions" [filtrable]="true" [(ngModel)]="filtreStatut" />
+        <app-dropdown-select class="filter-select" [options]="typeOptions" [(ngModel)]="filtreType" />
+        <button
+          type="button"
+          class="btn-reset"
+          *ngIf="recherche || filtreStatut || filtreType"
+          (click)="reinitialiserFiltres()"
+        >
+          Réinitialiser
+        </button>
+      </div>
+
+      <div class="empty-state" *ngIf="tousLesDossiers.length > 0 && dossiersFiltres.length === 0">
+        Aucun dossier ne correspond à ces critères.
+      </div>
 
       <div class="empty-state" *ngIf="tousLesDossiers.length === 0">
         Aucun dossier.
       </div>
 
-      <div class="table-wrapper" *ngIf="tousLesDossiers.length > 0">
+      <div class="table-wrapper" *ngIf="dossiersFiltres.length > 0">
         <table class="dossier-table">
           <colgroup>
             <col style="width: 12%" />
@@ -226,7 +249,7 @@
             </tr>
           </tbody>
         </table>
-        <app-pager [total]="tousLesDossiers.length" [pageSize]="pageSize" [page]="pageTousDossiers" (pageChange)="pageTousDossiers = $event"></app-pager>
+        <app-pager [total]="dossiersFiltres.length" [pageSize]="pageSize" [page]="pageTousDossiers" (pageChange)="pageTousDossiers = $event"></app-pager>
       </div>
     </section>
 

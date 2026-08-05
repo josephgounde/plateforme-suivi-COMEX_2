@@ -382,6 +382,7 @@ export interface Notification {
   codeErreur?: string;
   nbTentatives: number;
   dateEnvoi?: string;
+  createdAt: string;
 }
 
 // Un modèle par typeEvenement; libelle alimente la cloche/topbar, message est le corps SMS/Email. Configurable par l'Admin sans déploiement.

@@ -13,6 +13,7 @@ import { WorkflowApiService } from '../../../../core/api/workflow-api.service';
 import { DashboardData, Dossier, DossierRetard } from '../../../../core/models/dossier.model';
 import {
   StatutDossier,
+  TypeOperation,
   STATUT_LABELS,
   TYPE_OPERATION_LABELS,
   ProfilUtilisateur
@@ -73,6 +74,20 @@ export class AdminDashboardComponent implements OnInit {
   readonly statutLabels = STATUT_LABELS;
   readonly typeLabels = TYPE_OPERATION_LABELS;
   gestionnairesConnus: string[] = [];
+
+  // ── Recherche / filtres — "Tous les dossiers", même pattern que DossierListComponent.
+  recherche = '';
+  filtreStatut: StatutDossier | '' = '';
+  filtreType: TypeOperation | '' = '';
+
+  readonly statutOptions: DropdownOption[] = [
+    { value: '', label: 'Tous les statuts' },
+    ...Object.values(StatutDossier).map(s => ({ value: s, label: this.statutLabels[s] }))
+  ];
+  readonly typeOptions: DropdownOption[] = [
+    { value: '', label: 'Tous les types' },
+    ...Object.values(TypeOperation).map(t => ({ value: t, label: this.typeLabels[t] }))
+  ];
 
   get gestionnaireOptions(): DropdownOption[] {
     return this.gestionnairesConnus.map(g => ({ value: g, label: g }));
@@ -225,11 +240,36 @@ export class AdminDashboardComponent implements OnInit {
   readonly pageSize = PAGE_SIZE;
   pageTousDossiers = 1;
 
+  get dossiersFiltres(): Dossier[] {
+    const texte = this.recherche.trim().toLowerCase();
+
+    return this.tousLesDossiers.filter(d => {
+      const matchTexte =
+        !texte ||
+        d.referenceInterne.toLowerCase().includes(texte) ||
+        d.nomClient.toLowerCase().includes(texte) ||
+        d.numCompte.toLowerCase().includes(texte);
+
+      const matchStatut = !this.filtreStatut || d.statutElectronique === this.filtreStatut;
+      const matchType = !this.filtreType || d.typeOperation === this.filtreType;
+
+      return matchTexte && matchStatut && matchType;
+    });
+  }
+
+  reinitialiserFiltres(): void {
+    this.recherche = '';
+    this.filtreStatut = '';
+    this.filtreType = '';
+    this.pageTousDossiers = 1;
+  }
+
   get tousLesDossiersAffiches(): Dossier[] {
-    const totalPages = Math.max(1, Math.ceil(this.tousLesDossiers.length / PAGE_SIZE));
+    const liste = this.dossiersFiltres;
+    const totalPages = Math.max(1, Math.ceil(liste.length / PAGE_SIZE));
     if (this.pageTousDossiers > totalPages) this.pageTousDossiers = totalPages;
     const debut = (this.pageTousDossiers - 1) * PAGE_SIZE;
-    return this.tousLesDossiers.slice(debut, debut + PAGE_SIZE);
+    return liste.slice(debut, debut + PAGE_SIZE);
   }
 
   exporterDossiersEnRetard(): void {
