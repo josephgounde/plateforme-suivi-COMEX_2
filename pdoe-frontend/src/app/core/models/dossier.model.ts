@@ -340,8 +340,6 @@ export interface SignatureVerificationResult {
   signatureExistante: boolean;
   nomClient: string;
   typeCompte?: string;
-  dateSignature?: string;
-  imageSignature?: string;          // base64 — présent en mode VISUEL ou LES_DEUX
   modeVerification: ModeVerificationSignature;
   // Sert à pré-remplir la section "Compte client" de l'Initiation. codeBanque volontairement absent (pas une donnée ABS2000).
   nifClient?: string;

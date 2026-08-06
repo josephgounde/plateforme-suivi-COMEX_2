@@ -19,10 +19,6 @@ public class MockCbsClient : ICbsClient
         ["XOF"] = 1,
     };
 
-    // Signature svg de démonstration (même image que MockDataService.mockVerifierSignature côté frontend).
-    private static readonly byte[] SignatureSvgFactice = Convert.FromBase64String(
-        "PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjgwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMCA2MCBRIDUwIDEwIDkwIDUwIFEgMTMwIDkwIDE3MCA0MCIgc3Ryb2tlPSIjMUExQTFBIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz48L3N2Zz4=");
-
     public Task<TauxChangeResult> ObtenirTauxChangeAsync(string devise, string versDevise, CancellationToken cancellationToken)
     {
         var baseSource = TauxChangeBase.GetValueOrDefault(devise, 1);
@@ -76,8 +72,6 @@ public class MockCbsClient : ICbsClient
             SignatureExistante = true,
             NomClient = "CLIENT TEST SA",
             TypeCompte = "COURANT",
-            DateSignature = new DateTimeOffset(2024, 3, 15, 0, 0, 0, TimeSpan.Zero),
-            ImageSignature = mode != ModeVerificationSignature.AUTOMATIQUE ? SignatureSvgFactice : null,
             ModeVerification = mode,
             NifClient = "9601990K",
             AdressePostaleClient = "01 BP 1234 Abidjan 01",
@@ -88,7 +82,4 @@ public class MockCbsClient : ICbsClient
             AnneeExerciceCompte = DateTime.UtcNow.Year
         });
     }
-
-    public Task<bool> ValiderSignatureVisuelleAsync(string numCompte, string initialesAgent, CancellationToken cancellationToken)
-        => Task.FromResult(true);
 }

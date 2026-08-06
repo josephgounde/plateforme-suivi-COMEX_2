@@ -2307,8 +2307,10 @@ components:
       enum: [AUTOMATIQUE, VISUEL, LES_DEUX]
       description: |
         Mode de vérification signature ABS2000 :
-        - AUTOMATIQUE : contrôle binaire (signature présente ou absente)
-        - VISUEL : image affichée — agent compare et coche case + initiales
+        - AUTOMATIQUE : contrôle binaire (signature présente ou absente), suffisant seul
+        - VISUEL : ABS2000 ne fournit pas l'image — l'agent se rend dans ABS2000 lui-même,
+          compare visuellement avec le document papier (ordre de transfert), puis coche
+          case + initiales dans PDOE
         - LES_DEUX : automatique ET visuelle obligatoires
 
     ProfilUtilisateur:
@@ -3559,15 +3561,6 @@ components:
         typeCompte:
           type: string
           nullable: true
-        dateSignature:
-          type: string
-          format: date
-          nullable: true
-        imageSignature:
-          type: string
-          format: byte
-          nullable: true
-          description: Base64 de l'image de signature — présent uniquement en mode VISUEL ou LES_DEUX
         modeVerification:
           $ref: '#/components/schemas/ModeVerificationSignature'
         # Informations client complémentaires — retournées par ABS2000 au

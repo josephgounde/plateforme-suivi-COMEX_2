@@ -53,7 +53,7 @@ builder.Services.AddMediatR(cfg =>
 builder.Services.AddDbContext<PdoeDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("PdoeDb")));
 
-// Stockage local pour dev/test, voir IFileStorageService.cs pour le plan de bascule vers IIS en prod.
+// Stockage local pour dev/test, voir IFileStorageService.cs pour bascule vers IIS en prod.
 builder.Services.AddSingleton<IFileStorageService, LocalFileStorageService>();
 
 // Notifications : journalise sans réseau en dev/test, voir INotificationSender.cs pour le plan de bascule HTTP.
@@ -141,8 +141,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SuperAdmin", p => p.RequireRole("SUPER_ADMIN"));
 });
 
-// Déclenchent les alertes J-14/J-8/J0 (AlertesApurement) et retentent les notifications en échec — cf. leurs
-// commentaires de classe pour ce que ça referme (ModuleMarker.cs de PDOE.Notifications, DeclarerExecutionHandler).
+// Déclenchent les alertes J-14/J-8/J0 (AlertesApurement) et retentent les notifications en échec, (ModuleMarker.cs de PDOE.Notifications, DeclarerExecutionHandler).
 builder.Services.AddHostedService<PDOE.Workflow.API.BackgroundJobs.AlerteApurementSchedulerService>();
 builder.Services.AddHostedService<PDOE.Notifications.BackgroundJobs.NotificationRetryService>();
 

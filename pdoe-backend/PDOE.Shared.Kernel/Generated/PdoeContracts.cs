@@ -361,8 +361,10 @@ namespace PDOE.Api.Contracts
 
     /// <summary>
     /// Mode de vérification signature ABS2000 :
-    /// <br/>- AUTOMATIQUE : contrôle binaire (signature présente ou absente)
-    /// <br/>- VISUEL : image affichée — agent compare et coche case + initiales
+    /// <br/>- AUTOMATIQUE : contrôle binaire (signature présente ou absente), suffisant seul
+    /// <br/>- VISUEL : ABS2000 ne fournit pas l'image — l'agent se rend dans ABS2000 lui-même,
+    /// <br/>  compare visuellement avec le document papier (ordre de transfert), puis coche
+    /// <br/>  case + initiales dans PDOE
     /// <br/>- LES_DEUX : automatique ET visuelle obligatoires
     /// <br/>
     /// </summary>
@@ -2437,16 +2439,6 @@ namespace PDOE.Api.Contracts
 
         [System.Text.Json.Serialization.JsonPropertyName("typeCompte")]
         public string TypeCompte { get; set; }
-
-        [System.Text.Json.Serialization.JsonPropertyName("dateSignature")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(DateFormatConverter))]
-        public System.DateTimeOffset? DateSignature { get; set; }
-
-        /// <summary>
-        /// Base64 de l'image de signature — présent uniquement en mode VISUEL ou LES_DEUX
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("imageSignature")]
-        public byte[] ImageSignature { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("modeVerification")]
         [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<ModeVerificationSignature>))]

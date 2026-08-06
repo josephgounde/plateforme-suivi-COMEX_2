@@ -52,29 +52,9 @@ public class HttpCbsClient(HttpClient http) : ICbsClient
         }
     }
 
-    public async Task<bool> ValiderSignatureVisuelleAsync(string numCompte, string initialesAgent, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var response = await http.PostAsJsonAsync(
-                $"clients/{numCompte}/valider-signature-visuelle",
-                new { initialesAgent },
-                cancellationToken);
-            response.EnsureSuccessStatusCode();
-            var body = await response.Content.ReadFromJsonAsync<ValidationVisuelleReponse>(cancellationToken);
-            return body?.SignatureValidee ?? false;
-        }
-        catch (HttpRequestException ex)
-        {
-            throw Indisponible(ex);
-        }
-    }
-
     private static DomainException Indisponible(HttpRequestException ex) =>
         new(502, ErrorResponseCode.ABS_INDISPONIBLE, $"ABS2000 indisponible ou en erreur : {ex.Message}");
 
     private static DomainException ReponseVide() =>
         new(502, ErrorResponseCode.ABS_INDISPONIBLE, "Réponse ABS2000 vide.");
-
-    private record ValidationVisuelleReponse(bool SignatureValidee);
 }

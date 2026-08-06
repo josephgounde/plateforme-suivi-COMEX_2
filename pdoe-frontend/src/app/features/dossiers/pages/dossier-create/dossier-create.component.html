@@ -55,19 +55,15 @@
           </button>
         </p>
 
-        <!-- Mode VISUEL ou LES_DEUX : comparaison de l'image -->
+        <!-- Mode VISUEL ou LES_DEUX : ABS2000 ne fournit pas l'image, l'agent compare directement dans ABS2000 -->
         <div
           class="signature-visuelle"
-          *ngIf="etapeSignature === 'confirmation_visuelle' && resultatVerification?.imageSignature"
+          *ngIf="etapeSignature === 'confirmation_visuelle'"
         >
           <p class="signature-visuelle-hint">
-            Comparez la signature ci-dessous avec celle du document papier du client.
+            Connectez-vous à ABS2000 pour comparer la signature enregistrée avec celle du document papier
+            (ordre de transfert) du client, puis confirmez ci-dessous.
           </p>
-          <img
-            class="signature-image"
-            [src]="'data:image/png;base64,' + resultatVerification?.imageSignature"
-            alt="Signature enregistrée pour ce compte"
-          />
 
           <label class="signature-checkbox">
             <input type="checkbox" [(ngModel)]="confirmationVisuelleCochee" [ngModelOptions]="{ standalone: true }" />
