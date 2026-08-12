@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DossierApiService } from '../../../../core/api/dossier-api.service';
 import { WorkflowApiService } from '../../../../core/api/workflow-api.service';
-import { DossierDetail, Document as PdoeDocument } from '../../../../core/models/dossier.model';
+import { DossierDetail, Document as PdoeDocument, SoldeClientResult } from '../../../../core/models/dossier.model';
 import {
   StatutDossier,
   NiveauValidation,
@@ -38,6 +38,12 @@ interface EtatConfirmation {
   erreur: boolean;
 }
 
+interface EtatSolde {
+  verification: boolean;
+  resultat: SoldeClientResult | null;
+  erreur: boolean;
+}
+
 @Component({
   selector: 'app-dossier-detail',
   standalone: true,
@@ -62,6 +68,9 @@ export class DossierDetailComponent implements OnInit {
   // ── Confirmation de commande (Gestionnaire) ──────────────────
   etatConfirmation: EtatConfirmation = { confirme: false, date: '', enregistrement: false, erreur: false };
   transmissionEnCours = false;
+
+  // ── Vérification du solde (Gestionnaire, étape 2) — ABS2000 en lecture seule ─
+  etatSolde: EtatSolde = { verification: false, resultat: null, erreur: false };
 
   constructor(
     private route: ActivatedRoute,
@@ -149,10 +158,39 @@ export class DossierDetailComponent implements OnInit {
     return new Date().toISOString().slice(0, 10);
   }
 
-  // Valide le dossier et le transmet à l'Agent COMEX — n'est proposé
-  // qu'après confirmation de commande.
+  // Consulte le solde ABS2000 (lecture seule) et marque soldeCompteVerifie sur le dossier — précondition
+  // bloquante de peutValiderEtTransmettre(), au même titre que la confirmation de commande.
+  verifierSolde(): void {
+    const dossier = this.dossier;
+    if (!dossier || this.etatSolde.verification) return;
+
+    this.etatSolde = { ...this.etatSolde, verification: true, erreur: false };
+
+    this.dossierApi.getSoldeClient(dossier.numCompte, dossier.dossierId).subscribe({
+      next: resultat => {
+        this.etatSolde = { verification: false, resultat, erreur: false };
+        this.dossierApi.updateDossier(dossier.dossierId, { soldeCompteVerifie: true }).subscribe({
+          next: () => {
+            dossier.soldeCompteVerifie = true;
+            this.cdr.detectChanges();
+          }
+        });
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.etatSolde = { verification: false, resultat: null, erreur: true };
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Valide le dossier et le transmet à l'Agent COMEX — n'est proposé qu'après confirmation de commande
+  // ET vérification du solde (les deux préconditions de la checklist étape 2). etatConfirmation.confirme
+  // (la case cochée) est requis en plus de dateConfirmationClient (la valeur enregistrée) : décocher la case
+  // doit rebloquer immédiatement même si une date avait déjà été sauvegardée précédemment — sinon la case
+  // n'est plus qu'un affichage sans effet sur le blocage réel une fois une première confirmation enregistrée.
   peutValiderEtTransmettre(): boolean {
-    return !!this.dossier?.dateConfirmationClient;
+    return this.etatConfirmation.confirme && !!this.dossier?.dateConfirmationClient && !!this.dossier?.soldeCompteVerifie;
   }
 
   validerEtTransmettre(): void {

@@ -42,11 +42,15 @@
 }
 
 .login-header h1 {
-  margin: 0 0 6px;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--pdoe-red);
-  letter-spacing: 0.04em;
+  margin: 0 0 8px;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--pdoe-red); // fallback si background-clip: text n'est pas supporté
+  background: linear-gradient(120deg, var(--pdoe-red) 0%, #ff8a3d 50%, #b80510 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .login-subtitle {
@@ -215,6 +219,6 @@
   }
 
   .login-header h1 {
-    font-size: 24px;
+    font-size: 28px;
   }
 }

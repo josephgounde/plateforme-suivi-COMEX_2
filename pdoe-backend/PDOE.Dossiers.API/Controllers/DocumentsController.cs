@@ -1,8 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using PDOE.Api.Contracts;
 using PDOE.Dossiers.API.Features.ListDocuments;
+using PDOE.Dossiers.API.Features.TelechargerFichierDocument;
 using PDOE.Dossiers.API.Features.UpdateDocumentStatut;
 using PDOE.Dossiers.API.Features.UploadDocument;
 
@@ -12,6 +14,8 @@ namespace PDOE.Dossiers.API.Controllers;
 [Route("dossiers/{dossierId:int}/documents")]
 public class DocumentsController(IMediator mediator) : ControllerBase
 {
+    private static readonly FileExtensionContentTypeProvider ContentTypeProvider = new();
+
     [HttpGet]
     public async Task<ActionResult<List<DocumentResponse>>> ListDocuments(
         int dossierId,
@@ -48,5 +52,19 @@ public class DocumentsController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new UpdateDocumentStatutCommand(dossierId, documentId, request), cancellationToken);
         return Ok(result);
+    }
+
+    [HttpGet("{documentId:int}/fichier")]
+    public async Task<IActionResult> TelechargerFichierDocument(
+        int dossierId,
+        int documentId,
+        CancellationToken cancellationToken)
+    {
+        var fichier = await mediator.Send(new TelechargerFichierDocumentQuery(dossierId, documentId), cancellationToken);
+
+        if (!ContentTypeProvider.TryGetContentType(fichier.NomFichier, out var contentType))
+            contentType = "application/octet-stream";
+
+        return File(fichier.Contenu, contentType, fichier.NomFichier);
     }
 }

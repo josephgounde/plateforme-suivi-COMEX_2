@@ -31,12 +31,22 @@ public class ValiderEtapeHandler(PdoeDbContext db, INotificationSender sender) :
                 $"Le dossier est actuellement sur {codeCourant}, pas {request.NiveauValidation}.");
         }
 
-        // Seule vraie précondition côté front : confirmation de commande déjà enregistrée. soldeCompteVerifie/conformiteBCEAO/lcbftConforme
-        // ne sont envoyés par aucune UI, pas de blocage dessus. Clé sur codeCourant (pas request.NiveauValidation) pour rester valide si repositionné.
-        if (codeCourant == "ETAPE_2_GESTIONNAIRE" && dossier.DateConfirmationClient is null)
+        // Préconditions de l'étape Gestionnaire : commande confirmée ET solde vérifié auprès d'ABS2000 (cf. checklist
+        // dossier-detail.component.ts). conformiteBCEAO/lcbftConforme restent sans blocage — aucune UI ne les envoie.
+        // Clé sur codeCourant (pas request.NiveauValidation) pour rester valide si repositionné.
+        if (codeCourant == "ETAPE_2_GESTIONNAIRE")
         {
-            throw new DomainException(422, ErrorResponseCode.DATE_CONFIRMATION_CLIENT_MANQUANTE,
-                "La confirmation de commande (dateConfirmationClient) doit être enregistrée avant validation.");
+            if (dossier.DateConfirmationClient is null)
+            {
+                throw new DomainException(422, ErrorResponseCode.DATE_CONFIRMATION_CLIENT_MANQUANTE,
+                    "La confirmation de commande (dateConfirmationClient) doit être enregistrée avant validation.");
+            }
+
+            if (!dossier.SoldeCompteVerifie)
+            {
+                throw new DomainException(422, ErrorResponseCode.SOLDE_NON_VERIFIE,
+                    "Le solde du compte client doit être vérifié auprès d'ABS2000 avant validation.");
+            }
         }
 
         var now = DateTime.UtcNow;

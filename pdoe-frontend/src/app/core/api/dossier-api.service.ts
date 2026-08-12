@@ -57,11 +57,14 @@ export class DossierApiService {
     );
   }
 
-  // GET /clients/{numCompte}/solde
-  // Utilisé à l'étape 2 (validation gestionnaire) — lecture seule ABS2000.
-  getSoldeClient(numCompte: string): Observable<SoldeClientResult> {
+  // GET /clients/{numCompte}/solde?dossierId=X
+  // Utilisé à l'étape 2 (validation gestionnaire) — solde brut lecture seule ABS2000, mais `suffisant` est calculé
+  // côté API par comparaison avec le montant du dossier passé en paramètre (jamais fourni par ABS2000 lui-même).
+  getSoldeClient(numCompte: string, dossierId: number): Observable<SoldeClientResult> {
+    const params = new HttpParams().set('dossierId', String(dossierId));
     return this.http.get<SoldeClientResult>(
-      `${this.base}/clients/${numCompte}/solde`
+      `${this.base}/clients/${numCompte}/solde`,
+      { params }
     );
   }
 
@@ -179,5 +182,12 @@ export class DossierApiService {
       `${this.base}/dossiers/${dossierId}/documents`,
       formData
     );
+  }
+
+  // GET /dossiers/{dossierId}/documents/{documentId}/fichier — contenu binaire, consommé par DocumentPreviewModalComponent.
+  telechargerFichierDocument(dossierId: number, documentId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/dossiers/${dossierId}/documents/${documentId}/fichier`, {
+      responseType: 'blob'
+    });
   }
 }

@@ -40,6 +40,7 @@ export class ApurementDetailComponent implements OnInit {
   checklist: ChecklistItem[] = [];
   checklistEnCours = false;
   checklistErreur = false;
+  checklistChargementErreur = false;
 
   afficherFormulairePaiement = false;
   paiementEnCours = false;
@@ -124,6 +125,10 @@ export class ApurementDetailComponent implements OnInit {
           .filter(i => i.actif)
           .sort((a, b) => a.ordre - b.ordre)
           .map(i => ({ libelle: i.libelle, valide: false }));
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.checklistChargementErreur = true;
         this.cdr.detectChanges();
       }
     });

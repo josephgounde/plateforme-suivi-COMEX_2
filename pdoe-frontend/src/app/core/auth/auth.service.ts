@@ -90,7 +90,7 @@ export class AuthService {
         this.journalAudit.enregistrer({
           categorie: CategorieAudit.AUTHENTIFICATION,
           typeAction: 'CONNEXION_ECHEC',
-          description: `Échec de connexion pour "${login}" (aucun profil PDOE associé).`,
+          description: `Échec de connexion pour "${login}" (aucun profil PGSA-COMEX associé).`,
           acteur: login,
           succes: false
         });

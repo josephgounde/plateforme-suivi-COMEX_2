@@ -1,7 +1,7 @@
 // Menu déroulant maison : remplace le <select> natif là où on a besoin de
 // styler le survol des options, ce que le rendu OS de <option> ne permet pas.
 
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild, forwardRef } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild, forwardRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -41,7 +41,10 @@ export class DropdownSelectComponent implements ControlValueAccessor {
   private onChange: (value: string) => void = () => {};
   private onTouched: () => void = () => {};
 
-  constructor(private elementRef: ElementRef<HTMLElement>) {}
+  constructor(
+    private elementRef: ElementRef<HTMLElement>,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   get libelleActuel(): string {
     // || plutôt que ?? : une valeur vide ('') doit retomber sur le placeholder, pas s'afficher comme un libellé vide.
@@ -105,5 +108,10 @@ export class DropdownSelectComponent implements ControlValueAccessor {
 
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
+    // Zoneless (pas de zone.js) : Angular applique l'état disabled d'un FormControl à son
+    // ControlValueAccessor un micro-tick après l'appel .enable()/.disable() (mécanisme interne des
+    // reactive forms) — un detectChanges() déclenché par l'appelant juste après .enable() arrive donc
+    // trop tôt pour ce composant. On se rafraîchit nous-mêmes dès que ce callback s'exécute.
+    this.cdr.detectChanges();
   }
 }

@@ -4,7 +4,7 @@ public class Dossier
 {
     public int DossierId { get; set; }
 
-    /// <summary>N° interne (PDOE-{yyyyMM}-{seq}), attribué à la création — distinct de ReferenceSWIFT, la vraie référence COMEX du processus physique, attribuée à la déclaration d'exécution.</summary>
+    /// <summary>N° interne (COMEX-{yyyyMM}-{seq}), attribué à la création — distinct de ReferenceSWIFT, la vraie référence COMEX du processus physique, attribuée à la déclaration d'exécution.</summary>
     public string ReferenceInterne { get; set; } = null!;
     public string NumCompte { get; set; } = null!;
     public string NomClient { get; set; } = null!;

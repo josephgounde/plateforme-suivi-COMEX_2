@@ -7,5 +7,5 @@ export const environment = {
   // PDOE.Gateway (AuthController) est branché côté backend — login/OTP/JWT réels.
   useMockAuth: false,
   appVersion: '5.2.0',
-  appName: 'PDOE — AfrilandFirstBank CI'
+  appName: 'PGSA-COMEX — AfrilandFirstBank CI'
 };

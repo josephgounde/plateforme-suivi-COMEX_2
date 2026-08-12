@@ -12,9 +12,10 @@ namespace PDOE.Apurement.API.Controllers;
 
 [ApiController]
 [Route("checklist-config")]
-[Authorize(Policy = "AdminDsiri")]
 public class ChecklistConfigController(IMediator mediator) : ControllerBase
 {
+    // Pas de [Authorize] ici : lecture ouverte à tout utilisateur authentifié (FallbackPolicy, cf. Program.cs) —
+    // consommé par ApurementDetailComponent pour afficher la checklist, pas seulement par l'écran d'admin.
     [HttpGet("items")]
     public async Task<ActionResult<List<ChecklistItemConfigResponse>>> ListItems(CancellationToken cancellationToken)
     {
@@ -23,6 +24,7 @@ public class ChecklistConfigController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("items")]
+    [Authorize(Policy = "AdminDsiri")]
     public async Task<ActionResult<ChecklistItemConfigResponse>> CreerItem(
         [FromBody] ChecklistItemConfigCreateRequest request,
         CancellationToken cancellationToken)
@@ -32,6 +34,7 @@ public class ChecklistConfigController(IMediator mediator) : ControllerBase
     }
 
     [HttpPatch("items/reordonner")]
+    [Authorize(Policy = "AdminDsiri")]
     public async Task<ActionResult<List<ChecklistItemConfigResponse>>> ReordonnerItems(
         [FromBody] ReordonnerChecklistItemsRequest request,
         CancellationToken cancellationToken)
@@ -41,6 +44,7 @@ public class ChecklistConfigController(IMediator mediator) : ControllerBase
     }
 
     [HttpPatch("items/{checklistItemId:int}")]
+    [Authorize(Policy = "AdminDsiri")]
     public async Task<ActionResult<ChecklistItemConfigResponse>> ModifierItem(
         int checklistItemId,
         [FromBody] ChecklistItemConfigUpdateRequest request,

@@ -33,9 +33,12 @@ public class ClientsController(IMediator mediator) : ControllerBase
     }
 
     [HttpGet("{numCompte}/solde")]
-    public async Task<ActionResult<SoldeClientResult>> ObtenirSolde(string numCompte, CancellationToken cancellationToken)
+    public async Task<ActionResult<SoldeClientResult>> ObtenirSolde(
+        string numCompte,
+        [FromQuery] int dossierId,
+        CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new ObtenirSoldeClientQuery(numCompte), cancellationToken);
+        var result = await mediator.Send(new ObtenirSoldeClientQuery(numCompte, dossierId), cancellationToken);
         return Ok(result);
     }
 }

@@ -132,8 +132,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// FallbackPolicy : tout endpoint sans [AllowAnonymous] exige un JWT valide par défaut (aucun [Authorize] à poser
-// partout). AdminDsiri/SuperAdmin : policies nommées pour les surfaces déjà documentées comme restreintes dans l'OpenAPI.
+
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();

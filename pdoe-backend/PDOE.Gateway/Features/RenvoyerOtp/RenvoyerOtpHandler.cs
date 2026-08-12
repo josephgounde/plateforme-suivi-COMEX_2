@@ -33,8 +33,8 @@ public class RenvoyerOtpHandler(PdoeDbContext db, IOtpChallengeStore otpStore, I
         var expiresAt = DateTime.UtcNow.AddSeconds(OtpSettings.ValiditeSecondes);
         await otpStore.ReinitialiserAsync(otpToken, code, expiresAt, cancellationToken);
 
-        var resultatEnvoi = await sender.EnvoyerAsync("EMAIL", etat.Email, "Code de vérification PDOE",
-            $"Votre code de vérification PDOE est : {code}. Il est valable {OtpSettings.ValiditeSecondes / 60} minutes.",
+        var resultatEnvoi = await sender.EnvoyerAsync("EMAIL", etat.Email, "Code de vérification PGSA-COMEX",
+            $"Votre code de vérification PGSA-COMEX est : {code}. Il est valable {OtpSettings.ValiditeSecondes / 60} minutes.",
             cancellationToken);
 
         var destinataireMasque = EmailMasking.Masquer(etat.Email);

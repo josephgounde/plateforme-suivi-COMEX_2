@@ -33,37 +33,86 @@
   <section class="detail-block detail-block--action" *ngIf="peutConfirmerCommande">
     <h2>Confirmation de commande</h2>
 
-    <label class="confirmation-checkbox">
-      <input
-        type="checkbox"
-        [checked]="etatConfirmation.confirme"
-        (change)="basculerConfirmation()"
-      />
-      <span>Ordre confirmé avec le client</span>
-    </label>
+    <div class="checklist">
+      <!-- Précondition 1 : confirmation de la commande avec le client -->
+      <div class="checklist-item">
+        <div class="checklist-corps">
+          <label class="checklist-label checklist-label--cliquable">
+            <input
+              type="checkbox"
+              [checked]="etatConfirmation.confirme"
+              (change)="basculerConfirmation()"
+            />
+            <span>Ordre confirmé avec le client</span>
+          </label>
 
-    <ng-container *ngIf="etatConfirmation.confirme">
-      <input
-        type="date"
-        class="confirmation-date"
-        [value]="etatConfirmation.date"
-        (change)="modifierDateConfirmation($any($event.target).value)"
-        title="Date de confirmation de la commande"
-      />
+          <div class="checklist-controle" *ngIf="etatConfirmation.confirme">
+            <input
+              type="date"
+              class="confirmation-date"
+              [value]="etatConfirmation.date"
+              (change)="modifierDateConfirmation($any($event.target).value)"
+              title="Date de confirmation de la commande"
+            />
 
-      <button
-        type="button"
-        class="btn-save"
-        [disabled]="!etatConfirmation.date || etatConfirmation.enregistrement"
-        (click)="enregistrerConfirmation()"
-      >
-        {{ etatConfirmation.enregistrement ? 'Enregistrement…' : 'Enregistrer' }}
-      </button>
+            <button
+              type="button"
+              class="btn-save"
+              [disabled]="!etatConfirmation.date || etatConfirmation.enregistrement"
+              (click)="enregistrerConfirmation()"
+            >
+              {{ etatConfirmation.enregistrement ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
 
-      <span class="confirmation-erreur" *ngIf="etatConfirmation.erreur">
-        Échec de l'enregistrement — réessayez.
-      </span>
-    </ng-container>
+            <span class="confirmation-erreur" *ngIf="etatConfirmation.erreur">
+              Échec de l'enregistrement — réessayez.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Précondition 2 : solde du compte client vérifié auprès d'ABS2000 — bloquante au même titre que la
+           confirmation ci-dessus (cf. peutValiderEtTransmettre()). Les deux cases reflètent le résultat réel
+           renvoyé par ABS2000, non modifiable par l'agent (pas question de pouvoir déclarer "suffisant" à la main). -->
+      <div class="checklist-item">
+        <div class="checklist-corps">
+          <span class="checklist-label">Solde vérifié</span>
+
+          <div class="checklist-controle">
+            <button
+              type="button"
+              class="btn-save"
+              [disabled]="etatSolde.verification"
+              (click)="verifierSolde()"
+            >
+              {{ etatSolde.verification ? 'Vérification…' : 'Vérifier le solde' }}
+            </button>
+
+            <ng-container *ngIf="etatSolde.resultat as solde">
+              <label class="checklist-label--cliquable checklist-label--lecture-seule checklist-label--ok">
+                <input type="checkbox" [checked]="solde.suffisant" disabled />
+                <span>Solde suffisant</span>
+              </label>
+              <label class="checklist-label--cliquable checklist-label--lecture-seule checklist-label--alerte">
+                <input type="checkbox" [checked]="!solde.suffisant" disabled />
+                <span>Solde insuffisant</span>
+              </label>
+              <span class="solde-resultat">
+                {{ solde.soldeDisponible | number: '1.0-2' }} {{ solde.devise }}
+              </span>
+            </ng-container>
+
+            <span class="solde-confirme" *ngIf="!etatSolde.resultat && dossier.soldeCompteVerifie">
+              Déjà vérifié — cliquez pour revérifier
+            </span>
+
+            <span class="confirmation-erreur" *ngIf="etatSolde.erreur">
+              Échec de la consultation du solde — réessayez.
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="transmission-bloc" *ngIf="dossier.dateConfirmationClient">
       <button
@@ -274,6 +323,7 @@
 
   <app-document-preview-modal
     *ngIf="documentEnApercu"
+    [dossierId]="dossier.dossierId"
     [document]="documentEnApercu"
     (fermer)="fermerApercu()"
   />

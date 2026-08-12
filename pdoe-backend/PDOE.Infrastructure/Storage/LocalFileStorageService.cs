@@ -21,11 +21,22 @@ public class LocalFileStorageService(IConfiguration configuration) : IFileStorag
 
         var hash = Convert.ToHexString(SHA256.HashData(octets)).ToLowerInvariant();
         var nomStocke = $"{Guid.NewGuid()}{Path.GetExtension(nomFichierOriginal)}";
-        var cheminComplet = Path.Combine(dossierCible, nomStocke);
+        // Relatif à Storage:DocumentsRootPath, jamais la racine elle-même — sinon un changement de racine
+        // (migration vers un NAS, déplacement du dossier local) invalide tous les chemins déjà stockés en base.
+        var cheminRelatif = Path.Combine(dossierId.ToString(), nomStocke);
 
-        await File.WriteAllBytesAsync(cheminComplet, octets, cancellationToken);
+        await File.WriteAllBytesAsync(Path.Combine(dossierCible, nomStocke), octets, cancellationToken);
 
-        return new StoredFile(cheminComplet, hash, octets.LongLength);
+        return new StoredFile(cheminRelatif, hash, octets.LongLength);
+    }
+
+    public async Task<byte[]?> RecupererAsync(string cheminRelatif, CancellationToken cancellationToken)
+    {
+        var racine = configuration["Storage:DocumentsRootPath"]
+            ?? throw new InvalidOperationException("Configuration manquante : Storage:DocumentsRootPath.");
+
+        var cheminComplet = Path.Combine(racine, cheminRelatif);
+        return File.Exists(cheminComplet) ? await File.ReadAllBytesAsync(cheminComplet, cancellationToken) : null;
     }
 
     public async Task<StoredFile> SaveExportAsync(string nomFichier, byte[] contenu, CancellationToken cancellationToken)

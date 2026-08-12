@@ -42,7 +42,7 @@ public class LoginHandler(
         {
             await EnregistrerEchec(login, "NO_PROFILE_MAPPED", cancellationToken);
             throw new AuthException(403, AuthErrorResponseCode.NO_PROFILE_MAPPED,
-                "Aucun profil PDOE associé à ce compte. Contactez l'administrateur DSIRI.");
+                "Aucun profil PGSA-COMEX associé à ce compte. Contactez l'administrateur DSIRI.");
         }
 
         if (!utilisateur.EstActif)
@@ -61,8 +61,8 @@ public class LoginHandler(
             utilisateur.LoginAD, code, $"{utilisateur.Prenom} {utilisateur.Nom}", utilisateur.Email, utilisateur.Profil, expiresAt, 0),
             cancellationToken);
 
-        var resultatEnvoi = await sender.EnvoyerAsync("EMAIL", utilisateur.Email, "Code de vérification PDOE",
-            $"Votre code de vérification PDOE est : {code}. Il est valable {OtpSettings.ValiditeSecondes / 60} minutes.",
+        var resultatEnvoi = await sender.EnvoyerAsync("EMAIL", utilisateur.Email, "Code de vérification PGSA-COMEX",
+            $"Votre code de vérification PGSA-COMEX est : {code}. Il est valable {OtpSettings.ValiditeSecondes / 60} minutes.",
             cancellationToken);
 
         var destinataireMasque = EmailMasking.Masquer(utilisateur.Email);

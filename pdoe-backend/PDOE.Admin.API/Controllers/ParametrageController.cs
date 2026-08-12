@@ -10,9 +10,10 @@ namespace PDOE.Admin.API.Controllers;
 
 [ApiController]
 [Route("parametrage")]
-[Authorize(Policy = "AdminDsiri")]
 public class ParametrageController(IMediator mediator) : ControllerBase
 {
+    // Pas de [Authorize] ici : lecture ouverte à tout utilisateur authentifié (FallbackPolicy, cf. Program.cs) —
+    // consommée par DossierCreateComponent (seuils domiciliation/FDI), pas seulement par l'écran d'admin.
     [HttpGet]
     public async Task<ActionResult<List<ParametreMetierResponse>>> ListParametrage(CancellationToken cancellationToken)
     {
@@ -28,6 +29,7 @@ public class ParametrageController(IMediator mediator) : ControllerBase
     }
 
     [HttpPatch("{cle}")]
+    [Authorize(Policy = "AdminDsiri")]
     public async Task<ActionResult<ParametreMetierResponse>> UpdateParametre(
         string cle,
         [FromBody] UpdateParametreRequest request,

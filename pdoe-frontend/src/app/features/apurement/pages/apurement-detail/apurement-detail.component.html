@@ -166,7 +166,11 @@
       </button>
     </h2>
 
-    <ul class="checklist-list">
+    <p class="erreur-msg" *ngIf="checklistChargementErreur">
+      Impossible de charger la checklist — réessayez ou contactez l'administrateur DSIRI si le problème persiste.
+    </p>
+
+    <ul class="checklist-list" *ngIf="!checklistChargementErreur">
       <li class="checklist-item" *ngFor="let item of checklist">
         <label>
           <input type="checkbox" [(ngModel)]="item.valide" [ngModelOptions]="{ standalone: true }" />

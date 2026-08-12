@@ -143,12 +143,38 @@
   color: #595959;
 }
 
-.confirmation-checkbox {
+// Checklist des deux préconditions de l'étape 2 (ordre confirmé, solde vérifié) — chacune portée par
+// une vraie checkbox, pas d'indicateur décoratif séparé.
+.checklist {
+  display: flex;
+  flex-direction: column;
+}
+
+.checklist-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #ececec;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.checklist-corps {
+  flex: 1;
+  min-width: 0;
+}
+
+.checklist-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pdoe-ink);
+}
+
+.checklist-label--cliquable {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  color: var(--pdoe-ink);
   cursor: pointer;
 
   input {
@@ -158,8 +184,40 @@
   }
 }
 
+// Résultat ABS2000 : affiché en checkbox pour rester visuellement cohérent avec "Ordre confirmé", mais non
+// cliquable — reflète le fait constaté, l'agent ne peut pas déclarer "suffisant" à la main.
+.checklist-label--lecture-seule {
+  cursor: default;
+  font-size: 12px;
+  color: #999999;
+
+  input {
+    accent-color: #999999;
+  }
+
+  &:has(input:checked) {
+    color: var(--pdoe-ink);
+    font-weight: 600;
+  }
+}
+
+.checklist-label--ok:has(input:checked) input {
+  accent-color: #2e7d32;
+}
+
+.checklist-label--alerte:has(input:checked) input {
+  accent-color: var(--pdoe-red);
+}
+
+.checklist-controle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
 .confirmation-date {
-  margin-top: 10px;
   padding: 5px 8px;
   font-size: 12px;
   border: 1px solid #d9d9d9;
@@ -173,7 +231,6 @@
 }
 
 .btn-save {
-  margin-left: 8px;
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 600;
@@ -194,10 +251,19 @@
 }
 
 .confirmation-erreur {
-  display: block;
-  margin-top: 6px;
   font-size: 11px;
   color: var(--pdoe-red);
+}
+
+.solde-resultat,
+.solde-confirme {
+  font-size: 12px;
+  color: var(--pdoe-ink);
+}
+
+.solde-confirme {
+  color: #2e7d32;
+  font-style: italic;
 }
 
 .transmission-bloc {

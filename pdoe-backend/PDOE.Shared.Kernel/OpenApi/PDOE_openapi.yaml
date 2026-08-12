@@ -346,7 +346,10 @@ paths:
     get:
       tags: [CBS]
       summary: Vérifier le solde du compte client dans ABS2000
-      description: Utilisé à l'étape 2 (validation gestionnaire). Lecture seule ABS2000.
+      description: |
+        Utilisé à l'étape 2 (validation gestionnaire). ABS2000 ne renvoie que le solde brut (lecture seule) —
+        suffisant est calculé côté PDOE en comparant soldeDisponible au montant de l'opération du dossier,
+        jamais fourni tel quel par ABS2000.
       operationId: getSoldeClient
       parameters:
         - name: numCompte
@@ -354,6 +357,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: dossierId
+          in: query
+          required: true
+          description: Dossier dont le montant sert de référence pour le calcul de suffisant.
+          schema:
+            type: integer
       responses:
         '200':
           description: Solde récupéré
@@ -724,6 +733,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentResponse'
+
+  /dossiers/{dossierId}/documents/{documentId}/fichier:
+    get:
+      tags: [Documents]
+      summary: Télécharger/prévisualiser le fichier d'un document
+      description: |
+        Relit le fichier stocké sur le disque du serveur (Storage:DocumentsRootPath)
+        et vérifie son intégrité (SHA-256) avant de le renvoyer.
+      operationId: telechargerFichierDocument
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Contenu du fichier
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Document introuvable, ou fichier absent du disque
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /dossiers/{dossierId}/notifier-client:
     post:
@@ -2824,7 +2863,7 @@ components:
         referenceInterne:
           type: string
           description: N° interne attribué à la création — distinct de referenceSWIFT, la vraie référence COMEX du processus physique, attribuée à la déclaration d'exécution.
-          example: PDOE-202506-0042
+          example: COMEX-202506-0042
         numCompte:
           type: string
         nomClient:
@@ -3605,6 +3644,7 @@ components:
           type: string
         suffisant:
           type: boolean
+          description: Calculé côté PDOE (soldeDisponible >= montant du dossier), pas renvoyé par ABS2000.
         dateConsultation:
           type: string
           format: date-time
@@ -3829,6 +3869,7 @@ components:
             - MOTIF_REJET_MANQUANT
             - RESPONSABLE_CORRECTION_MANQUANT
             - DATE_CONFIRMATION_CLIENT_MANQUANTE
+            - SOLDE_NON_VERIFIE
             - SOLDE_INSUFFISANT
             - FRACTIONNEMENT_DETECTE
             - PARAMETRAGE_NON_MODIFIABLE
@@ -3856,6 +3897,7 @@ components:
             - FDI_MANQUANTE
             - EXPORT_INTROUVABLE
             - ABS_INDISPONIBLE
+            - DOCUMENT_INTROUVABLE
         message:
           type: string
           description: Message lisible par l'humain

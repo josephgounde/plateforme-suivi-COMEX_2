@@ -47,7 +47,9 @@ public class MockCbsClient : ICbsClient
             NumCompte = numCompte,
             SoldeDisponible = 125_000_000,
             Devise = "XOF",
-            Suffisant = true,
+            // Recalculé par ObtenirSoldeClientHandler (comparaison au montant du dossier) — la valeur ici n'a pas
+            // d'importance, ABS2000 (réel ou mock) ne fait jamais autorité sur suffisant.
+            Suffisant = false,
             DateConsultation = DateTimeOffset.UtcNow
         });
     }

@@ -74,11 +74,11 @@ public class CreateDossierHandler(PdoeDbContext db) : IRequestHandler<CreateDoss
         return dossier.ToResponse();
     }
 
-    /// PDOE-{yyyyMM}-{seq 4 chiffres}, compteur remis à 1 chaque mois. Pas la ReferenceSWIFT
+    /// COMEX-{yyyyMM}-{seq 4 chiffres}, compteur remis à 1 chaque mois. Pas la ReferenceSWIFT
     /// (celle-là vient plus tard, cf. DeclarerExecutionHandler).
     private async Task<string> GenererReferenceInterneAsync(DateTime now, CancellationToken cancellationToken)
     {
-        var prefix = $"PDOE-{now:yyyyMM}-";
+        var prefix = $"COMEX-{now:yyyyMM}-";
         var count = await db.Dossiers.CountAsync(d => d.ReferenceInterne.StartsWith(prefix), cancellationToken);
         return $"{prefix}{count + 1:D4}";
     }

@@ -9,15 +9,26 @@
   </header>
 
   <div class="preview-body">
-    <img *ngIf="nature === 'image'" [src]="objectUrl" [alt]="document.nomFichier" class="preview-image" />
-
-    <iframe *ngIf="nature === 'pdf'" [src]="objectUrlSafe" class="preview-pdf" title="Aperçu PDF"></iframe>
-
-    <div class="preview-fallback" *ngIf="nature === 'inconnu'">
-      <span class="preview-fallback-icon">📄</span>
-      <p *ngIf="fichier">Aperçu non disponible pour ce type de fichier.</p>
-      <p *ngIf="!fichier">Aperçu indisponible pour ce document (chargé sans fichier réel dans cette démonstration).</p>
+    <div class="preview-fallback" *ngIf="chargement">
+      <span class="preview-fallback-icon">⏳</span>
+      <p>Chargement du document…</p>
     </div>
+
+    <div class="preview-fallback" *ngIf="!chargement && erreur">
+      <span class="preview-fallback-icon">⚠️</span>
+      <p>{{ erreur }}</p>
+    </div>
+
+    <ng-container *ngIf="!chargement && !erreur">
+      <img *ngIf="nature === 'image'" [src]="objectUrl" [alt]="document.nomFichier" class="preview-image" />
+
+      <iframe *ngIf="nature === 'pdf'" [src]="objectUrlSafe" class="preview-pdf" title="Aperçu PDF"></iframe>
+
+      <div class="preview-fallback" *ngIf="nature === 'inconnu'">
+        <span class="preview-fallback-icon">📄</span>
+        <p>Aperçu non disponible pour ce type de fichier.</p>
+      </div>
+    </ng-container>
   </div>
 
   <footer class="preview-footer" *ngIf="fichier">
