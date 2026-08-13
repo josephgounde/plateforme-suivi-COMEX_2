@@ -49,6 +49,14 @@ public class ValiderEtapeHandler(PdoeDbContext db, INotificationSender sender) :
             }
         }
 
+        // Précondition de l'étape Trésorerie : disponibilité des fonds confirmée (cf. tresorerie-dashboard.component.ts).
+        // Déclarative (aucun contrôle CBS derrière), mais doit bloquer côté serveur comme les préconditions Gestionnaire ci-dessus.
+        if (codeCourant == "ETAPE_4_TRESORERIE" && !dossier.DisponibiliteFonds)
+        {
+            throw new DomainException(422, ErrorResponseCode.DISPONIBILITE_FONDS_NON_CONFIRMEE,
+                "La disponibilité des fonds doit être confirmée avant validation.");
+        }
+
         var now = DateTime.UtcNow;
         var statutAvant = dossier.StatutElectronique;
 

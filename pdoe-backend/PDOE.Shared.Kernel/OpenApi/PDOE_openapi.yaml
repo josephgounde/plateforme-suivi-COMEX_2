@@ -2648,9 +2648,6 @@ components:
           type: string
           format: date-time
           nullable: true
-        soldeCompteVerifie:
-          type: boolean
-          nullable: true
 
     NotifierClientRequest:
       type: object
@@ -2950,6 +2947,22 @@ components:
           nullable: true
         soldeCompteVerifie:
           type: boolean
+        soldeSuffisant:
+          type: boolean
+          nullable: true
+          description: Résultat de la dernière vérification, calculé par PDOE (jamais fourni tel quel par ABS2000) — null tant qu'aucune vérification n'a eu lieu.
+        soldeConstate:
+          type: number
+          format: decimal
+          nullable: true
+          description: Solde brut constaté chez ABS2000 lors de la dernière vérification, dans deviseConstatee (pas forcément la devise du dossier).
+        deviseConstatee:
+          type: string
+          nullable: true
+        dateVerificationSolde:
+          type: string
+          format: date-time
+          nullable: true
 
         # Coordonnées client — pour notifier-client (SMS/Email), pas
         # renseignées à la création (v1 : pas encore de lookup CBS pour
@@ -3871,6 +3884,7 @@ components:
             - DATE_CONFIRMATION_CLIENT_MANQUANTE
             - SOLDE_NON_VERIFIE
             - SOLDE_INSUFFISANT
+            - DISPONIBILITE_FONDS_NON_CONFIRMEE
             - FRACTIONNEMENT_DETECTE
             - PARAMETRAGE_NON_MODIFIABLE
             - VALEUR_HORS_PLAGE

@@ -64,6 +64,12 @@ public class Dossier
 
     public DateTime? DateConfirmationClient { get; set; }
     public bool SoldeCompteVerifie { get; set; }
+    /// <summary>Résultat de la dernière vérification (calculé par ObtenirSoldeClientHandler, jamais fourni par ABS2000) — null tant qu'aucune vérification n'a eu lieu.</summary>
+    public bool? SoldeSuffisant { get; set; }
+    /// <summary>Solde brut constaté chez ABS2000 lors de la dernière vérification, dans la devise du compte (DeviseConstatee) — pas forcément celle du dossier.</summary>
+    public decimal? SoldeConstate { get; set; }
+    public string? DeviseConstatee { get; set; }
+    public DateTime? DateVerificationSolde { get; set; }
 
     /// <summary>Pas de lookup CBS pour EmailClient en v1 — alimenté uniquement par le seed pour l'instant.</summary>
     public string? EmailClient { get; set; }

@@ -256,6 +256,11 @@ CREATE TABLE dbo.Dossiers
     -- Workflows Étape par Étape
     DateConfirmationClient          DATETIME2       NULL,
     SoldeCompteVerifie              BIT             NOT NULL    CONSTRAINT DF_Dossiers_SoldeCompteVerifie DEFAULT (0),
+    -- Résultat de la dernière vérification (calculé côté PDOE, jamais fourni par ABS2000) — NULL tant qu'aucune vérification n'a eu lieu
+    SoldeSuffisant                  BIT             NULL,
+    SoldeConstate                   DECIMAL(18,4)   NULL,
+    DeviseConstatee                 NCHAR(3)        NULL,
+    DateVerificationSolde           DATETIME2       NULL,
 
     -- Coordonnées client (v5.9) — pour notifier-client (SMS/Email) ;
     -- pas encore de lookup CBS pour ces champs, NULL tant qu'aucune

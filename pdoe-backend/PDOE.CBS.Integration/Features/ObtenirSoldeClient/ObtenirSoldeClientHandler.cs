@@ -11,10 +11,7 @@ public class ObtenirSoldeClientHandler(ICbsClient cbs, PdoeDbContext db) : IRequ
 {
     public async Task<SoldeClientResult> Handle(ObtenirSoldeClientQuery request, CancellationToken cancellationToken)
     {
-        var dossier = await db.Dossiers
-            .Where(d => d.DossierId == request.DossierId)
-            .Select(d => new { d.Montant, d.Devise })
-            .FirstOrDefaultAsync(cancellationToken);
+        var dossier = await db.Dossiers.FirstOrDefaultAsync(d => d.DossierId == request.DossierId, cancellationToken);
 
         if (dossier is null)
             throw new DomainException(404, ErrorResponseCode.DOSSIER_INTROUVABLE, "Dossier introuvable.");
@@ -32,6 +29,18 @@ public class ObtenirSoldeClientHandler(ICbsClient cbs, PdoeDbContext db) : IRequ
         }
 
         resultat.Suffisant = soldeEnDeviseDossier >= (double)dossier.Montant;
+
+        // Seul point d'écriture pour ces champs — cf. UpdateDossierHandler, qui refuse désormais SoldeCompteVerifie
+        // pour empêcher qu'un simple PUT ne simule une vérification jamais faite auprès d'ABS2000.
+        dossier.SoldeCompteVerifie = true;
+        dossier.SoldeSuffisant = resultat.Suffisant;
+        dossier.SoldeConstate = (decimal)resultat.SoldeDisponible;
+        dossier.DeviseConstatee = resultat.Devise;
+        dossier.DateVerificationSolde = DateTime.UtcNow;
+        dossier.UpdatedAt = DateTime.UtcNow;
+        dossier.UpdatedBy = CurrentUser.Login;
+        await db.SaveChangesAsync(cancellationToken);
+
         return resultat;
     }
 }

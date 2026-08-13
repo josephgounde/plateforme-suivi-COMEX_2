@@ -810,9 +810,6 @@ namespace PDOE.Api.Contracts
         [System.Text.Json.Serialization.JsonPropertyName("dateConfirmationClient")]
         public System.DateTimeOffset? DateConfirmationClient { get; set; }
 
-        [System.Text.Json.Serialization.JsonPropertyName("soldeCompteVerifie")]
-        public bool? SoldeCompteVerifie { get; set; }
-
         private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -1318,6 +1315,24 @@ namespace PDOE.Api.Contracts
 
         [System.Text.Json.Serialization.JsonPropertyName("soldeCompteVerifie")]
         public bool SoldeCompteVerifie { get; set; }
+
+        /// <summary>
+        /// Résultat de la dernière vérification, calculé par PDOE (jamais fourni tel quel par ABS2000) — null tant qu'aucune vérification n'a eu lieu.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("soldeSuffisant")]
+        public bool? SoldeSuffisant { get; set; }
+
+        /// <summary>
+        /// Solde brut constaté chez ABS2000 lors de la dernière vérification, dans deviseConstatee (pas forcément la devise du dossier).
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("soldeConstate")]
+        public decimal? SoldeConstate { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("deviseConstatee")]
+        public string DeviseConstatee { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("dateVerificationSolde")]
+        public System.DateTimeOffset? DateVerificationSolde { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("emailClient")]
         public string EmailClient { get; set; }
@@ -3121,86 +3136,89 @@ namespace PDOE.Api.Contracts
         [System.Runtime.Serialization.EnumMember(Value = @"SOLDE_INSUFFISANT")]
         SOLDE_INSUFFISANT = 8,
 
+        [System.Runtime.Serialization.EnumMember(Value = @"DISPONIBILITE_FONDS_NON_CONFIRMEE")]
+        DISPONIBILITE_FONDS_NON_CONFIRMEE = 9,
+
         [System.Runtime.Serialization.EnumMember(Value = @"FRACTIONNEMENT_DETECTE")]
-        FRACTIONNEMENT_DETECTE = 9,
+        FRACTIONNEMENT_DETECTE = 10,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PARAMETRAGE_NON_MODIFIABLE")]
-        PARAMETRAGE_NON_MODIFIABLE = 10,
+        PARAMETRAGE_NON_MODIFIABLE = 11,
 
         [System.Runtime.Serialization.EnumMember(Value = @"VALEUR_HORS_PLAGE")]
-        VALEUR_HORS_PLAGE = 11,
+        VALEUR_HORS_PLAGE = 12,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PROFIL_INSUFFISANT")]
-        PROFIL_INSUFFISANT = 12,
+        PROFIL_INSUFFISANT = 13,
 
         [System.Runtime.Serialization.EnumMember(Value = @"DOSSIER_INTROUVABLE")]
-        DOSSIER_INTROUVABLE = 13,
+        DOSSIER_INTROUVABLE = 14,
 
         [System.Runtime.Serialization.EnumMember(Value = @"STATUT_INVALIDE_POUR_ACTION")]
-        STATUT_INVALIDE_POUR_ACTION = 14,
+        STATUT_INVALIDE_POUR_ACTION = 15,
 
         [System.Runtime.Serialization.EnumMember(Value = @"INITIALES_AGENT_MANQUANTES")]
-        INITIALES_AGENT_MANQUANTES = 15,
+        INITIALES_AGENT_MANQUANTES = 16,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ETAPE_GESTIONNAIRE_DEPASSEE")]
-        ETAPE_GESTIONNAIRE_DEPASSEE = 16,
+        ETAPE_GESTIONNAIRE_DEPASSEE = 17,
 
         [System.Runtime.Serialization.EnumMember(Value = @"GESTIONNAIRE_LOGIN_MANQUANT")]
-        GESTIONNAIRE_LOGIN_MANQUANT = 17,
+        GESTIONNAIRE_LOGIN_MANQUANT = 18,
 
         [System.Runtime.Serialization.EnumMember(Value = @"LOGIN_AD_DEJA_UTILISE")]
-        LOGIN_AD_DEJA_UTILISE = 18,
+        LOGIN_AD_DEJA_UTILISE = 19,
 
         [System.Runtime.Serialization.EnumMember(Value = @"CHAMPS_UTILISATEUR_MANQUANTS")]
-        CHAMPS_UTILISATEUR_MANQUANTS = 19,
+        CHAMPS_UTILISATEUR_MANQUANTS = 20,
 
         [System.Runtime.Serialization.EnumMember(Value = @"UTILISATEUR_INTROUVABLE")]
-        UTILISATEUR_INTROUVABLE = 20,
+        UTILISATEUR_INTROUVABLE = 21,
 
         [System.Runtime.Serialization.EnumMember(Value = @"AUTO_RETRAIT_DROITS_ADMIN_INTERDIT")]
-        AUTO_RETRAIT_DROITS_ADMIN_INTERDIT = 21,
+        AUTO_RETRAIT_DROITS_ADMIN_INTERDIT = 22,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PORTEFEUILLE_DEJA_AFFECTE")]
-        PORTEFEUILLE_DEJA_AFFECTE = 22,
+        PORTEFEUILLE_DEJA_AFFECTE = 23,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ETAPE_CODE_DEJA_UTILISE")]
-        ETAPE_CODE_DEJA_UTILISE = 23,
+        ETAPE_CODE_DEJA_UTILISE = 24,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ETAPE_CONFIG_INTROUVABLE")]
-        ETAPE_CONFIG_INTROUVABLE = 24,
+        ETAPE_CONFIG_INTROUVABLE = 25,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ETAPE_DESACTIVATION_REFUSEE")]
-        ETAPE_DESACTIVATION_REFUSEE = 25,
+        ETAPE_DESACTIVATION_REFUSEE = 26,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ETAPE_ORDRE_INVALIDE")]
-        ETAPE_ORDRE_INVALIDE = 26,
+        ETAPE_ORDRE_INVALIDE = 27,
 
         [System.Runtime.Serialization.EnumMember(Value = @"MODELE_NOTIFICATION_INTROUVABLE")]
-        MODELE_NOTIFICATION_INTROUVABLE = 27,
+        MODELE_NOTIFICATION_INTROUVABLE = 28,
 
         [System.Runtime.Serialization.EnumMember(Value = @"CHECKLIST_ITEM_LIBELLE_MANQUANT")]
-        CHECKLIST_ITEM_LIBELLE_MANQUANT = 28,
+        CHECKLIST_ITEM_LIBELLE_MANQUANT = 29,
 
         [System.Runtime.Serialization.EnumMember(Value = @"CHECKLIST_ITEM_INTROUVABLE")]
-        CHECKLIST_ITEM_INTROUVABLE = 29,
+        CHECKLIST_ITEM_INTROUVABLE = 30,
 
         [System.Runtime.Serialization.EnumMember(Value = @"CHECKLIST_ORDRE_INVALIDE")]
-        CHECKLIST_ORDRE_INVALIDE = 30,
+        CHECKLIST_ORDRE_INVALIDE = 31,
 
         [System.Runtime.Serialization.EnumMember(Value = @"PARAMETRE_INTROUVABLE")]
-        PARAMETRE_INTROUVABLE = 31,
+        PARAMETRE_INTROUVABLE = 32,
 
         [System.Runtime.Serialization.EnumMember(Value = @"FDI_MANQUANTE")]
-        FDI_MANQUANTE = 32,
+        FDI_MANQUANTE = 33,
 
         [System.Runtime.Serialization.EnumMember(Value = @"EXPORT_INTROUVABLE")]
-        EXPORT_INTROUVABLE = 33,
+        EXPORT_INTROUVABLE = 34,
 
         [System.Runtime.Serialization.EnumMember(Value = @"ABS_INDISPONIBLE")]
-        ABS_INDISPONIBLE = 34,
+        ABS_INDISPONIBLE = 35,
 
         [System.Runtime.Serialization.EnumMember(Value = @"DOCUMENT_INTROUVABLE")]
-        DOCUMENT_INTROUVABLE = 35,
+        DOCUMENT_INTROUVABLE = 36,
 
     }
 

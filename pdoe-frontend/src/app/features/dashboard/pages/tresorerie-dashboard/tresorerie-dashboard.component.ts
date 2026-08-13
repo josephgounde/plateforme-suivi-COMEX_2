@@ -367,10 +367,15 @@ export class TresorerieDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  // N'est proposé qu'une fois les paramètres Trésorerie enregistrés
-  // (etat.enregistre).
+  // N'est proposé qu'une fois les paramètres Trésorerie enregistrés (etat.enregistre) ET la disponibilité des
+  // fonds confirmée — sinon la case à cocher n'est qu'un affichage sans effet sur le blocage réel, même bug de
+  // fond que dateConfirmationClient/etatConfirmation.confirme côté Gestionnaire (cf. dossier-detail.component.ts).
+  // Lu sur le dossier persisté (this.dossiers), pas sur le FormControl, pour ne bloquer que sur une valeur
+  // réellement enregistrée côté serveur.
   peutValiderEtTransmettre(dossierId: number): boolean {
-    return this.etat(dossierId).enregistre;
+    if (!this.etat(dossierId).enregistre) return false;
+    const dossier = this.dossiers.find(d => d.dossierId === dossierId);
+    return !!dossier?.disponibiliteFonds;
   }
 
   validerEtTransmettre(dossier: Dossier): void {

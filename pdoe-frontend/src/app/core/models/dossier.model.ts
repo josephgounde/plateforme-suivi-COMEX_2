@@ -58,6 +58,12 @@ export interface Dossier {
   // Validation gestionnaire (étape 2)
   dateConfirmationClient?: string;
   soldeCompteVerifie: boolean;
+  // Résultat de la dernière vérification — calculé et persisté par le backend (ObtenirSoldeClientHandler),
+  // jamais réglable via updateDossier. undefined tant qu'aucune vérification n'a eu lieu.
+  soldeSuffisant?: boolean;
+  soldeConstate?: number;
+  deviseConstatee?: string;
+  dateVerificationSolde?: string;
 
   // Ajoutées pour permettre au Gestionnaire de notifier le client directement (SMS/Email).
   emailClient?: string;
@@ -185,7 +191,6 @@ export interface UpdateDossierRequest {
   codeSwiftIndicatif?: string;
   banqueCorrespondanteIndicative?: string;
   dateConfirmationClient?: string;
-  soldeCompteVerifie?: boolean;
 }
 
 // Réattribution — n'a de sens que tant que le dossier n'a pas dépassé l'étape Gestionnaire.

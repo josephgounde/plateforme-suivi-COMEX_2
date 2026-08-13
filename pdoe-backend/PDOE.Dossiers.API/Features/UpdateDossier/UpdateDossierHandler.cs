@@ -42,7 +42,8 @@ public class UpdateDossierHandler(PdoeDbContext db) : IRequestHandler<UpdateDoss
         if (request.CodeSwiftIndicatif is not null) dossier.CodeSwiftIndicatif = request.CodeSwiftIndicatif;
         if (request.BanqueCorrespondanteIndicative is not null) dossier.BanqueCorrespondanteIndicative = request.BanqueCorrespondanteIndicative;
         if (request.DateConfirmationClient is not null) dossier.DateConfirmationClient = request.DateConfirmationClient.Value.UtcDateTime;
-        if (request.SoldeCompteVerifie is not null) dossier.SoldeCompteVerifie = request.SoldeCompteVerifie.Value;
+        // SoldeCompteVerifie/SoldeSuffisant : jamais réglable ici — uniquement écrit par ObtenirSoldeClientHandler,
+        // seul point qui a réellement interrogé ABS2000. Sinon un simple PUT pourrait simuler une vérification jamais faite.
         dossier.UpdatedAt = DateTime.UtcNow;
         dossier.UpdatedBy = CurrentUser.Login;
 

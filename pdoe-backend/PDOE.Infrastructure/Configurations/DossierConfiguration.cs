@@ -61,6 +61,8 @@ public class DossierConfiguration : IEntityTypeConfiguration<Dossier>
         builder.Property(d => d.InitialesAgent).HasMaxLength(10);
 
         builder.Property(d => d.SoldeCompteVerifie).HasDefaultValue(false);
+        builder.Property(d => d.SoldeConstate).HasPrecision(18, 4);
+        builder.Property(d => d.DeviseConstatee).HasColumnType("nchar(3)");
         builder.Property(d => d.EmailClient).HasMaxLength(150);
         builder.Property(d => d.TelephoneClient).HasMaxLength(30);
         builder.Property(d => d.TauxChange).HasPrecision(18, 6);

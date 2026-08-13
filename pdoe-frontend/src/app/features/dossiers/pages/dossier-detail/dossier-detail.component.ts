@@ -93,6 +93,21 @@ export class DossierDetailComponent implements OnInit {
           enregistrement: false,
           erreur: false
         };
+        // Résultat de la dernière vérification déjà persisté côté serveur — évite d'obliger un nouveau clic
+        // sur "Vérifier le solde" juste pour réafficher un résultat déjà connu après rechargement de la page.
+        if (dossier.soldeCompteVerifie && dossier.soldeSuffisant !== undefined) {
+          this.etatSolde = {
+            verification: false,
+            erreur: false,
+            resultat: {
+              numCompte: dossier.numCompte,
+              soldeDisponible: dossier.soldeConstate ?? 0,
+              devise: dossier.deviseConstatee ?? dossier.devise,
+              suffisant: dossier.soldeSuffisant,
+              dateConsultation: dossier.dateVerificationSolde ?? ''
+            }
+          };
+        }
         this.chargement = false;
         this.cdr.detectChanges();
       },
@@ -158,8 +173,9 @@ export class DossierDetailComponent implements OnInit {
     return new Date().toISOString().slice(0, 10);
   }
 
-  // Consulte le solde ABS2000 (lecture seule) et marque soldeCompteVerifie sur le dossier — précondition
-  // bloquante de peutValiderEtTransmettre(), au même titre que la confirmation de commande.
+  // Consulte le solde ABS2000 (lecture seule). Le backend (ObtenirSoldeClientHandler) persiste lui-même
+  // soldeCompteVerifie/soldeSuffisant/soldeConstate sur le dossier — c'est le seul point d'écriture autorisé
+  // (updateDossier refuse soldeCompteVerifie), donc pas de second appel ici : on répercute juste la réponse.
   verifierSolde(): void {
     const dossier = this.dossier;
     if (!dossier || this.etatSolde.verification) return;
@@ -169,12 +185,11 @@ export class DossierDetailComponent implements OnInit {
     this.dossierApi.getSoldeClient(dossier.numCompte, dossier.dossierId).subscribe({
       next: resultat => {
         this.etatSolde = { verification: false, resultat, erreur: false };
-        this.dossierApi.updateDossier(dossier.dossierId, { soldeCompteVerifie: true }).subscribe({
-          next: () => {
-            dossier.soldeCompteVerifie = true;
-            this.cdr.detectChanges();
-          }
-        });
+        dossier.soldeCompteVerifie = true;
+        dossier.soldeSuffisant = resultat.suffisant;
+        dossier.soldeConstate = resultat.soldeDisponible;
+        dossier.deviseConstatee = resultat.devise;
+        dossier.dateVerificationSolde = resultat.dateConsultation;
         this.cdr.detectChanges();
       },
       error: () => {
