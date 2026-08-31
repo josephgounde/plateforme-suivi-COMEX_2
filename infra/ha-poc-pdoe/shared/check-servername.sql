@@ -1,0 +1,2 @@
+SELECT @@SERVERNAME AS server_name;
+GO

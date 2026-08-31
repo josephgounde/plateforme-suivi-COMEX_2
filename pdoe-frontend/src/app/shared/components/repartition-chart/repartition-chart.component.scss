@@ -1,8 +1,8 @@
 .section-block {
   margin-bottom: 24px;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 12px;
 
   h2 {
@@ -32,14 +32,14 @@
   &--rejete {
     padding-top: 10px;
     margin-top: 2px;
-    border-top: 1px dashed #ececec;
+    border-top: 1px dashed var(--pdoe-surface-hover);
   }
 }
 
 .repartition-label {
   font-size: 12px;
   font-weight: 500;
-  color: #404040;
+  color: var(--pdoe-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -48,7 +48,7 @@
 .repartition-track {
   position: relative;
   height: 10px;
-  background: #f2f2f2;
+  background: var(--pdoe-surface-muted);
   border-radius: 6px;
   overflow: hidden;
 }

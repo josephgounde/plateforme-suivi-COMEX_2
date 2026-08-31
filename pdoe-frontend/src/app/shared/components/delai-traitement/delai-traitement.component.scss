@@ -11,17 +11,17 @@
   white-space: nowrap;
 
   &--ok {
-    color: #2e7d32;
-    background: #e8f5e9;
+    color: var(--pdoe-success);
+    background: var(--pdoe-success-soft);
   }
 
   &--attention {
-    color: #e65100;
-    background: #fff3e0;
+    color: var(--pdoe-warning);
+    background: var(--pdoe-warning-soft);
   }
 
   &--depasse {
     color: var(--pdoe-red);
-    background: #fdecee;
+    background: var(--pdoe-error-soft);
   }
 }

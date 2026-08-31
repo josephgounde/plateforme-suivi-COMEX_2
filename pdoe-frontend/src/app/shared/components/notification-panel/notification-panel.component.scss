@@ -11,8 +11,8 @@
   height: 100%;
   min-height: 0;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 12px;
   box-sizing: border-box;
 }
@@ -47,7 +47,7 @@
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
   text-align: center;
 }
 
@@ -76,8 +76,8 @@
   align-items: flex-start;
   gap: 8px;
   padding: 10px;
-  background: #fff8e1;
-  border: 1px solid #ffe082;
+  background: var(--pdoe-warning-soft);
+  border: 1px solid var(--pdoe-warning-soft);
   border-radius: 8px;
 }
 
@@ -91,7 +91,7 @@
   min-width: 0;
   font-size: 12px;
   line-height: 1.5;
-  color: #5c4a00;
+  color: var(--pdoe-warning);
 
   strong {
     color: var(--pdoe-red);
@@ -116,7 +116,7 @@
   padding: 0 4px;
   font-size: 12px;
   line-height: 1.5;
-  color: #8a7300;
+  color: var(--pdoe-warning);
   background: transparent;
   border: none;
   border-radius: 4px;

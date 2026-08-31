@@ -33,6 +33,12 @@
     "BaseUrl": "",
     "BypassValidation": true
   },
+  "ArchiveApp": {
+    // URL d'ingestion de l'application d'archivage externe — inconnue pour l'instant. Tant que vide, NullArchiveNotifier
+    // s'en charge (cf. Program.cs) : l'archivage d'un dossier ne bloque jamais faute de cette intégration.
+    "BaseUrl": "",
+    "ApiKey": ""
+  },
   "Otp": {
     "LogCodeInConsole": false
   }

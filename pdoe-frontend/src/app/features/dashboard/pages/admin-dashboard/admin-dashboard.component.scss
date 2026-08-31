@@ -24,7 +24,7 @@
   h1 { margin: 0; font-size: 20px; color: var(--pdoe-ink); }
 }
 
-.loading { font-size: 13px; color: #999999; }
+.loading { font-size: 13px; color: var(--pdoe-gray); }
 
 // ── Graphiques (jauge + barres) ──────────────────────────────
 
@@ -55,14 +55,14 @@
   flex: 1 1 200px;
   padding: 8px 10px;
   font-size: 13px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--pdoe-border);
   border-radius: 6px;
-  background: #fafafa;
+  background: var(--pdoe-surface-muted);
 
   &:focus {
     outline: none;
     border-color: var(--pdoe-red);
-    background: #ffffff;
+    background: var(--pdoe-surface-raised);
   }
 }
 
@@ -74,14 +74,14 @@ app-dropdown-select.filter-select {
 .btn-reset {
   padding: 8px 14px;
   font-size: 12px;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border: none;
   border-radius: 6px;
   cursor: pointer;
 
   &:hover {
-    background: #e5e5e5;
+    background: var(--pdoe-border);
   }
 }
 
@@ -90,8 +90,8 @@ app-dropdown-select.filter-select {
 .empty-state {
   padding: 14px;
   font-size: 12px;
-  color: #999999;
-  background: #fafafa;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
   border-radius: 6px;
   text-align: center;
 }
@@ -122,7 +122,7 @@ app-dropdown-select.filter-select {
   border-collapse: collapse;
   font-size: 12px;
 
-  thead tr { background: #f5f5f5; }
+  thead tr { background: var(--pdoe-surface-muted); }
 
   th {
     padding: 8px 12px;
@@ -131,33 +131,33 @@ app-dropdown-select.filter-select {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: #595959;
-    border-bottom: 1px solid #ececec;
+    color: var(--pdoe-text-secondary);
+    border-bottom: 1px solid var(--pdoe-surface-hover);
     overflow-wrap: break-word;
 
     // Ancré à top: 0 de .table-wrapper (la zone qui défile) ; fond porté par le <th> lui-même, sinon le contenu défilé transparaît.
     position: sticky;
     top: 0;
     z-index: 5;
-    background: #f5f5f5;
+    background: var(--pdoe-surface-muted);
   }
 
   td {
     padding: 10px 12px;
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--pdoe-surface-muted);
     vertical-align: middle;
     overflow-wrap: break-word;
   }
 
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #fafafa; }
+  tr:hover td { background: var(--pdoe-surface-muted); }
 }
 
 .td-ref  { font-weight: 700; color: var(--pdoe-red); font-size: 11px; }
 .td-client { font-weight: 500; color: var(--pdoe-ink); display: block; }
-.td-compte { font-size: 11px; color: #999999; }
+.td-compte { font-size: 11px; color: var(--pdoe-gray); }
 .td-montant { font-weight: 600; white-space: nowrap; color: var(--pdoe-ink); }
-.td-date { font-size: 11px; color: #999999; }
+.td-date { font-size: 11px; color: var(--pdoe-gray); }
 
 .td-gestionnaire {
   overflow-wrap: break-word;
@@ -171,7 +171,7 @@ app-dropdown-select.select-gestionnaire {
 
 .gestionnaire-fige {
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .reattribution-erreur {
@@ -190,11 +190,11 @@ app-dropdown-select.select-gestionnaire {
   font-size: 11px;
   font-weight: 600;
 
-  &--default { color: #1565c0; background: #e3f2fd; }
-  &--success  { color: #2e7d32; background: #e8f5e9; }
-  &--warning  { color: #e65100; background: #fff3e0; }
-  &--danger   { color: var(--pdoe-red); background: #fdecee; }
-  &--type     { color: #6a1fa0; background: #f3e5f5; }
+  &--default { color: var(--pdoe-info); background: var(--pdoe-info-soft); }
+  &--success  { color: var(--pdoe-success); background: var(--pdoe-success-soft); }
+  &--warning  { color: var(--pdoe-warning); background: var(--pdoe-warning-soft); }
+  &--danger   { color: var(--pdoe-red); background: var(--pdoe-error-soft); }
+  &--type     { color: var(--pdoe-accent-purple); background: var(--pdoe-accent-purple-soft); }
 }
 
 .btn-detail {
@@ -202,12 +202,12 @@ app-dropdown-select.select-gestionnaire {
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: var(--pdoe-ink);
+  background: var(--pdoe-chrome);
   border-radius: 6px;
   text-decoration: none;
   white-space: nowrap;
 
-  &:hover { background: #333333; }
+  &:hover { background: var(--pdoe-text-secondary); }
 }
 
 // ── Goulots d'étranglement ───────────────────────────────────
@@ -215,8 +215,8 @@ app-dropdown-select.select-gestionnaire {
 .section-block {
   margin-bottom: 24px;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 12px;
 
   h2 {
@@ -238,8 +238,8 @@ app-dropdown-select.select-gestionnaire {
   padding: 0 6px;
   font-size: 10px;
   font-weight: 700;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border-radius: 10px;
 }
 
@@ -250,14 +250,14 @@ app-dropdown-select.select-gestionnaire {
   font-size: 12px;
   font-weight: 700;
   color: #ffffff;
-  background: #2e7d32;
+  background: var(--pdoe-success-strong);
   border: none;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+  box-shadow: 0 4px 12px var(--pdoe-shadow-success);
 
-  &:hover:not(:disabled) { background: #256428; }
+  &:hover:not(:disabled) { background: var(--pdoe-success-strong); }
 
   &:disabled {
     opacity: 0.5;
@@ -289,21 +289,21 @@ app-dropdown-select.select-gestionnaire {
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 
   input[type='date'] {
     padding: 6px 8px;
     font: inherit;
     font-size: 12px;
     color: var(--pdoe-ink);
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 5px;
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
 
     &:focus {
       outline: none;
       border-color: var(--pdoe-red);
-      background: #ffffff;
+      background: var(--pdoe-surface-raised);
     }
   }
 }
@@ -333,8 +333,8 @@ app-dropdown-select.select-gestionnaire {
   gap: 12px;
   padding: 10px 14px;
   border-radius: 10px;
-  border-left: 4px solid #e65100;
-  background: #fff8f0;
+  border-left: 4px solid var(--pdoe-warning);
+  background: var(--pdoe-warning-soft);
 }
 
 .retard-main {
@@ -352,7 +352,7 @@ app-dropdown-select.select-gestionnaire {
   font-weight: 600;
   letter-spacing: 0.03em;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 999px;
   text-transform: uppercase;
 }
@@ -365,7 +365,7 @@ app-dropdown-select.select-gestionnaire {
   text-overflow: ellipsis;
 }
 
-.retard-meta { font-size: 11px; color: #999999; }
+.retard-meta { font-size: 11px; color: var(--pdoe-gray); }
 
 // ── Actions transversales : lever alerte / rejet définitif ──────
 
@@ -406,9 +406,9 @@ app-dropdown-select.select-gestionnaire {
 .btn-rejeter-def-toggle {
   color: var(--pdoe-red);
   background: transparent;
-  border: 1px solid #f0b8c0;
+  border: 1px solid var(--pdoe-error-soft);
 
-  &:hover { background: #fdecee; }
+  &:hover { background: var(--pdoe-error-soft); }
 }
 
 .rejet-def-form {
@@ -425,15 +425,15 @@ app-dropdown-select.select-gestionnaire {
     padding: 6px 8px;
     font: inherit;
     font-size: 11px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 5px;
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
     resize: vertical;
 
     &:focus {
       outline: none;
       border-color: var(--pdoe-red);
-      background: #ffffff;
+      background: var(--pdoe-surface-raised);
     }
   }
 }

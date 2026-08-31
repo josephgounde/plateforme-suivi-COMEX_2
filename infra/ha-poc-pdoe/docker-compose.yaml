@@ -1,0 +1,94 @@
+services:
+  pdoe-a:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pdoe-a
+    hostname: pdoe-a
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+      MSSQL_AGENT_ENABLED: "true"
+    ports:
+      - "14340:1433"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - pdoe-a-data:/var/opt/mssql
+      - ./shared:/var/opt/mssql/backup
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      pdoe-net:
+        aliases: [pdoe-a]
+
+  pdoe-b:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pdoe-b
+    hostname: pdoe-b
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+      MSSQL_AGENT_ENABLED: "true"
+    ports:
+      - "14341:1433"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - pdoe-b-data:/var/opt/mssql
+      - ./shared:/var/opt/mssql/backup
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      pdoe-net:
+        aliases: [pdoe-b]
+
+  pdoe-c:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pdoe-c
+    hostname: pdoe-c
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+      MSSQL_AGENT_ENABLED: "true"
+    ports:
+      - "14342:1433"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - pdoe-c-data:/var/opt/mssql
+      - ./shared:/var/opt/mssql/backup
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      pdoe-net:
+        aliases: [pdoe-c]
+
+  pdoe-proxy:
+    image: alpine/socat
+    container_name: pdoe-proxy
+    command: ["tcp-listen:1433,fork,reuseaddr", "tcp-connect:172.19.0.100:1433"]
+    ports:
+      - "14350:1433"
+    networks:
+      pdoe-net:
+        aliases: [pdoe-proxy]
+
+  pdoe-witness:
+    image: ubuntu:22.04
+    container_name: pdoe-witness
+    hostname: pdoe-witness
+    command: ["sleep", "infinity"]
+    volumes:
+      - ./shared:/root/shared
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      pdoe-net:
+        aliases: [pdoe-witness]
+
+networks:
+  pdoe-net:
+    driver: bridge
+
+volumes:
+  pdoe-a-data:
+  pdoe-b-data:
+  pdoe-c-data:

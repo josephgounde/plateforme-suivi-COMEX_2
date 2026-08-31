@@ -1,5 +1,7 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using PDOE.Api.Contracts;
 using PDOE.Dossiers.API.Features.CreateDossier;
 using PDOE.Dossiers.API.Features.CreerPaiement;
@@ -12,13 +14,28 @@ using PDOE.Dossiers.API.Features.ReassignerGestionnaire;
 using PDOE.Dossiers.API.Features.SoumettreDossier;
 using PDOE.Dossiers.API.Features.UpdateDossier;
 using PDOE.Dossiers.API.Features.UpdateTresorerie;
+using PDOE.Infrastructure.Archive;
+using PDOE.Shared.Kernel.Common;
 
 namespace PDOE.Dossiers.API.Controllers;
 
 [ApiController]
 [Route("dossiers")]
-public class DossiersController(IMediator mediator) : ControllerBase
+public class DossiersController(IMediator mediator, IConfiguration configuration) : ControllerBase
 {
+    /// GET /dossiers et GET /dossiers/{id} sont accessibles à l'application d'archivage externe (clé API, cf.
+    /// ArchiveApiKeyValidator) en plus des utilisateurs PDOE (JWT) — c'est le côté "pull" du scénario hybride
+    /// de handoff vers l'archivage (statut=ARCHIVE). [AllowAnonymous] retire seulement l'obligation de JWT ;
+    /// un appel sans clé API ni JWT valide est toujours rejeté explicitement ci-dessous.
+    private void ExigerJwtOuCleApi()
+    {
+        if (!ArchiveApiKeyValidator.CleEstValide(Request, configuration) && User.Identity?.IsAuthenticated != true)
+        {
+            throw new DomainException(401, ErrorResponseCode.CLE_API_INVALIDE, "Authentification requise (JWT ou clé API).");
+        }
+    }
+
+    [AllowAnonymous]
     [HttpGet]
     public async Task<ActionResult<DossierListResponse>> ListDossiers(
         [FromQuery] StatutDossier? statut,
@@ -30,6 +47,8 @@ public class DossiersController(IMediator mediator) : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
+        ExigerJwtOuCleApi();
+
         var result = await mediator.Send(
             new ListDossiersQuery(statut, typeOperation, numCompte, dateDebutCreation, dateFinCreation, page, pageSize),
             cancellationToken);
@@ -45,9 +64,12 @@ public class DossiersController(IMediator mediator) : ControllerBase
         return CreatedAtAction(nameof(GetDossier), new { dossierId = result.DossierId }, result);
     }
 
+    [AllowAnonymous]
     [HttpGet("{dossierId:int}")]
     public async Task<ActionResult<DossierDetailResponse>> GetDossier(int dossierId, CancellationToken cancellationToken)
     {
+        ExigerJwtOuCleApi();
+
         var result = await mediator.Send(new GetDossierQuery(dossierId), cancellationToken);
         return Ok(result);
     }

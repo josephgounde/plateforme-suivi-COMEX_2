@@ -17,7 +17,7 @@
   h1 { margin: 0; font-size: 20px; color: var(--pdoe-ink); }
 }
 
-.loading { font-size: 13px; color: #999999; }
+.loading { font-size: 13px; color: var(--pdoe-gray); }
 
 @media (max-width: 700px) {
   .page {
@@ -40,8 +40,8 @@
   margin-bottom: 14px;
   padding: 9px 12px;
   font-size: 12px;
-  color: #2e7d32;
-  background: #e8f5e9;
+  color: var(--pdoe-success);
+  background: var(--pdoe-success-soft);
   border-radius: 6px;
 }
 
@@ -50,7 +50,7 @@
   padding: 9px 12px;
   font-size: 12px;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 6px;
 }
 
@@ -58,8 +58,8 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
 }
 
@@ -69,7 +69,7 @@ table {
   font-size: 12px;
 }
 
-thead tr { background: #f5f5f5; }
+thead tr { background: var(--pdoe-surface-muted); }
 
 th {
   padding: 9px 12px;
@@ -78,47 +78,47 @@ th {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #595959;
-  border-bottom: 1px solid #ececec;
+  color: var(--pdoe-text-secondary);
+  border-bottom: 1px solid var(--pdoe-surface-hover);
   white-space: nowrap;
 
   // Garde les titres visibles pendant le défilement : ancré à top: 0 de .table-wrapper (cf. .page).
   position: sticky;
   top: 0;
   z-index: 5;
-  background: #f5f5f5;
+  background: var(--pdoe-surface-muted);
 }
 
 td {
   padding: 10px 12px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--pdoe-surface-muted);
   vertical-align: middle;
 }
 
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: #fafafa; }
-.row-locked td { color: #999999; background: #fafafa; }
+tr:hover td { background: var(--pdoe-surface-muted); }
+.row-locked td { color: var(--pdoe-gray); background: var(--pdoe-surface-muted); }
 
 // Colonne d'action ancrée au bord droit : évite un défilement horizontal peu évident pour l'atteindre.
 th:last-child,
 td:last-child {
   position: sticky;
   right: 0;
-  background: #ffffff;
+  background: var(--pdoe-surface-raised);
 }
 
 thead th:last-child {
-  background: #f5f5f5;
+  background: var(--pdoe-surface-muted);
   z-index: 6;
 }
 
-tr:hover td:last-child { background: #fafafa; }
-.row-locked td:last-child { background: #fafafa; }
+tr:hover td:last-child { background: var(--pdoe-surface-muted); }
+.row-locked td:last-child { background: var(--pdoe-surface-muted); }
 
 .td-cle  { font-family: monospace; font-size: 11px; font-weight: 700; color: var(--pdoe-red); white-space: nowrap; }
 .td-desc { max-width: 280px; line-height: 1.4; }
 .td-val  { font-weight: 600; }
-.td-unite, .td-plage, .td-date { white-space: nowrap; color: #595959; font-size: 11px; }
+.td-unite, .td-plage, .td-date { white-space: nowrap; color: var(--pdoe-text-secondary); font-size: 11px; }
 
 .td-actions {
   display: flex;
@@ -139,27 +139,27 @@ tr:hover td:last-child { background: #fafafa; }
   border-radius: 10px;
   font-size: 11px;
   font-weight: 600;
-  color: #595959;
-  background: #f0f0f0;
-  &--ok { color: #2e7d32; background: #e8f5e9; }
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
+  &--ok { color: var(--pdoe-success); background: var(--pdoe-success-soft); }
 }
 
 .btn-edit {
   padding: 4px 10px;
   font-size: 11px;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  &:hover { background: #fad9dd; }
+  &:hover { background: var(--pdoe-error-soft); }
 }
 
 .btn-cancel {
   padding: 4px 10px;
   font-size: 11px;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -170,7 +170,7 @@ tr:hover td:last-child { background: #fafafa; }
   font-size: 11px;
   font-weight: 600;
   color: #ffffff;
-  background: #2e7d32;
+  background: var(--pdoe-success);
   border: none;
   border-radius: 4px;
   cursor: pointer;

@@ -1,7 +1,7 @@
 .section-block {
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 12px;
 
   h2 {

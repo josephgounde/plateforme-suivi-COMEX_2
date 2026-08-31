@@ -1,7 +1,12 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using PDOE.Api.Contracts;
+using PDOE.Infrastructure.Archive;
+using PDOE.Shared.Kernel.Common;
 using PDOE.Workflow.API.Features.ArchiverDossier;
+using PDOE.Workflow.API.Features.ConfirmerArchivageExterne;
 using PDOE.Workflow.API.Features.ControleLcbft;
 using PDOE.Workflow.API.Features.ControleReglementaire;
 using PDOE.Workflow.API.Features.ExporterHistorique;
@@ -16,7 +21,7 @@ namespace PDOE.Workflow.API.Controllers;
 
 [ApiController]
 [Route("workflow")]
-public class WorkflowController(IMediator mediator) : ControllerBase
+public class WorkflowController(IMediator mediator, IConfiguration configuration) : ControllerBase
 {
     [HttpPost("{dossierId:int}/valider")]
     public async Task<ActionResult<WorkflowTransitionResponse>> Valider(
@@ -69,6 +74,23 @@ public class WorkflowController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<WorkflowTransitionResponse>> Archiver(int dossierId, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new ArchiverDossierCommand(dossierId), cancellationToken);
+        return Ok(result);
+    }
+
+    /// Appelé par l'application d'archivage externe, jamais par un utilisateur PDOE — pas de JWT, authentification
+    /// par clé API statique (ArchiveApp:ApiKey) vérifiée ici avant d'atteindre le handler.
+    [AllowAnonymous]
+    [HttpPost("{dossierId:int}/confirmer-archivage-externe")]
+    public async Task<ActionResult<ConfirmationArchivageResponse>> ConfirmerArchivageExterne(
+        int dossierId,
+        CancellationToken cancellationToken)
+    {
+        if (!ArchiveApiKeyValidator.CleEstValide(Request, configuration))
+        {
+            throw new DomainException(401, ErrorResponseCode.CLE_API_INVALIDE, "Clé API invalide ou manquante.");
+        }
+
+        var result = await mediator.Send(new ConfirmerArchivageExterneCommand(dossierId), cancellationToken);
         return Ok(result);
     }
 

@@ -12,20 +12,20 @@
   font: inherit;
   font-size: 13px;
   color: var(--pdoe-ink);
-  background: #fafafa;
-  border: 1px solid #d9d9d9;
+  background: var(--pdoe-surface-muted);
+  border: 1px solid var(--pdoe-border);
   border-radius: 5px;
   cursor: pointer;
   box-sizing: border-box;
 
   &:hover:not(:disabled) {
     border-color: var(--pdoe-red);
-    background: #fff5f5;
+    background: var(--pdoe-error-soft);
   }
 
   &--ouvert {
     border-color: var(--pdoe-red);
-    background: #ffffff;
+    background: var(--pdoe-surface-raised);
   }
 
   &:disabled {
@@ -47,8 +47,8 @@
   right: 0;
   z-index: 20;
   padding: 4px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
 }
@@ -62,14 +62,14 @@
   font: inherit;
   font-size: 13px;
   color: var(--pdoe-ink);
-  background: #fafafa;
-  border: 1px solid #d9d9d9;
+  background: var(--pdoe-surface-muted);
+  border: 1px solid var(--pdoe-border);
   border-radius: 5px;
 
   &:focus {
     outline: none;
     border-color: var(--pdoe-red);
-    background: #ffffff;
+    background: var(--pdoe-surface-raised);
   }
 }
 
@@ -91,7 +91,7 @@
 .dropdown-vide {
   padding: 7px 10px;
   font-size: 13px;
-  color: #999;
+  color: var(--pdoe-gray);
 }
 
 .dropdown-option {

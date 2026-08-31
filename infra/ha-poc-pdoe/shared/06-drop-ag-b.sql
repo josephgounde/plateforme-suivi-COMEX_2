@@ -1,0 +1,2 @@
+DROP AVAILABILITY GROUP [pdoe_ag];
+GO

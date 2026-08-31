@@ -14,17 +14,17 @@
 .page-sub {
   margin: 2px 0 0;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
-.loading { font-size: 13px; color: #999999; }
+.loading { font-size: 13px; color: var(--pdoe-gray); }
 
 .succes {
   margin-bottom: 14px;
   padding: 9px 12px;
   font-size: 12px;
-  color: #2e7d32;
-  background: #e8f5e9;
+  color: var(--pdoe-success);
+  background: var(--pdoe-success-soft);
   border-radius: 6px;
 }
 
@@ -33,7 +33,7 @@
   padding: 9px 12px;
   font-size: 12px;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 6px;
 }
 
@@ -45,8 +45,8 @@
 
 .carte {
   padding: 14px 16px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
 }
 
@@ -69,7 +69,7 @@
   border-radius: 10px;
   font-size: 11px;
   font-weight: 600;
-  &--canal { color: #595959; background: #f0f0f0; }
+  &--canal { color: var(--pdoe-text-secondary); background: var(--pdoe-surface-muted); }
 }
 
 .carte-libelle {
@@ -83,13 +83,13 @@
   margin: 0 0 6px;
   font-size: 12px;
   line-height: 1.5;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .carte-meta {
   margin: 0;
   font-size: 10.5px;
-  color: #b3b3b3;
+  color: var(--pdoe-border-strong);
 }
 
 .btn-edit {
@@ -97,11 +97,11 @@
   padding: 4px 10px;
   font-size: 11px;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  &:hover { background: #fad9dd; }
+  &:hover { background: var(--pdoe-error-soft); }
 }
 
 .form-field {
@@ -115,7 +115,7 @@
   label {
     font-size: 11px;
     font-weight: 600;
-    color: #595959;
+    color: var(--pdoe-text-secondary);
   }
 
   input,
@@ -123,7 +123,7 @@
     padding: 7px 10px;
     font-size: 13px;
     font-family: inherit;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 5px;
     resize: vertical;
 
@@ -143,12 +143,12 @@
 .btn-cancel {
   padding: 7px 14px;
   font-size: 12px;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  &:hover { background: #e5e5e5; }
+  &:hover { background: var(--pdoe-border); }
 }
 
 .btn-save {
@@ -156,7 +156,7 @@
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: #2e7d32;
+  background: var(--pdoe-success);
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -167,5 +167,5 @@
   padding: 20px;
   text-align: center;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }

@@ -76,6 +76,16 @@
       <div class="topbar-spacer"></div>
 
       <div class="topbar-actions">
+        <button
+          type="button"
+          class="topbar-theme-toggle"
+          (click)="theme.basculer()"
+          [attr.aria-label]="theme.theme() === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre'"
+          [title]="theme.theme() === 'dark' ? 'Thème clair' : 'Thème sombre'"
+        >
+          {{ theme.theme() === 'dark' ? '☀' : '☾' }}
+        </button>
+
         <div class="topbar-bell-wrap">
           <button
             type="button"

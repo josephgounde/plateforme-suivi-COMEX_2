@@ -1,0 +1,6 @@
+-- Run on pdoe-c (database already restored WITH NORECOVERY from Step 12)
+ALTER AVAILABILITY GROUP [pdoe_ag] JOIN WITH (CLUSTER_TYPE = EXTERNAL);
+GO
+
+ALTER DATABASE PDOE_DB SET HADR AVAILABILITY GROUP = [pdoe_ag];
+GO

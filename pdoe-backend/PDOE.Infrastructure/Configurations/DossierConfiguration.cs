@@ -83,6 +83,9 @@ public class DossierConfiguration : IEntityTypeConfiguration<Dossier>
         builder.Property(d => d.SoldeRestantApurement).HasPrecision(18, 4);
         builder.Property(d => d.ApurementComplet).HasDefaultValue(false);
 
+        builder.Property(d => d.NotifieArchivage).HasDefaultValue(false);
+        builder.Property(d => d.ArchivageConfirme).HasDefaultValue(false);
+
         builder.Property(d => d.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
         builder.Property(d => d.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
         builder.Property(d => d.CreatedBy).HasMaxLength(100).IsRequired();

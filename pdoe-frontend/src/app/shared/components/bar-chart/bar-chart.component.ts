@@ -1,7 +1,7 @@
 // Barres horizontales (ng-apexcharts), pour les répartitions par acteur où
 // RepartitionChartComponent (barres CSS maison, sans axe) est trop sommaire.
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   NgApexchartsModule,
@@ -13,6 +13,8 @@ import {
   ApexGrid,
   ApexTooltip
 } from 'ng-apexcharts';
+import { ThemeService } from '../../../core/theme/theme.service';
+import { resolveToken } from '../../utils/resolve-token';
 
 export interface BarChartItem {
   libelle: string;
@@ -38,11 +40,15 @@ export type ChartOptions = {
   styleUrl: './bar-chart.component.scss'
 })
 export class BarChartComponent {
+  private theme = inject(ThemeService);
+
   @Input({ required: true }) titre!: string;
   @Input({ required: true }) items: BarChartItem[] = [];
-  @Input() couleur = '#e30613'; // var(--pdoe-red) — ApexCharts n'accepte pas les custom properties CSS
+  // Nom de jeton (ex. '--pdoe-info') plutôt qu'un hex figé — cf. GaugeChartComponent pour le raisonnement complet.
+  @Input() couleur = '--pdoe-red';
 
   get chartOptions(): ChartOptions {
+    this.theme.theme(); // dépendance de signal : force le recalcul à la bascule de thème
     return {
       series: [{ name: this.titre, data: this.items.map(i => i.valeur) }],
       chart: { type: 'bar', height: Math.max(220, this.items.length * 46), toolbar: { show: false } },
@@ -51,9 +57,9 @@ export class BarChartComponent {
       plotOptions: {
         bar: { horizontal: true, borderRadius: 4, distributed: false, barHeight: '55%' }
       },
-      grid: { borderColor: '#f0f0f0' },
+      grid: { borderColor: resolveToken('--pdoe-border') },
       tooltip: { enabled: true },
-      colors: [this.couleur]
+      colors: [resolveToken(this.couleur)]
     };
   }
 }

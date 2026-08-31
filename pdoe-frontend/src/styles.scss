@@ -1,17 +1,99 @@
-/* Styles globaux : fondations partagées (typo/reset) + palette échantillonnée
-   depuis le vrai logo Afriland First Bank. */
+/* Styles globaux : fondations partagées (typo/reset) + jetons de couleur.
+   Palette de marque échantillonnée depuis le vrai logo Afriland First Bank ;
+   le reste (surfaces, texte, statuts) consolide ~130 valeurs hex jusque-là
+   dupliquées telles quelles dans chaque composant, en un seul jeu de jetons
+   réutilisé partout — c'est ce qui rend un thème sombre possible sans devoir
+   ajuster chaque composant séparément. Bascule pilotée par ThemeService
+   (attribut data-theme sur <html>, cf. core/theme/theme.service.ts) plutôt
+   que par prefers-color-scheme seul : l'utilisateur choisit explicitement,
+   la préférence système ne sert qu'au tout premier chargement. */
 :root {
+  /* Marque */
   --pdoe-red: #e30613;
   --pdoe-red-rgb: 227, 6, 19;
   --pdoe-red-hover: #b80510;
+  --pdoe-orange: #f57c00;
+
+  /* Chrome (sidebar/topbar) : volontairement toujours sombre, indépendant du thème
+     clair/sombre du contenu — cf. AppShellComponent. Ne pas confondre avec --pdoe-ink. */
+  --pdoe-chrome: #1a1a1a;
+
+  /* Surfaces */
+  --pdoe-surface: #f5f6f8;
+  --pdoe-surface-raised: #ffffff;
+  --pdoe-surface-muted: #f5f5f5;
+  --pdoe-surface-hover: #ececec;
+
+  /* Bordures */
+  --pdoe-border: #e0e0e0;
+  --pdoe-border-strong: #c2c2c2;
+
+  /* Texte */
   --pdoe-ink: #1a1a1a;
+  --pdoe-text-secondary: #595959;
   --pdoe-gray: #8b8b8a;
   --pdoe-gray-light: #c0bfbf;
-  /* Étape courante du stepper de circuit (WorkflowStepperComponent) —
-     distincte du rouge, désormais réservé au rejet définitif d'un
-     dossier, pour qu'un dossier "en cours normal" ne soit plus
-     visuellement confondu avec un dossier rejeté. */
-  --pdoe-orange: #f57c00;
+
+  /* Statuts (badges, alertes, pastilles) — texte + fond léger par statut */
+  --pdoe-success: #2e7d32;
+  --pdoe-success-soft: #e8f5e9;
+  /* Fond plein (gros boutons, jauges) : identique à --pdoe-success en clair, mais assourdi en sombre
+     (cf. bloc ci-dessous) où le vert vif de badge devient agressif appliqué en grande surface. */
+  --pdoe-success-strong: #2e7d32;
+  --pdoe-shadow-success: rgba(46, 125, 50, 0.3);
+  --pdoe-shadow-soft: rgba(20, 20, 20, 0.05);
+  --pdoe-warning: #e65100;
+  --pdoe-warning-soft: #fff3e0;
+  --pdoe-error: #c62828;
+  --pdoe-error-soft: #fdecee;
+  --pdoe-info: #1565c0;
+  --pdoe-info-hover: #0d47a1;
+  --pdoe-info-soft: #e3f2fd;
+  --pdoe-accent-purple: #6a1fa0;
+  --pdoe-accent-purple-soft: #f3e5f5;
+}
+
+:root[data-theme='dark'] {
+  /* Ladder d'élévation volontairement plus écarté que la première passe : surface/raised/muted/hover doivent se
+     distinguer à l'œil nu, et les bordures doivent vraiment se voir sur les deux — sinon les petits éléments
+     (contours de pastille, séparateurs) disparaissent littéralement sur un fond proche du noir. */
+  --pdoe-red: #ff5a6b;
+  --pdoe-red-rgb: 255, 90, 107;
+  --pdoe-red-hover: #ff8894;
+  --pdoe-orange: #ffb347;
+  --pdoe-chrome: #0a0c10;
+
+  --pdoe-surface: #0f1115;
+  --pdoe-surface-raised: #1b1e25;
+  --pdoe-surface-muted: #242833;
+  --pdoe-surface-hover: #2d323f;
+
+  --pdoe-border: #3c4353;
+  --pdoe-border-strong: #545d70;
+
+  /* #e4e6ea plutôt qu'un blanc quasi pur : moins agressif à l'œil sur de grandes surfaces de texte tout en
+     gardant un contraste largement suffisant (~13:1 sur --pdoe-surface). */
+  --pdoe-ink: #e4e6ea;
+  --pdoe-text-secondary: #c7cbd4;
+  --pdoe-gray: #9ba1ae;
+  --pdoe-gray-light: #545d70;
+
+  --pdoe-success: #4ade80;
+  --pdoe-success-soft: #16301f;
+  /* Vert nettement assourdi par rapport à --pdoe-success : en pleine surface (bouton, jauge) le vert vif
+     de badge devient criard sur fond sombre — on garde le vif pour le texte/les petites pastilles seulement. */
+  --pdoe-success-strong: #1f8a52;
+  --pdoe-shadow-success: rgba(31, 138, 82, 0.28);
+  --pdoe-shadow-soft: rgba(0, 0, 0, 0.4);
+  --pdoe-warning: #fbbf24;
+  --pdoe-warning-soft: #332508;
+  --pdoe-error: #fb7185;
+  --pdoe-error-soft: #331620;
+  --pdoe-info: #60a5fa;
+  --pdoe-info-hover: #93c5fd;
+  --pdoe-info-soft: #142338;
+  --pdoe-accent-purple: #c084fc;
+  --pdoe-accent-purple-soft: #251a35;
 }
 
 * {
@@ -28,9 +110,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   color: var(--pdoe-ink);
-  background: #f5f6f8;
+  background: var(--pdoe-surface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 a {

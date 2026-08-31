@@ -887,6 +887,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /workflow/{dossierId}/confirmer-archivage-externe:
+    post:
+      tags: [Workflow]
+      summary: Confirmer la réception d'un dossier par l'application d'archivage externe (appel machine-à-machine)
+      description: |
+        Appelé par l'application d'archivage externe elle-même, jamais par un utilisateur PDOE — aucun JWT
+        attendu ici. Authentification par clé API statique (en-tête X-Api-Key, cf. ArchiveApp:ApiKey), pas par
+        le mécanisme LDAP/OTP/JWT humain de PDOE.Gateway. Ferme la boucle du scénario hybride de handoff : nous
+        avons poussé un signal "dossier prêt" à l'archivage du dossier (cf. NotifieArchivage), leur application
+        est venue chercher le détail/documents via GET /dossiers?statut=ARCHIVE, et confirme ici la réception.
+      operationId: confirmerArchivageExterne
+      parameters:
+        - $ref: '#/components/parameters/DossierIdParam'
+        - name: X-Api-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Réception confirmée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmationArchivageResponse'
+        '401':
+          description: Clé API invalide ou manquante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Dossier pas en statut ARCHIVE — confirmation impossible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /workflow/{dossierId}/lever-alerte:
     post:
       tags: [Workflow]
@@ -3124,6 +3162,22 @@ components:
           type: string
           format: date-time
 
+    ConfirmationArchivageResponse:
+      type: object
+      description: |
+        Réponse à POST /workflow/{dossierId}/confirmer-archivage-externe — ferme la boucle du scénario hybride
+        de handoff vers l'application d'archivage externe (cf. NotifieArchivage/ArchivageConfirme sur Dossier).
+      properties:
+        dossierId:
+          type: integer
+        referenceInterne:
+          type: string
+        archivageConfirme:
+          type: boolean
+        dateConfirmationArchivage:
+          type: string
+          format: date-time
+
     DocumentResponse:
       type: object
       properties:
@@ -3912,6 +3966,7 @@ components:
             - EXPORT_INTROUVABLE
             - ABS_INDISPONIBLE
             - DOCUMENT_INTROUVABLE
+            - CLE_API_INVALIDE
         message:
           type: string
           description: Message lisible par l'humain

@@ -1545,6 +1545,38 @@ namespace PDOE.Api.Contracts
 
     }
 
+    /// <summary>
+    /// Réponse à POST /workflow/{dossierId}/confirmer-archivage-externe — ferme la boucle du scénario hybride
+    /// <br/>de handoff vers l'application d'archivage externe (cf. NotifieArchivage/ArchivageConfirme sur Dossier).
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ConfirmationArchivageResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("dossierId")]
+        public int DossierId { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("referenceInterne")]
+        public string ReferenceInterne { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("archivageConfirme")]
+        public bool ArchivageConfirme { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("dateConfirmationArchivage")]
+        public System.DateTimeOffset DateConfirmationArchivage { get; set; }
+
+        private System.Collections.Generic.IDictionary<string, object> _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class DocumentResponse
     {
@@ -3219,6 +3251,9 @@ namespace PDOE.Api.Contracts
 
         [System.Runtime.Serialization.EnumMember(Value = @"DOCUMENT_INTROUVABLE")]
         DOCUMENT_INTROUVABLE = 36,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"CLE_API_INVALIDE")]
+        CLE_API_INVALIDE = 37,
 
     }
 

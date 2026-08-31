@@ -11,14 +11,14 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: linear-gradient(160deg, var(--pdoe-ink) 0%, #2d0a12 100%);
+  background: linear-gradient(160deg, var(--pdoe-chrome) 0%, #2d0a12 100%);
   box-sizing: border-box;
 }
 
 .otp-card {
   width: 100%;
   max-width: 360px;
-  background: #ffffff;
+  background: var(--pdoe-surface-raised);
   border-radius: 10px;
   padding: 28px 20px;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
@@ -51,7 +51,7 @@
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 
   strong {
     color: var(--pdoe-ink);
@@ -85,15 +85,15 @@
     text-align: center;
     letter-spacing: 0.3em;
     font-weight: 600;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 6px;
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
     transition: border-color 0.15s ease;
 
     &:focus {
       outline: none;
       border-color: var(--pdoe-red);
-      background: #ffffff;
+      background: var(--pdoe-surface-raised);
     }
   }
 }
@@ -106,7 +106,7 @@
 .otp-timer {
   margin: 0;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
   text-align: center;
 
   &--expire {
@@ -120,7 +120,7 @@
   padding: 8px 10px;
   font-size: 12px;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 6px;
 }
 
@@ -128,8 +128,8 @@
   margin: 0;
   padding: 8px 10px;
   font-size: 12px;
-  color: #2e7d32;
-  background: #e8f5e9;
+  color: var(--pdoe-success);
+  background: var(--pdoe-success-soft);
   border-radius: 6px;
 }
 
@@ -138,8 +138,8 @@
   padding: 6px 10px;
   font-size: 11px;
   text-align: center;
-  color: #8a6d00;
-  background: #fff8e1;
+  color: var(--pdoe-warning);
+  background: var(--pdoe-warning-soft);
   border-radius: 6px;
 }
 
@@ -170,7 +170,7 @@
 .otp-actions {
   margin-top: 18px;
   padding-top: 16px;
-  border-top: 1px solid #ececec;
+  border-top: 1px solid var(--pdoe-surface-hover);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -191,16 +191,16 @@
   }
 
   &:disabled {
-    color: #bfbfbf;
+    color: var(--pdoe-gray);
     cursor: not-allowed;
   }
 
   &--muted {
-    color: #999999;
+    color: var(--pdoe-gray);
     font-weight: 500;
 
     &:hover {
-      color: #595959;
+      color: var(--pdoe-text-secondary);
     }
   }
 }

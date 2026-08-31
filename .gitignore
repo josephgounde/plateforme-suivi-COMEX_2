@@ -21,3 +21,23 @@ pdoe-backend/.local-storage/
 # OS junk
 Thumbs.db
 .DS_Store
+
+# Local Claude Code tool settings, not shared project config
+.claude/settings.json
+
+# Personal weekly reports, not project deliverables
+Documents/rapport_bi_hebdomadaire_*.docx
+
+# infra/ : only the active HA POC and its backups are pushed — earlier/alternate
+# experiments (ha-pdoe-real, ha-poc-mssql) and generated reports stay local
+infra/ha-pdoe-real/
+infra/ha-poc-mssql/
+infra/report/
+
+# infra/ha-poc-pdoe, infra/sql-backups : keep the compose file and .sql scripts,
+# but never commit secrets or the SQL Server backup/log binaries
+infra/**/.env
+infra/**/*.pvk
+infra/**/corosync.authkey
+infra/**/*.bak
+infra/**/*.trn

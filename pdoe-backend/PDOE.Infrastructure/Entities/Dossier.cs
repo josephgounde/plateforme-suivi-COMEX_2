@@ -95,6 +95,13 @@ public class Dossier
     public decimal? SoldeRestantApurement { get; set; }
     public bool ApurementComplet { get; set; }
 
+    /// <summary>Vrai si le signal "dossier archivé" a été envoyé avec succès à l'application d'archivage externe (IArchiveNotifier) — jamais fourni par elle, calculé côté PDOE.</summary>
+    public bool NotifieArchivage { get; set; }
+    public DateTime? DateNotificationArchivage { get; set; }
+    /// <summary>Renseigné uniquement par l'application d'archivage externe, via POST /workflow/{dossierId}/confirmer-archivage-externe, une fois le dossier effectivement récupéré.</summary>
+    public bool ArchivageConfirme { get; set; }
+    public DateTime? DateConfirmationArchivage { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public string CreatedBy { get; set; } = null!;

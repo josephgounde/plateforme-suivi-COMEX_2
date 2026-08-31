@@ -7,6 +7,7 @@ using PDOE.Api.Contracts;
 using PDOE.Gateway.Common;
 using PDOE.Gateway.Ldap;
 using PDOE.Infrastructure;
+using PDOE.Infrastructure.Archive;
 using PDOE.Infrastructure.Cbs;
 using PDOE.Infrastructure.Ldap;
 using PDOE.Infrastructure.Notifications;
@@ -112,6 +113,27 @@ else
     });
 }
 
+// Application d'archivage externe (scénario hybride, cf. mémoire projet) : on pousse un signal "dossier archivé",
+// l'appli externe vient chercher le détail via notre API (GET /dossiers?statut=ARCHIVE). Pas de bascule dev/prod
+// comme Ldap/Cbs ci-dessus : NullArchiveNotifier ne bloque jamais l'archivage, que BaseUrl soit fournie ou non.
+var archiveBaseUrl = builder.Configuration["ArchiveApp:BaseUrl"];
+if (string.IsNullOrWhiteSpace(archiveBaseUrl))
+{
+    builder.Services.AddSingleton<IArchiveNotifier, NullArchiveNotifier>();
+}
+else
+{
+    builder.Services.AddHttpClient<IArchiveNotifier, HttpArchiveNotifier>(client =>
+    {
+        client.BaseAddress = new Uri(archiveBaseUrl);
+        var apiKey = builder.Configuration["ArchiveApp:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(apiKey))
+        {
+            client.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+        }
+    });
+}
+
 builder.Services.AddScoped<IOtpChallengeStore, DbOtpChallengeStore>();
 builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
@@ -149,7 +171,7 @@ const string DevCors = "DevCors";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(DevCors, policy =>
-        policy.WithOrigins("http://localhost:4200")
+        policy.WithOrigins("http://localhost:4200", "https://xbkk45fh-4200.uks1.devtunnels.ms")
               .AllowAnyHeader()
               .AllowAnyMethod());
 });

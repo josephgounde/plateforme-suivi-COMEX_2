@@ -107,7 +107,7 @@
 }
 
 .loading {
-  color: #595959;
+  color: var(--pdoe-text-secondary);
   font-size: 13px;
 }
 
@@ -115,7 +115,7 @@
 // et statut-badge) — même teinte, deux contextes différents.
 %danger-tint {
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
 }
 
 // Base commune des pilules d'action secondaires (Voir / Modifier) —
@@ -132,7 +132,7 @@
 
 %muted-caption {
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .count-badge {
@@ -144,8 +144,8 @@
   padding: 0 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border-radius: 10px;
 
   &--danger {
@@ -155,18 +155,18 @@
 
 .btn-detail {
   @extend %pill-btn-neutral;
-  background: #f0f0f0;
+  background: var(--pdoe-surface-muted);
 
   &:hover {
-    background: #e2e2e2;
+    background: var(--pdoe-border);
   }
 }
 
 .empty-state {
   padding: 20px;
   font-size: 13px;
-  color: #999999;
-  background: #fafafa;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
   border-radius: 18px;
   text-align: center;
 }
@@ -192,7 +192,7 @@
 .content-subtitle {
   margin: 4px 0 0;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 // ── Barre de filtre : pays + recherche + Filtres + Rechercher ──
@@ -214,7 +214,7 @@
 
 .filter-pays-icon {
   font-size: 10px;
-  color: #999999;
+  color: var(--pdoe-gray);
   flex-shrink: 0;
 }
 
@@ -232,22 +232,22 @@ app-dropdown-select.filter-pays-select {
   font-size: 12px;
   font-weight: 600;
   color: var(--pdoe-ink);
-  background: #ffffff;
-  border: 1px solid #e2e2e2;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-border);
   border-radius: 999px;
   cursor: pointer;
 
   &:hover {
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
   }
 
   &--actif {
     color: var(--pdoe-ink);
-    background: #e9e9e8;
+    background: var(--pdoe-surface-muted);
     border-color: transparent;
 
     &:hover {
-      background: #dedede;
+      background: var(--pdoe-border);
     }
   }
 }
@@ -258,9 +258,9 @@ app-dropdown-select.filter-pays-select {
   gap: 10px;
   flex: 1 1 220px;
   padding: 11px 18px;
-  background: #ffffff;
+  background: var(--pdoe-surface-raised);
   border-radius: 999px;
-  box-shadow: 0 4px 16px rgba(20, 20, 20, 0.05);
+  box-shadow: 0 4px 16px var(--pdoe-shadow-soft);
 }
 
 .search-icon {
@@ -280,7 +280,7 @@ app-dropdown-select.filter-pays-select {
   outline: none;
 
   &::placeholder {
-    color: #b3b3b3;
+    color: var(--pdoe-border-strong);
   }
 }
 
@@ -292,14 +292,14 @@ app-dropdown-select.filter-pays-select {
   width: 22px;
   height: 22px;
   font-size: 11px;
-  color: #999999;
-  background: #f0f0f0;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
   border: none;
   border-radius: 50%;
   cursor: pointer;
 
   &:hover {
-    background: #e2e2e2;
+    background: var(--pdoe-border);
   }
 }
 
@@ -315,7 +315,7 @@ app-dropdown-select.filter-pays-select {
   margin-right: 2px;
   font-size: 11px;
   font-weight: 600;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .chip {
@@ -324,13 +324,13 @@ app-dropdown-select.filter-pays-select {
   font-size: 12px;
   font-weight: 600;
   color: var(--pdoe-ink);
-  background: #f0f0f0;
+  background: var(--pdoe-surface-muted);
   border: none;
   border-radius: 999px;
   cursor: pointer;
 
   &:hover {
-    background: #e5e5e5;
+    background: var(--pdoe-border);
   }
 
   &--actif {
@@ -338,7 +338,7 @@ app-dropdown-select.filter-pays-select {
     background: var(--pdoe-gray);
 
     &:hover {
-      background: #767675;
+      background: var(--pdoe-gray);
     }
   }
 }
@@ -361,7 +361,7 @@ app-dropdown-select.filter-pays-select {
 .results-count {
   font-size: 12px;
   font-weight: 600;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .results-subtitle {
@@ -382,7 +382,7 @@ app-dropdown-select.filter-pays-select {
   gap: 7px;
   font-size: 11px;
   font-weight: 600;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .toggle-switch {
@@ -391,7 +391,7 @@ app-dropdown-select.filter-pays-select {
   width: 32px;
   height: 18px;
   padding: 0;
-  background: #e2e2e2;
+  background: var(--pdoe-border);
   border: none;
   border-radius: 999px;
   cursor: pointer;
@@ -408,7 +408,7 @@ app-dropdown-select.filter-pays-select {
   left: 2px;
   width: 14px;
   height: 14px;
-  background: #ffffff;
+  background: var(--pdoe-surface-raised);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.15s ease;
@@ -432,7 +432,7 @@ app-dropdown-select.tri-select {
   display: flex;
   gap: 2px;
   padding: 3px;
-  background: #f0f0f0;
+  background: var(--pdoe-surface-muted);
   border-radius: 999px;
 }
 
@@ -443,7 +443,7 @@ app-dropdown-select.tri-select {
   width: 26px;
   height: 26px;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
   background: transparent;
   border: none;
   border-radius: 50%;
@@ -486,9 +486,9 @@ app-dropdown-select.tri-select {
   gap: 8px;
   min-width: 0;
   padding: 24px;
-  background: #ffffff;
+  background: var(--pdoe-surface-raised);
   border-radius: 20px;
-  box-shadow: 0 4px 16px rgba(20, 20, 20, 0.05);
+  box-shadow: 0 4px 16px var(--pdoe-shadow-soft);
 }
 
 .dossier-grid--liste .dossier-card {
@@ -563,7 +563,7 @@ app-dropdown-select.tri-select {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
-  color: #8a8a8a;
+  color: var(--pdoe-gray);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -593,10 +593,10 @@ app-dropdown-select.tri-select {
   text-transform: uppercase;
   border-radius: 999px;
 
-  &--import { color: #1565c0; background: #e3f2fd; }
-  &--export { color: #2e7d32; background: #e8f5e9; }
-  &--service { color: #7b1fa2; background: #f3e5f5; }
-  &--transfert { color: #ef6c00; background: #fff3e0; }
+  &--import { color: var(--pdoe-info); background: var(--pdoe-info-soft); }
+  &--export { color: var(--pdoe-success); background: var(--pdoe-success-soft); }
+  &--service { color: var(--pdoe-accent-purple); background: var(--pdoe-accent-purple-soft); }
+  &--transfert { color: var(--pdoe-warning); background: var(--pdoe-warning-soft); }
 }
 
 .card-pays {
@@ -610,7 +610,7 @@ app-dropdown-select.tri-select {
   gap: 8px;
   margin-top: 4px;
   padding-top: 10px;
-  border-top: 1px solid #f2f2f2;
+  border-top: 1px solid var(--pdoe-surface-muted);
 }
 
 .soumission-erreur {
@@ -622,10 +622,10 @@ app-dropdown-select.tri-select {
 
 .btn-edit {
   @extend %pill-btn-neutral;
-  background: #eeeeed;
+  background: var(--pdoe-surface-muted);
 
   &:hover {
-    background: #e2e2e1;
+    background: var(--pdoe-border);
   }
 }
 
@@ -636,13 +636,13 @@ app-dropdown-select.tri-select {
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: #2e7d32;
+  background: var(--pdoe-success);
   border: none;
   border-radius: 999px;
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: #256428;
+    background: var(--pdoe-success);
   }
 
   &:disabled {
@@ -656,13 +656,13 @@ app-dropdown-select.tri-select {
   padding: 4px 12px;
   font-size: 11px;
   font-weight: 600;
-  color: #1565c0;
-  background: #e3f2fd;
+  color: var(--pdoe-info);
+  background: var(--pdoe-info-soft);
   border-radius: 999px;
 
   &--ok {
-    color: #2e7d32;
-    background: #e8f5e9;
+    color: var(--pdoe-success);
+    background: var(--pdoe-success-soft);
   }
 
   &--danger {

@@ -9,7 +9,7 @@
   display: inline-block;
   margin-bottom: 14px;
   font-size: 13px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
   text-decoration: none;
 
   &:hover {
@@ -41,7 +41,7 @@
 .dossier-compte {
   margin: 0;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .statut-badge {
@@ -49,8 +49,8 @@
   padding: 5px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #1565c0;
-  background: #e3f2fd;
+  color: var(--pdoe-info);
+  background: var(--pdoe-info-soft);
   border-radius: 14px;
 }
 
@@ -68,14 +68,14 @@
   font-size: 12px;
   font-weight: 700;
   color: #ffffff;
-  background: #2e7d32;
+  background: var(--pdoe-success-strong);
   border: none;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+  box-shadow: 0 4px 12px var(--pdoe-shadow-success);
 
-  &:hover:not(:disabled) { background: #256428; }
+  &:hover:not(:disabled) { background: var(--pdoe-success-strong); }
 
   &:disabled {
     opacity: 0.5;
@@ -106,16 +106,16 @@
   padding: 0 5px;
   font-size: 10px;
   font-weight: 700;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border-radius: 9px;
 }
 
 .empty-state {
   padding: 14px;
   font-size: 12px;
-  color: #999999;
-  background: #fafafa;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
   border-radius: 6px;
   text-align: center;
 }
@@ -125,8 +125,8 @@
 
 .detail-block--action {
   padding: 14px;
-  background: #fafafa;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-muted);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
 }
 
@@ -140,7 +140,7 @@
   margin: 0;
   font-size: 12px;
   font-style: italic;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 // Checklist des deux préconditions de l'étape 2 (ordre confirmé, solde vérifié) — chacune portée par
@@ -152,7 +152,7 @@
 
 .checklist-item {
   padding: 12px 0;
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid var(--pdoe-surface-hover);
 
   &:last-child {
     border-bottom: none;
@@ -189,10 +189,10 @@
 .checklist-label--lecture-seule {
   cursor: default;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
 
   input {
-    accent-color: #999999;
+    accent-color: var(--pdoe-gray);
   }
 
   &:has(input:checked) {
@@ -202,7 +202,7 @@
 }
 
 .checklist-label--ok:has(input:checked) input {
-  accent-color: #2e7d32;
+  accent-color: var(--pdoe-success);
 }
 
 .checklist-label--alerte:has(input:checked) input {
@@ -220,9 +220,9 @@
 .confirmation-date {
   padding: 5px 8px;
   font-size: 12px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--pdoe-border);
   border-radius: 5px;
-  background: #ffffff;
+  background: var(--pdoe-surface-raised);
 
   &:focus {
     outline: none;
@@ -235,13 +235,13 @@
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: #2e7d32;
+  background: var(--pdoe-success-strong);
   border: none;
   border-radius: 5px;
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: #256428;
+    background: var(--pdoe-success-strong);
   }
 
   &:disabled {
@@ -262,22 +262,22 @@
 }
 
 .solde-confirme {
-  color: #2e7d32;
+  color: var(--pdoe-success);
   font-style: italic;
 }
 
 .transmission-bloc {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px dashed #ececec;
+  border-top: 1px dashed var(--pdoe-surface-hover);
 }
 
 // ── Infos générales (definition list) ───────────────────────
 
 .info-grid {
   margin: 0;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -290,11 +290,11 @@
   font-size: 13px;
 
   &:not(:last-child) {
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--pdoe-surface-muted);
   }
 
   dt {
-    color: #595959;
+    color: var(--pdoe-text-secondary);
     flex-shrink: 0;
   }
 
@@ -327,8 +327,8 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 10px 14px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 6px;
 }
 
@@ -345,12 +345,12 @@
 
 .document-type {
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .document-reference {
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .document-meta {
@@ -358,18 +358,18 @@
   align-items: center;
   gap: 10px;
   font-size: 11px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .document-validite {
   padding: 2px 8px;
   border-radius: 10px;
-  background: #f0f0f0;
-  color: #595959;
+  background: var(--pdoe-surface-muted);
+  color: var(--pdoe-text-secondary);
 
   &--ok {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: var(--pdoe-success-soft);
+    color: var(--pdoe-success);
   }
 }
 
@@ -381,14 +381,14 @@
   width: 26px;
   height: 26px;
   font-size: 12px;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border: none;
   border-radius: 50%;
   cursor: pointer;
 
   &:hover {
-    background: #e2e2e2;
+    background: var(--pdoe-border);
   }
 }
 
@@ -399,14 +399,14 @@
   justify-content: space-between;
   gap: 10px;
   padding: 8px 14px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 6px;
   font-size: 12px;
 }
 
 .paiement-ref {
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 // ── Alertes ──────────────────────────────────────────────────
@@ -417,26 +417,26 @@
   justify-content: space-between;
   gap: 10px;
   padding: 8px 14px;
-  background: #fff8f0;
-  border: 1px solid #ffe0b2;
+  background: var(--pdoe-warning-soft);
+  border: 1px solid var(--pdoe-warning-soft);
   border-radius: 6px;
   font-size: 12px;
 }
 
 .alerte-type {
   font-weight: 600;
-  color: #e65100;
+  color: var(--pdoe-warning);
 }
 
 .alerte-statut {
   padding: 2px 8px;
   border-radius: 10px;
-  background: #f0f0f0;
-  color: #595959;
+  background: var(--pdoe-surface-muted);
+  color: var(--pdoe-text-secondary);
 
   &--ok {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: var(--pdoe-success-soft);
+    color: var(--pdoe-success);
   }
 }
 
@@ -444,8 +444,8 @@
 
 .historique-row {
   padding: 10px 14px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 6px;
 }
 
@@ -460,7 +460,7 @@
   gap: 12px;
   margin-top: 2px;
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .historique-motif {
@@ -468,7 +468,7 @@
   padding: 6px 8px;
   font-size: 11px;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 4px;
 }
 
@@ -479,7 +479,7 @@
   padding: 40px 16px;
   text-align: center;
   font-size: 13px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 // ── Responsive ───────────────────────────────────────────────

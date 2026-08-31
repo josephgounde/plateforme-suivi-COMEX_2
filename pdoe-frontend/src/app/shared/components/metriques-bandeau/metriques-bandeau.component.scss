@@ -4,8 +4,8 @@
   gap: 32px;
   padding: 20px 24px;
   margin-bottom: 24px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 12px;
   flex-shrink: 0;
 }
@@ -19,7 +19,7 @@
 
 .metrique-lbl {
   font-size: 13px;
-  color: #767676;
+  color: var(--pdoe-gray);
   white-space: nowrap;
 }
 
@@ -29,9 +29,9 @@
   color: var(--pdoe-ink);
   line-height: 1.1;
 
-  &--success { color: #2e7d32; }
+  &--success { color: var(--pdoe-success); }
   &--danger  { color: var(--pdoe-red); }
-  &--warning { color: #e65100; }
+  &--warning { color: var(--pdoe-warning); }
 }
 
 @media (max-width: 600px) {

@@ -9,7 +9,7 @@
   display: inline-block;
   margin-bottom: 14px;
   font-size: 13px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
   text-decoration: none;
 
   &:hover {
@@ -25,14 +25,14 @@ h1 {
 
 .loading {
   font-size: 13px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .form-section {
   margin-bottom: 24px;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
 
   h2 {
@@ -65,26 +65,26 @@ h1 {
     padding: 9px 11px;
     font-size: 13px;
     font-family: inherit;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 6px;
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
     transition: border-color 0.15s ease, background 0.15s ease;
 
     &:focus {
       outline: none;
       border-color: var(--pdoe-red);
-      background: #ffffff;
+      background: var(--pdoe-surface-raised);
     }
 
     &:disabled {
-      background: #f0f0f0;
-      color: #999999;
+      background: var(--pdoe-surface-muted);
+      color: var(--pdoe-gray);
       cursor: not-allowed;
     }
 
     &.champ-invalide {
       border-color: var(--pdoe-red);
-      background: #fdecee;
+      background: var(--pdoe-error-soft);
     }
   }
 
@@ -132,7 +132,7 @@ h1 {
 .section-divider {
   margin: 20px 0 18px;
   border: none;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--pdoe-border);
 }
 
 // ── Flux de vérification de signature ───────────────────────
@@ -144,14 +144,14 @@ h1 {
   font-size: 13px;
   font-weight: 600;
   color: #ffffff;
-  background: var(--pdoe-ink);
+  background: var(--pdoe-chrome);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
 
   &:hover:not(:disabled) {
-    background: #333333;
+    background: var(--pdoe-text-secondary);
   }
 
   &:disabled {
@@ -173,13 +173,13 @@ h1 {
   border-radius: 6px;
 
   &--loading {
-    color: #1565c0;
-    background: #e3f2fd;
+    color: var(--pdoe-info);
+    background: var(--pdoe-info-soft);
   }
 
   &--error {
     color: var(--pdoe-red);
-    background: #fdecee;
+    background: var(--pdoe-error-soft);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -187,8 +187,8 @@ h1 {
   }
 
   &--ok {
-    color: #2e7d32;
-    background: #e8f5e9;
+    color: var(--pdoe-success);
+    background: var(--pdoe-success-soft);
   }
 }
 
@@ -198,28 +198,28 @@ h1 {
   font-size: 11px;
   font-weight: 600;
   color: var(--pdoe-red);
-  background: #ffffff;
+  background: var(--pdoe-surface-raised);
   border: 1px solid var(--pdoe-red);
   border-radius: 4px;
   cursor: pointer;
 
   &:hover {
-    background: #fdecee;
+    background: var(--pdoe-error-soft);
   }
 }
 
 .signature-visuelle {
   margin-top: 10px;
   padding: 12px;
-  background: #fafafa;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-muted);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 6px;
 }
 
 .signature-visuelle-hint {
   margin: 0 0 8px;
   font-size: 12px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .signature-checkbox {
@@ -243,7 +243,7 @@ h1 {
 .section-hint {
   margin: -6px 0 14px;
   font-size: 12px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 // ── Règle réglementaire (délai + référence) ───────────────────
@@ -258,7 +258,7 @@ h1 {
   margin: 0 0 14px;
   font-size: 12px;
   font-style: italic;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 // ── Checklist documentaire ───────────────────────────────────
@@ -279,8 +279,8 @@ h1 {
   gap: 10px;
   padding: 8px 10px;
   font-size: 12px;
-  background: #fafafa;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-muted);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 6px;
 }
 
@@ -294,22 +294,22 @@ h1 {
   font-size: 11px;
   font-weight: 600;
   border-radius: 10px;
-  color: #999999;
-  background: #f0f0f0;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
 
   &--obligatoire {
     color: var(--pdoe-red);
-    background: #fdecee;
+    background: var(--pdoe-error-soft);
   }
 
   &--facultatif {
-    color: #1565c0;
-    background: #e3f2fd;
+    color: var(--pdoe-info);
+    background: var(--pdoe-info-soft);
   }
 
   &--non-requis {
-    color: #999999;
-    background: #f0f0f0;
+    color: var(--pdoe-gray);
+    background: var(--pdoe-surface-muted);
   }
 }
 
@@ -334,13 +334,13 @@ h1 {
   font-size: 12px;
   font-weight: 600;
   color: var(--pdoe-ink);
-  background: #ffffff;
-  border: 1px solid #d9d9d9;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-border);
   border-radius: 6px;
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
   }
 
   &:disabled {
@@ -364,8 +364,8 @@ h1 {
   gap: 8px;
   padding: 7px 10px;
   font-size: 12px;
-  background: #fafafa;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-muted);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 6px;
 }
 
@@ -380,13 +380,13 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .fichier-reference {
   flex-shrink: 0;
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .btn-retirer {
@@ -394,9 +394,9 @@ h1 {
   width: 20px;
   height: 20px;
   font-size: 11px;
-  color: #999999;
-  background: #ffffff;
-  border: 1px solid #d9d9d9;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-border);
   border-radius: 50%;
   cursor: pointer;
 
@@ -413,7 +413,7 @@ h1 {
   padding: 9px 11px;
   font-size: 12px;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 6px;
 }
 

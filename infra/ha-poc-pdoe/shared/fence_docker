@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+# Custom Pacemaker STONITH agent for the pdoe HA POC.
+# Fences a node by calling the Docker Engine API (over the host's docker.sock,
+# bind-mounted into this container) to stop/start its container from OUTSIDE it.
+# Not an official Microsoft/RHCS agent -- hand-written for this POC.
+
+import sys
+import json
+import subprocess
+
+SOCKET = "/var/run/docker.sock"
+CONTROLLABLE = ["pdoe-a", "pdoe-b", "pdoe-c"]
+
+METADATA = """<?xml version="1.0" ?>
+<resource-agent name="fence_docker" shortdesc="Fence agent for Docker containers (POC)">
+<longdesc>Stops or starts a Docker container from outside it, via the Docker
+Engine API over the host's docker.sock, to fence a node in the pdoe HA POC.</longdesc>
+<parameters>
+<parameter name="plug" unique="1" required="1">
+<getopt mixed="-n, --plug=[name]"/>
+<content type="string"/>
+<shortdesc>Name of the Docker container to fence</shortdesc>
+</parameter>
+<parameter name="action" unique="0" required="1">
+<getopt mixed="-o, --action=[action]"/>
+<content type="string" default="off"/>
+<shortdesc>Fencing action</shortdesc>
+</parameter>
+</parameters>
+<actions>
+<action name="on"/>
+<action name="off"/>
+<action name="status"/>
+<action name="list"/>
+<action name="monitor"/>
+<action name="metadata"/>
+</actions>
+</resource-agent>
+"""
+
+
+def parse_args():
+    opts = {}
+    args = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a in ("-o", "--action"):
+            opts["action"] = args[i + 1]
+            i += 2
+        elif a.startswith("--action="):
+            opts["action"] = a.split("=", 1)[1]
+            i += 1
+        elif a in ("-n", "--plug"):
+            opts["plug"] = args[i + 1]
+            i += 2
+        elif a.startswith("--plug="):
+            opts["plug"] = a.split("=", 1)[1]
+            i += 1
+        else:
+            i += 1
+
+    # Pacemaker's real invocation passes parameters as key=value lines on stdin.
+    for line in sys.stdin:
+        line = line.strip()
+        if not line or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        k, v = k.strip(), v.strip()
+        if k == "action" and "action" not in opts:
+            opts["action"] = v
+        elif k in ("port", "plug") and "plug" not in opts:
+            opts["plug"] = v
+    return opts
+
+
+def docker_api(method, path):
+    url = f"http://localhost{path}"
+    # -f makes curl exit non-zero on a 4xx/5xx HTTP response instead of
+    # only failing on a transport-level error -- without it, a rejected
+    # Docker Engine API call (e.g. an already-running container refusing
+    # /start) looks identical to success.
+    cmd = ["curl", "-sf", "--unix-socket", SOCKET, "-X", method, url]
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def container_running(name):
+    r = docker_api("GET", f"/containers/{name}/json")
+    if r.returncode != 0 or not r.stdout:
+        return None
+    try:
+        data = json.loads(r.stdout)
+    except json.JSONDecodeError:
+        return None
+    if "message" in data:
+        return None
+    return data.get("State", {}).get("Running", False)
+
+
+def main():
+    opts = parse_args()
+    action = opts.get("action", "monitor")
+
+    if action == "metadata":
+        sys.stdout.write(METADATA)
+        return 0
+
+    if action == "monitor":
+        return 0
+
+    if action == "list":
+        for name in CONTROLLABLE:
+            print(f"{name},")
+        return 0
+
+    plug = opts.get("plug")
+    if not plug:
+        sys.stderr.write("Missing plug/port (-n)\n")
+        return 1
+
+    if action == "status":
+        running = container_running(plug)
+        if running is None:
+            return 1
+        return 0 if running else 2
+
+    if action == "off":
+        r = docker_api("POST", f"/containers/{plug}/stop")
+        return 0 if r.returncode == 0 else 1
+
+    if action == "on":
+        r = docker_api("POST", f"/containers/{plug}/start")
+        return 0 if r.returncode == 0 else 1
+
+    if action == "reboot":
+        docker_api("POST", f"/containers/{plug}/stop")
+        r = docker_api("POST", f"/containers/{plug}/start")
+        return 0 if r.returncode == 0 else 1
+
+    sys.stderr.write(f"Unsupported action: {action}\n")
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

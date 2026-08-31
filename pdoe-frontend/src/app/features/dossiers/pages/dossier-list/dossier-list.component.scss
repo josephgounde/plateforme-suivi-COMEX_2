@@ -21,7 +21,7 @@
 .count-badge {
   font-size: 12px;
   font-weight: 600;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 // ── Barre de filtres ─────────────────────────────────────────
@@ -37,14 +37,14 @@
   flex: 1 1 200px;
   padding: 8px 10px;
   font-size: 13px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--pdoe-border);
   border-radius: 6px;
-  background: #fafafa;
+  background: var(--pdoe-surface-muted);
 
   &:focus {
     outline: none;
     border-color: var(--pdoe-red);
-    background: #ffffff;
+    background: var(--pdoe-surface-raised);
   }
 }
 
@@ -56,14 +56,14 @@ app-dropdown-select.filter-select {
 .btn-reset {
   padding: 8px 14px;
   font-size: 12px;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border: none;
   border-radius: 6px;
   cursor: pointer;
 
   &:hover {
-    background: #e5e5e5;
+    background: var(--pdoe-border);
   }
 }
 
@@ -71,8 +71,8 @@ app-dropdown-select.filter-select {
 .empty-state {
   padding: 16px;
   font-size: 13px;
-  color: #999999;
-  background: #fafafa;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
   border-radius: 6px;
   text-align: center;
 }
@@ -94,8 +94,8 @@ app-dropdown-select.filter-select {
   flex-wrap: wrap;
   gap: 10px;
   padding: 12px 14px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
 }
 
@@ -122,7 +122,7 @@ app-dropdown-select.filter-select {
 
 .dossier-compte {
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .dossier-meta {
@@ -136,8 +136,8 @@ app-dropdown-select.filter-select {
   padding: 3px 9px;
   font-size: 11px;
   font-weight: 600;
-  color: #6a1fa0;
-  background: #f3e5f5;
+  color: var(--pdoe-accent-purple);
+  background: var(--pdoe-accent-purple-soft);
   border-radius: 12px;
 }
 
@@ -150,8 +150,8 @@ app-dropdown-select.filter-select {
   padding: 3px 9px;
   font-size: 11px;
   font-weight: 600;
-  color: #1565c0;
-  background: #e3f2fd;
+  color: var(--pdoe-info);
+  background: var(--pdoe-info-soft);
   border-radius: 12px;
 }
 
@@ -162,12 +162,12 @@ app-dropdown-select.filter-select {
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: var(--pdoe-ink);
+  background: var(--pdoe-chrome);
   border-radius: 6px;
   text-decoration: none;
 
   &:hover {
-    background: #333333;
+    background: var(--pdoe-text-secondary);
   }
 }
 

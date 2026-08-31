@@ -23,9 +23,9 @@
   min-width: 30px;
   height: 30px;
   padding: 0 6px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--pdoe-border);
   border-radius: 6px;
-  background: #fff;
+  background: var(--pdoe-surface-raised);
   color: var(--pdoe-ink);
   font-size: 13px;
   font-weight: 500;
@@ -33,7 +33,7 @@
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 
   &:hover:not(:disabled):not(.pager-btn--active) {
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
     border-color: var(--pdoe-gray-light);
   }
 

@@ -21,7 +21,7 @@ const MESSAGES_ERREUR: Partial<Record<AuthErrorCode, string>> = {
   ACCOUNT_LOCKED: 'Compte verrouillé après plusieurs tentatives échouées. Contactez le support DSIRI.',
   PASSWORD_EXPIRED: 'Mot de passe expiré — merci de le réinitialiser via le portail AD.',
   ACCOUNT_DISABLED: 'Compte désactivé. Contactez votre administrateur.',
-  NO_PROFILE_MAPPED: "Aucun profil PGSA-COMEX associé à ce compte. Contactez l'administrateur DSIRI.",
+  NO_PROFILE_MAPPED: "Aucun profil GSA-COMEX associé à ce compte. Contactez l'administrateur DSIRI.",
   LDAP_UNAVAILABLE: "Service d'authentification indisponible. Réessayez dans quelques instants."
 };
 

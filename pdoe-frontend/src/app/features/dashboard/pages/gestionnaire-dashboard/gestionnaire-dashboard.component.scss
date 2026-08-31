@@ -35,8 +35,8 @@
   grid-area: content;
   min-width: 0;
   min-height: calc(100vh - 70px - 16px);
-  border-left: 1px solid #ececec;
-  border-right: 1px solid #ececec;
+  border-left: 1px solid var(--pdoe-surface-hover);
+  border-right: 1px solid var(--pdoe-surface-hover);
   padding: 0 16px;
   box-sizing: border-box;
 }
@@ -91,8 +91,8 @@
   padding: 0 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border-radius: 10px;
 }
 
@@ -100,8 +100,8 @@
 .empty-state {
   padding: 16px;
   font-size: 13px;
-  color: #999999;
-  background: #fafafa;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
   border-radius: 6px;
   text-align: center;
 }
@@ -117,8 +117,8 @@
 
 .dossier-row {
   padding: 14px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
 }
 
@@ -145,7 +145,7 @@
   font-weight: 600;
   letter-spacing: 0.03em;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 999px;
   text-transform: uppercase;
 }
@@ -164,7 +164,7 @@
   align-items: flex-end;
   gap: 2px;
   font-size: 11px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .dossier-montant {
@@ -188,12 +188,12 @@
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: var(--pdoe-ink);
+  background: var(--pdoe-chrome);
   border-radius: 6px;
   text-decoration: none;
 
   &:hover {
-    background: #333333;
+    background: var(--pdoe-text-secondary);
   }
 }
 
@@ -202,7 +202,7 @@
 .rejet-bloc {
   padding-top: 10px;
   margin-top: 10px;
-  border-top: 1px dashed #ececec;
+  border-top: 1px dashed var(--pdoe-surface-hover);
 }
 
 .btn-rejeter-toggle {
@@ -211,12 +211,12 @@
   font-weight: 600;
   color: var(--pdoe-red);
   background: transparent;
-  border: 1px solid #f0b8c0;
+  border: 1px solid var(--pdoe-error-soft);
   border-radius: 5px;
   cursor: pointer;
 
   &:hover {
-    background: #fdecee;
+    background: var(--pdoe-error-soft);
   }
 }
 
@@ -242,15 +242,15 @@
     padding: 7px 9px;
     font: inherit;
     font-size: 12px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 5px;
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
     resize: vertical;
 
     &:focus {
       outline: none;
       border-color: var(--pdoe-red);
-      background: #ffffff;
+      background: var(--pdoe-surface-raised);
     }
   }
 
@@ -262,7 +262,7 @@
 .rejet-cible {
   margin: 0;
   font-size: 11px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 // ── Bloc notification client (SMS/Email) ─────────────────────
@@ -271,21 +271,21 @@
 .notif-client-bloc {
   padding-top: 10px;
   margin-top: 10px;
-  border-top: 1px dashed #ececec;
+  border-top: 1px dashed var(--pdoe-surface-hover);
 }
 
 .btn-notif-client-toggle {
   padding: 5px 10px;
   font-size: 12px;
   font-weight: 600;
-  color: #1565c0;
+  color: var(--pdoe-info);
   background: transparent;
-  border: 1px solid #bbdefb;
+  border: 1px solid var(--pdoe-info);
   border-radius: 5px;
   cursor: pointer;
 
   &:hover {
-    background: #e3f2fd;
+    background: var(--pdoe-info-soft);
   }
 }
 
@@ -302,13 +302,13 @@
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: #1565c0;
+  background: var(--pdoe-info);
   border: none;
   border-radius: 5px;
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: #0d47a1;
+    background: var(--pdoe-info-hover);
   }
 
   &:disabled {
@@ -319,7 +319,7 @@
 
 .notif-client-succes {
   font-size: 11px;
-  color: #2e7d32;
+  color: var(--pdoe-success);
 }
 
 .notif-client-erreur {
@@ -353,8 +353,8 @@
   padding: 3px 9px;
   font-size: 11px;
   font-weight: 600;
-  color: #1565c0;
-  background: #e3f2fd;
+  color: var(--pdoe-info);
+  background: var(--pdoe-info-soft);
   border-radius: 12px;
 }
 

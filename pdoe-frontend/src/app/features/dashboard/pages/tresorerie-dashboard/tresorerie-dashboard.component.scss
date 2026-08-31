@@ -35,8 +35,8 @@
   grid-area: content;
   min-width: 0;
   min-height: calc(100vh - 70px - 16px);
-  border-left: 1px solid #ececec;
-  border-right: 1px solid #ececec;
+  border-left: 1px solid var(--pdoe-surface-hover);
+  border-right: 1px solid var(--pdoe-surface-hover);
   padding: 0 16px;
   box-sizing: border-box;
 }
@@ -91,8 +91,8 @@
   padding: 0 6px;
   font-size: 11px;
   font-weight: 700;
-  color: #595959;
-  background: #f0f0f0;
+  color: var(--pdoe-text-secondary);
+  background: var(--pdoe-surface-muted);
   border-radius: 10px;
 }
 
@@ -100,8 +100,8 @@
 .empty-state {
   padding: 16px;
   font-size: 13px;
-  color: #999999;
-  background: #fafafa;
+  color: var(--pdoe-gray);
+  background: var(--pdoe-surface-muted);
   border-radius: 6px;
   text-align: center;
 }
@@ -117,8 +117,8 @@
 
 .dossier-row {
   padding: 14px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-surface-hover);
   border-radius: 8px;
 }
 
@@ -144,7 +144,7 @@
   font-weight: 600;
   letter-spacing: 0.03em;
   color: var(--pdoe-red);
-  background: #fdecee;
+  background: var(--pdoe-error-soft);
   border-radius: 999px;
   text-transform: uppercase;
 }
@@ -165,12 +165,12 @@
   align-items: flex-end;
   gap: 2px;
   font-size: 11px;
-  color: #595959;
+  color: var(--pdoe-text-secondary);
   flex-shrink: 0;
 }
 
 .dossier-type {
-  color: #595959;
+  color: var(--pdoe-text-secondary);
 }
 
 .dossier-montant {
@@ -179,7 +179,7 @@
 }
 
 .dossier-pays {
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 @media (min-width: 600px) {
@@ -202,10 +202,10 @@
 .param-statut {
   font-size: 11px;
   font-weight: 600;
-  color: #e65100;
+  color: var(--pdoe-warning);
 
   &--ok {
-    color: #2e7d32;
+    color: var(--pdoe-success);
   }
 }
 
@@ -228,11 +228,11 @@
 
   &--ouvert {
     color: var(--pdoe-ink);
-    background: #f0f0f0;
+    background: var(--pdoe-surface-muted);
     box-shadow: none;
 
     &:hover {
-      background: #e5e5e5;
+      background: var(--pdoe-border);
     }
   }
 }
@@ -242,19 +242,19 @@
   font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  background: var(--pdoe-ink);
+  background: var(--pdoe-chrome);
   border-radius: 6px;
   text-decoration: none;
 
   &:hover {
-    background: #333333;
+    background: var(--pdoe-text-secondary);
   }
 }
 
 .treso-form {
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px dashed #ececec;
+  border-top: 1px dashed var(--pdoe-surface-hover);
 }
 
 .transmission-bloc {
@@ -264,14 +264,14 @@
   gap: 10px;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px dashed #ececec;
+  border-top: 1px dashed var(--pdoe-surface-hover);
 }
 
 .transmission-hint {
   flex-basis: 100%;
   margin: 0;
   font-size: 11px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .form-grid {
@@ -289,21 +289,21 @@
   label {
     font-size: 11px;
     font-weight: 600;
-    color: #595959;
+    color: var(--pdoe-text-secondary);
   }
 
   input,
   select {
     padding: 8px 10px;
     font-size: 13px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 5px;
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
 
     &:focus {
       outline: none;
       border-color: var(--pdoe-red);
-      background: #ffffff;
+      background: var(--pdoe-surface-raised);
     }
   }
 
@@ -343,7 +343,7 @@
   cursor: pointer;
 
   &:hover:not(:disabled) {
-    background: #767675;
+    background: var(--pdoe-gray);
   }
 
   &:disabled {
@@ -354,7 +354,7 @@
 
 .taux-cote-le {
   font-size: 10px;
-  color: #999999;
+  color: var(--pdoe-gray);
 }
 
 .disponibilite-check {
@@ -369,7 +369,7 @@
   input {
     width: 16px;
     height: 16px;
-    accent-color: #2e7d32;
+    accent-color: var(--pdoe-success);
   }
 }
 
@@ -388,8 +388,8 @@
   padding: 3px 9px;
   font-size: 11px;
   font-weight: 600;
-  color: #1565c0;
-  background: #e3f2fd;
+  color: var(--pdoe-info);
+  background: var(--pdoe-info-soft);
   border-radius: 12px;
 }
 
@@ -418,7 +418,7 @@
 .rejet-bloc {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px dashed #ececec;
+  border-top: 1px dashed var(--pdoe-surface-hover);
 }
 
 .btn-rejeter-toggle {
@@ -427,12 +427,12 @@
   font-weight: 600;
   color: var(--pdoe-red);
   background: transparent;
-  border: 1px solid #f0b8c0;
+  border: 1px solid var(--pdoe-error-soft);
   border-radius: 5px;
   cursor: pointer;
 
   &:hover {
-    background: #fdecee;
+    background: var(--pdoe-error-soft);
   }
 }
 
@@ -459,15 +459,15 @@
     padding: 7px 9px;
     font: inherit;
     font-size: 12px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid var(--pdoe-border);
     border-radius: 5px;
-    background: #fafafa;
+    background: var(--pdoe-surface-muted);
     resize: vertical;
 
     &:focus {
       outline: none;
       border-color: var(--pdoe-red);
-      background: #ffffff;
+      background: var(--pdoe-surface-raised);
     }
   }
 

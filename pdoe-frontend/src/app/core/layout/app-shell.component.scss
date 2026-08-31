@@ -21,7 +21,7 @@
   height: 100vh;
   padding: 6px 12px 16px;
   box-sizing: border-box;
-  background: var(--pdoe-ink);
+  background: var(--pdoe-chrome);
   overflow-y: auto;
 
   // Défilement fonctionnel, barre masquée — cohérent avec le reste
@@ -162,14 +162,14 @@
   &--actif {
     color: var(--pdoe-ink);
     font-weight: 700;
-    background: #f5f6f8;
+    background: var(--pdoe-surface);
     width: calc(100% + 12px);
     margin-right: -12px;
     padding-right: 26px;
     border-radius: 8px 0 0 8px;
 
     &:hover {
-      background: #f5f6f8;
+      background: var(--pdoe-surface);
     }
 
     &::before,
@@ -183,12 +183,12 @@
 
     &::before {
       top: -14px;
-      background: radial-gradient(circle at 0 0, transparent 14px, #f5f6f8 14.5px);
+      background: radial-gradient(circle at 0 0, transparent 14px, var(--pdoe-surface) 14.5px);
     }
 
     &::after {
       bottom: -14px;
-      background: radial-gradient(circle at 0 100%, transparent 14px, #f5f6f8 14.5px);
+      background: radial-gradient(circle at 0 100%, transparent 14px, var(--pdoe-surface) 14.5px);
     }
 
     .nav-count {
@@ -273,7 +273,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 20px;
-  background: var(--pdoe-ink);
+  background: var(--pdoe-chrome);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 
   // Comble le coin que le border-radius de .shell-content découpe juste en dessous (24px, même rayon) : sans ça ce triangle resterait vide.
@@ -284,7 +284,7 @@
     bottom: -24px;
     width: 24px;
     height: 24px;
-    background: radial-gradient(circle at 100% 100%, transparent 24px, var(--pdoe-ink) 24.5px);
+    background: radial-gradient(circle at 100% 100%, transparent 24px, var(--pdoe-chrome) 24.5px);
     pointer-events: none;
   }
 }
@@ -302,6 +302,28 @@
   align-items: center;
   gap: 14px;
   min-width: 0;
+}
+
+// ── Bascule de thème ──────────────────────────────────────────
+
+.topbar-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  color: #ffffff;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
 // ── Cloche de notifications ──────────────────────────────────
@@ -366,8 +388,8 @@
   max-height: 400px;
   overflow-y: auto;
   padding: 12px;
-  background: #ffffff;
-  border: 1px solid #ececec;
+  background: var(--pdoe-surface-raised);
+  border: 1px solid var(--pdoe-border);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
@@ -391,7 +413,7 @@
 .topbar-bell-empty {
   padding: 16px 0;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
   text-align: center;
 }
 
@@ -409,7 +431,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px;
-  background: #fafafa;
+  background: var(--pdoe-surface-muted);
   border-radius: 8px;
 }
 
@@ -442,7 +464,7 @@
   flex-shrink: 0;
   padding: 0 4px;
   font-size: 12px;
-  color: #999999;
+  color: var(--pdoe-gray);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -502,7 +524,7 @@
   overflow-x: hidden;
   box-sizing: border-box;
   border-radius: 24px 0 0 0;
-  background: #f5f6f8;
+  background: var(--pdoe-surface);
 
   // Barre masquée : la vue a déjà son coin arrondi et sa bordure de coquille, une barre visible casserait l'habillage.
   scrollbar-width: none;

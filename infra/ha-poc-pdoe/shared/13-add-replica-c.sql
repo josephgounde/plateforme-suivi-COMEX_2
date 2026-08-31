@@ -1,0 +1,9 @@
+-- Run on the CURRENT PRIMARY (pdoe-b)
+ALTER AVAILABILITY GROUP [pdoe_ag]
+    ADD REPLICA ON 'pdoe-c' WITH (
+        ENDPOINT_URL = 'TCP://pdoe-c:5022',
+        AVAILABILITY_MODE = SYNCHRONOUS_COMMIT,
+        FAILOVER_MODE = EXTERNAL,
+        SEEDING_MODE = MANUAL
+    );
+GO

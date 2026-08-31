@@ -7,6 +7,7 @@ import { Subscription, filter } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { ProfilUtilisateur, PROFIL_LABELS } from '../models/enums.model';
 import { NotificationsService } from '../notifications/notifications.service';
+import { ThemeService } from '../theme/theme.service';
 import { DashboardNavService } from './dashboard-nav.service';
 import { ToastContainerComponent } from '../../shared/components/toast-container/toast-container.component';
 
@@ -38,6 +39,7 @@ export class AppShellComponent implements OnInit, OnDestroy {
   constructor(
     public auth: AuthService,
     public notifs: NotificationsService,
+    public theme: ThemeService,
     public dashboardNav: DashboardNavService,
     private router: Router
   ) {}

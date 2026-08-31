@@ -2,14 +2,17 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using PDOE.Api.Contracts;
 using PDOE.Infrastructure;
+using PDOE.Infrastructure.Archive;
 using PDOE.Infrastructure.Entities;
 using PDOE.Shared.Kernel.Common;
 using PDOE.Workflow.API.Common;
 
 namespace PDOE.Workflow.API.Features.ArchiverDossier;
 
-/// Étape 7 (Archivage). Ne fait que la transition d'état pour l'instant — vérif SHA-256 et reporting BCEAO restent à brancher via PDOE.Reporting.API.
-public class ArchiverDossierHandler(PdoeDbContext db) : IRequestHandler<ArchiverDossierCommand, WorkflowTransitionResponse>
+/// Étape 7 (Archivage). Vérif SHA-256 et reporting BCEAO restent à brancher via PDOE.Reporting.API. Signale en plus
+/// le dossier à l'application d'archivage externe (scénario hybride, cf. IArchiveNotifier) — un échec de ce signal
+/// ne fait jamais échouer la transition elle-même, cf. NotifieArchivage.
+public class ArchiverDossierHandler(PdoeDbContext db, IArchiveNotifier archiveNotifier) : IRequestHandler<ArchiverDossierCommand, WorkflowTransitionResponse>
 {
     public async Task<WorkflowTransitionResponse> Handle(ArchiverDossierCommand command, CancellationToken cancellationToken)
     {
@@ -47,6 +50,10 @@ public class ArchiverDossierHandler(PdoeDbContext db) : IRequestHandler<Archiver
         };
         dossier.EtapesWorkflow.Add(etape);
         JournalAuditWriter.EnregistrerTransition(db, dossier, etape);
+
+        var notifie = await archiveNotifier.NotifierArchivageAsync(dossier.DossierId, dossier.ReferenceInterne, now, cancellationToken);
+        dossier.NotifieArchivage = notifie;
+        dossier.DateNotificationArchivage = notifie ? now : null;
 
         await db.SaveChangesAsync(cancellationToken);
 
