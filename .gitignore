@@ -41,3 +41,7 @@ infra/**/*.pvk
 infra/**/corosync.authkey
 infra/**/*.bak
 infra/**/*.trn
+
+
+# Application logs
+pdoe-backend/PDOE.Api/logs/

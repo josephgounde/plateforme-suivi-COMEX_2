@@ -1,7 +1,7 @@
 // Formulaire de connexion LDAP + bloc "connexion rapide" (dev only, logins à garder synchronisés avec MockUtilisateursStore).
 // Un login valide déclenche l'OTP, pas directement le dashboard.
 
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -56,7 +56,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       login: ['', Validators.required],
@@ -89,6 +90,10 @@ export class LoginComponent {
         const code = err.error?.code as AuthErrorCode | undefined;
         this.erreur = (code && MESSAGES_ERREUR[code]) ?? MESSAGES_ERREUR.INVALID_CREDENTIALS!;
         this.loading = false;
+        // Sans ça, la réponse HTTP arrive hors du déclenchement automatique de détection de changement (app
+        // zoneless) — le message reste invisible jusqu'à ce qu'une interaction non liée (ex. l'œil du mot de
+        // passe) force un re-rendu. Même correctif déjà en place sur OtpComponent.
+        this.cdr.detectChanges();
       }
     });
   }

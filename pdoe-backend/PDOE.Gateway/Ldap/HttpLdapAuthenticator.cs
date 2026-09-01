@@ -34,10 +34,11 @@ public class HttpLdapAuthenticator(HttpClient http) : ILdapAuthenticator
             return new LdapBindResult(false, codeErreur);
             
         }
-        catch (HttpRequestException)
+        // TaskCanceledException : déclenchée par client.Timeout (15s, cf. Program.cs) — sans ce catch, un délai
+        // dépassé remontait comme une exception non gérée (500 brut) au lieu du message LDAP_UNAVAILABLE attendu.
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-          return new LdapBindResult(false, "LDAP_UNAVAILABLE");
-            
+            return new LdapBindResult(false, "LDAP_UNAVAILABLE");
         }
     }
 

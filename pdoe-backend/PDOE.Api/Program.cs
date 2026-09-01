@@ -14,6 +14,7 @@ using PDOE.Infrastructure.Notifications;
 using PDOE.Infrastructure.Otp;
 using PDOE.Infrastructure.Storage;
 using PDOE.Shared.Kernel.Common;
+using Serilog;
 
 // Sans ça, [Range(typeof(decimal), "0.0001", ...)] (généré par NSwag) plante en 500 sur tout serveur
 // dont la culture par défaut n'utilise pas le point comme séparateur décimal (ex. fr-FR → virgule) :
@@ -22,6 +23,17 @@ System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalizat
 System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
+// log file with serilog
+builder.Host.UseSerilog((context, services, configuration) => configuration
+    .ReadFrom.Configuration(context.Configuration)
+    .WriteTo.Console()
+    .WriteTo.File(
+        Path.Combine(context.Configuration["AppLogs:FolderPath"] ?? "logs", "log-.txt"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
 
 // Composition root du monolithe modulaire (DAT §4.2) : chaque module apporte ses contrôleurs (ApplicationPart) et handlers (scan MediatR), l'hôte n'assemble que ça.
 builder.Services.AddControllers()
@@ -76,6 +88,8 @@ builder.Services.AddHttpClient<ILdapAuthenticator, HttpLdapAuthenticator>(client
         throw new InvalidOperationException("Ldap:BaseUrl is not configured."));
 });*/
 
+
+
 var bypassLdap = builder.Configuration.GetValue<bool>("Ldap:BypassValidation");
 
 if (builder.Environment.IsDevelopment() && bypassLdap)
@@ -92,6 +106,9 @@ else
             ?? throw new InvalidOperationException("Ldap:BaseUrl is missing from configuration.");
 
         client.BaseAddress = new Uri(baseUrl);
+        // Sans ça, HttpClient retombe sur son timeout par défaut de 100s — l'utilisateur reste bloqué sur
+        // "Connexion en cours..." bien trop longtemps si la passerelle AD interne est lente/indisponible.
+        client.Timeout = TimeSpan.FromSeconds(15);
     });
 }
 
